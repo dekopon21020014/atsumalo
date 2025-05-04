@@ -1,6 +1,6 @@
 // 例：app/api/participants/[eventId]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
+import { db, FieldValue } from '@/lib/firebase'
 
 export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
   const { eventId } = await params
