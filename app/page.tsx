@@ -21,6 +21,8 @@ import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMediaQuery } from "@/hooks/use-mobile"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 // スケジュールの種類と対応する色
 const scheduleTypes = [
@@ -65,21 +67,21 @@ export default function SchedulePage() {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [selectionMode, setSelectionMode] = useState("tap") // "tap" or "drag"
 
-  // ローカルストレージからデータを読み込む
   useEffect(() => {
-    const savedData = localStorage.getItem("labScheduleData")
-    if (savedData) {
+    const fetchParticipants = async () => {
       try {
-        const parsedData = JSON.parse(savedData)
-        if (Array.isArray(parsedData)) {
-          setParticipants(parsedData)
+        const res = await fetch("/api/participants")
+        const json = await res.json()
+        if (Array.isArray(json.participants)) {
+          setParticipants(json.participants)
         }
       } catch (e) {
-        console.error("Failed to parse saved data:", e)
+        console.error("参加者の取得に失敗:", e)
       }
     }
-
-    // モバイルの場合はデフォルトでタップモードに
+  
+    fetchParticipants()
+  
     if (isMobile) {
       setSelectionMode("tap")
     } else {
@@ -206,7 +208,7 @@ export default function SchedulePage() {
   }
 
   // スケジュールの登録
-  const submitSchedule = () => {
+  const submitSchedule = async () => {
     if (!currentName.trim()) {
       toast({
         title: "エラー",
@@ -215,57 +217,67 @@ export default function SchedulePage() {
       })
       return
     }
-
-    // 入力が少なすぎる場合は警告
+  
     const filledCells = Object.values(currentSchedule).filter((v) => v).length
     if (filledCells < 5) {
       if (!confirm("入力されたスケジュールが少ないようです。このまま登録しますか？")) {
         return
       }
     }
-
-    if (editingParticipantIndex !== null) {
-      // 既存の参加者を編集
-      const newParticipants = [...participants]
-      newParticipants[editingParticipantIndex] = {
-        name: currentName,
-        schedule: { ...currentSchedule },
-      }
-      setParticipants(newParticipants)
-      setEditingParticipantIndex(null)
-
-      // ローカルストレージに保存
-      localStorage.setItem("labScheduleData", JSON.stringify(newParticipants))
-    } else {
-      // 新しい参加者を追加
-      const newParticipants = [
-        ...participants,
-        {
-          name: currentName,
-          schedule: { ...currentSchedule },
-        },
-      ]
-      setParticipants(newParticipants)
-
-      // ローカルストレージに保存
-      localStorage.setItem("labScheduleData", JSON.stringify(newParticipants))
+  
+    const payload = {
+      name: currentName,
+      schedule: currentSchedule,
     }
-
-    // フォームをリセット
-    setCurrentName("")
-    setCurrentSchedule(createEmptySchedule())
-    setSelectedCells({})
-    setBulkScheduleType("")
-
-    toast({
-      title: "登録完了",
-      description: "スケジュールが登録されました",
-    })
-
-    // 集計タブに切り替え
-    setActiveTab("summary")
+  
+    try {
+      if (editingParticipantIndex !== null) {
+        // 編集（PUT）
+        const participant = participants[editingParticipantIndex]
+        const res = await fetch(`/api/participants/${participant.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error("更新に失敗しました")
+  
+        // 状態更新
+        const updated = [...participants]
+        updated[editingParticipantIndex] = { ...participant, ...payload }
+        setParticipants(updated)
+        setEditingParticipantIndex(null)
+      } else {
+        // 新規登録（POST）
+        const res = await fetch("/api/participants", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error("登録に失敗しました")
+        const json = await res.json()
+        setParticipants([...participants, { id: json.id, ...payload }])
+      }
+  
+      toast({
+        title: "完了",
+        description: editingParticipantIndex !== null ? "更新しました" : "登録しました",
+      })
+      setCurrentName("")
+      setCurrentSchedule(createEmptySchedule())
+      setSelectedCells({})
+      setBulkScheduleType("")
+      setActiveTab("summary")
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "エラー",
+        description: String(err),
+        variant: "destructive",
+      })
+    }
   }
-
+  
+  
   // 参加者の編集
   const editParticipant = (index) => {
     const participant = participants[index]
@@ -277,23 +289,44 @@ export default function SchedulePage() {
     setBulkScheduleType("")
   }
 
-  // 参加者の削除
-  const deleteParticipant = (index) => {
-    if (confirm(`${participants[index].name}さんのスケジュールを削除しますか？`)) {
+  const deleteParticipant = async (index: number) => {
+    const participant = participants[index]
+    if (!participant?.id) {
+      toast({
+        title: "削除失敗",
+        description: "削除対象のIDが見つかりません",
+        variant: "destructive",
+      })
+      return
+    }
+  
+    if (!confirm(`${participant.name}さんのスケジュールを削除しますか？`)) return
+  
+    try {
+      const res = await fetch(`/api/participants/${participant.id}`, {
+        method: "DELETE",
+      })
+  
+      if (!res.ok) throw new Error("削除に失敗しました")
+  
       const newParticipants = [...participants]
       newParticipants.splice(index, 1)
       setParticipants(newParticipants)
-
-      // ローカルストレージに保存
-      localStorage.setItem("labScheduleData", JSON.stringify(newParticipants))
-
+  
       toast({
         title: "削除完了",
         description: "スケジュールが削除されました",
       })
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "削除エラー",
+        description: String(err),
+        variant: "destructive",
+      })
     }
   }
-
+  
   // スケジュールのエクスポート
   const exportSchedule = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(participants))
@@ -469,11 +502,6 @@ export default function SchedulePage() {
             </DialogContent>
           </Dialog>
         </div>
-
-        <Button variant="destructive" onClick={resetAllData} className="flex items-center gap-1 text-xs md:text-sm">
-          <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-          全データ削除
-        </Button>
       </div>
 
       <Tabs defaultValue="input" value={activeTab} onValueChange={setActiveTab}>
