@@ -5,8 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "研究室ゼミ日程調整アプリ",
-  description: "研究室のゼミ日程を調整するためのアプリケーション",
+  title: "日程調整アプリ",
+  description: "大学の研究室などで日程を調整するためのアプリケーション",
     generator: 'v0.dev'
 }
 
