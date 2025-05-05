@@ -7,6 +7,7 @@ export type Schedule = {
   export type Participant = {
     id: string
     name: string
+    grade: string 
     schedule: Schedule
   }
   

@@ -17,13 +17,16 @@ export async function GET(req: NextRequest, { params }: { params: { eventId: str
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { eventId, name, schedule } = body
+  const { eventId, name, grade, schedule } = body
 
   if (!eventId || typeof eventId !== "string") {
     return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
-  }
+  }  
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "名前が必要です" }, { status: 400 })
+  }
+  if (!grade || typeof grade !== "string") {
+    return NextResponse.json({ error: "学年が必要です" }, { status: 400 })
   }
   if (!schedule || typeof schedule !== "object") {
     return NextResponse.json({ error: "スケジュールが必要です" }, { status: 400 })
@@ -41,6 +44,7 @@ export async function POST(req: NextRequest) {
 
     const docRef = await participantsRef.add({
       name,
+      grade,
       schedule,
       createdAt: FieldValue.serverTimestamp(),
     })
@@ -58,10 +62,13 @@ export async function PUT(
   { params }: { params: { eventId: string; participantId: string } }
 ) {
   const { eventId, participantId } = await params
-  const { name, schedule } = await req.json()
+  const { name, schedule, grade } = await req.json()
 
   if (!name || typeof name !== 'string') {
     return NextResponse.json({ error: '名前が必要です' }, { status: 400 })
+  }
+  if (!grade || typeof grade !== 'string') {
+    return NextResponse.json({ error: '学年が必要です' }, { status: 400 })
   }
   if (!schedule || typeof schedule !== 'object') {
     return NextResponse.json({ error: 'スケジュールが必要です' }, { status: 400 })
@@ -75,6 +82,7 @@ export async function PUT(
       .doc(participantId)
       .update({
         name,
+        grade,
         schedule,
         updatedAt: FieldValue.serverTimestamp(),
       })

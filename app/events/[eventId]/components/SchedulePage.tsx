@@ -8,6 +8,8 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Input } from "@/components/ui/input"
 import { Toaster } from "@/components/ui/toaster"
 import { toast } from "@/components/ui/use-toast"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
 import useMediaQuery from "@/hooks/use-mobile"
 
 import ScheduleForm from "./ScheduleForm"
@@ -17,16 +19,17 @@ import BestTimeSlots from "./BestTimeSlots"
 import { createEmptySchedule } from "./utils"
 import { Participant, Schedule } from "./types"
 import { useParams } from 'next/navigation'
+import { gradeOptions } from "./constants"
 
 export default function SchedulePage() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("input")
-  const isMobile = useMediaQuery("(max-width: 768px)")
-
   const [currentName, setCurrentName] = useState("")
+  const [currentGrade, setCurrentGrade] = useState("")
   const [currentSchedule, setCurrentSchedule] = useState<Schedule>(createEmptySchedule())
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [filterGrade, setFilterGrade] = useState<string>('All')
   const { eventId } = useParams()
 
   useEffect(() => {
@@ -71,6 +74,12 @@ export default function SchedulePage() {
     link.remove()
   }
 
+  // 参加者を学年で絞り込む
+  const filteredParticipants = 
+    filterGrade === 'All'
+      ? participants
+      : participants.filter((p) => p.grade === filterGrade)
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6"> 
       <div className="flex flex-wrap justify-between gap-2 mb-4">
@@ -114,6 +123,8 @@ export default function SchedulePage() {
           <ScheduleForm
             currentName={currentName}
             setCurrentName={setCurrentName}
+            currentGrade={currentGrade}
+            setCurrentGrade={setCurrentGrade}
             currentSchedule={currentSchedule}
             setCurrentSchedule={setCurrentSchedule}
             participants={participants}
@@ -129,6 +140,7 @@ export default function SchedulePage() {
             participants={participants}
             setParticipants={setParticipants}
             setCurrentName={setCurrentName}
+            setCurrentGrade={setCurrentGrade}
             setCurrentSchedule={setCurrentSchedule}
             setEditingIndex={setEditingIndex}
             setActiveTab={setActiveTab}
@@ -136,9 +148,48 @@ export default function SchedulePage() {
         </TabsContent>
 
         <TabsContent value="summary">
+          {/* ① 学年フィルターUI */}
+          <div className="mb-4 flex items-center gap-2">
+            <Label htmlFor="filter-grade">学年で絞り込み</Label>
+            <Select
+              value={filterGrade}
+              onValueChange={setFilterGrade}
+            >
+              <SelectTrigger id="filter-grade" className="w-40">
+                <SelectValue placeholder="全学年" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">全学年</SelectItem>
+                {gradeOptions.map((g) => (
+                  <SelectItem key={g} value={g}>
+                    {g}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ② 絞り込んだ参加者でサマリー＆おすすめ時間を表示 */}
           <div className="grid gap-6 md:grid-cols-3">
-            <ScheduleSummary participants={participants} />
-            <BestTimeSlots participants={participants} />
+            <ScheduleSummary participants={filteredParticipants} />
+            <BestTimeSlots participants={filteredParticipants} />
+          </div>
+
+          {/* 2) 学年ごとの全体集計を一覧表示 */}
+          <div className="mt-12">
+            <h3 className="text-xl font-semibold mb-4">学年別集計（全体表示）</h3>
+            <div className="space-y-8">
+              {gradeOptions.map((g) => {
+                const group = participants.filter((p) => p.grade === g)
+                if (group.length === 0) return null
+                return (
+                  <div key={g}>
+                    <h4 className="text-lg font-medium mb-2">{g} ({group.length}名)</h4>
+                    <ScheduleSummary participants={group} />
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </TabsContent>
       </Tabs>

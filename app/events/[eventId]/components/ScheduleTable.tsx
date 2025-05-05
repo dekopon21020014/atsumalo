@@ -1,15 +1,17 @@
 "use client"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { scheduleTypes, days, periods } from "./constants"
+import { scheduleTypes, days, periods } from "@/app/events/[eventId]/components/constants" 
+import type { Schedule } from './types' 
 
 type Props = {
-  schedule: { [key: string]: string }
+  schedule: Schedule                             // ← Schedule 型を使う
   updateSchedule: (day: string, period: number, value: string) => void
-  selectedCells: { [key: string]: boolean }
-  setSelectedCells: (cells: { [key: string]: boolean }) => void
-  selectionMode: "tap" | "drag"
+  selectedCells: Record<string, boolean>         // ← Record<string,boolean> を使う
+  setSelectedCells: React.Dispatch< React.SetStateAction<Record<string, boolean>> >
+  selectionMode: 'tap' | 'drag'
 }
+
 
 export default function ScheduleTable({
   schedule,
@@ -39,7 +41,7 @@ export default function ScheduleTable({
       else newCells[key] = true
       return newCells
     })
-  }
+  }  
 
   return (
     <div className="overflow-x-auto">
@@ -78,7 +80,6 @@ export default function ScheduleTable({
                         <SelectValue placeholder="選択" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">未選択</SelectItem>
                         {scheduleTypes.map((type) => (
                           <SelectItem key={type.id} value={type.id} className={type.color}>
                             {type.label}

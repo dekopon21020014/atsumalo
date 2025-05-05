@@ -1,36 +1,54 @@
-"use client"
-
-import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Check, MousePointer, Smartphone } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
-import { scheduleTypes, days, periods } from "./constants"
-import { Schedule, Participant } from "./types"
-import { createEmptySchedule } from "./utils"
-import useMediaQuery from "@/hooks/use-mobile"
-import ScheduleTable from "./ScheduleTable"
-import ScheduleCellMobile from "./ScheduleCellMobile"
+// app/events/ScheduleForm.tsx
+'use client'
+import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Check, MousePointer, Smartphone } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { toast } from '@/components/ui/use-toast'
+import { scheduleTypes, days, periods, gradeOptions } from '@/app/events/[eventId]/components/constants'
+import { Schedule, Participant } from './types'
+import { createEmptySchedule } from './utils'
+import useMediaQuery from '@/hooks/use-mobile'
+import ScheduleTable from './ScheduleTable'
+import ScheduleCellMobile from './ScheduleCellMobile'
 import { useParams } from 'next/navigation'
 
 type Props = {
   currentName: string
-  setCurrentName: (name: string) => void
+  setCurrentName: Dispatch<SetStateAction<string>>
+  currentGrade: string
+  setCurrentGrade: Dispatch<SetStateAction<string>>
   currentSchedule: Schedule
-  setCurrentSchedule: (schedule: Schedule) => void
+  setCurrentSchedule: Dispatch<SetStateAction<Schedule>>
   participants: Participant[]
-  setParticipants: (ps: Participant[]) => void
+  setParticipants: Dispatch<SetStateAction<Participant[]>>
   editingIndex: number | null
-  setEditingIndex: (i: number | null) => void
+  setEditingIndex: Dispatch<SetStateAction<number | null>>
   setActiveTab: (tab: string) => void
 }
+
 
 export default function ScheduleForm({
   currentName,
   setCurrentName,
+  currentGrade,
+  setCurrentGrade,
   currentSchedule,
   setCurrentSchedule,
   participants,
@@ -39,17 +57,39 @@ export default function ScheduleForm({
   setEditingIndex,
   setActiveTab,
 }: Props) {
-  const isMobile = useMediaQuery("(max-width: 768px)")
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
-  const [bulkScheduleType, setBulkScheduleType] = useState("")
-  const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
-  const { eventId } = useParams() 
+  const [bulkScheduleType, setBulkScheduleType] = useState('')
+  const [selectionMode, setSelectionMode] = useState<'tap' | 'drag'>(isMobile ? 'tap' : 'drag')
+  const { eventId } = useParams()
 
   const selectedCellCount = Object.keys(selectedCells).length
 
   useEffect(() => {
-    setSelectionMode(isMobile ? "tap" : "drag")
+    setSelectionMode(isMobile ? 'tap' : 'drag')
   }, [isMobile])
+
+  useEffect(() => {
+    if (editingIndex !== null) {
+      const p = participants[editingIndex]
+      // 以前入力した名前／学年も同様にセットしているか確認
+      setCurrentName(p.name)
+      setCurrentGrade(p.grade || "")
+      setCurrentSchedule({ ...p.schedule })
+    } else {
+      // 新規モードならクリア
+      setCurrentSchedule(createEmptySchedule())
+    }
+  }, [editingIndex, participants])
+
+  useEffect(() => {
+    if (editingIndex !== null) {
+      const p = participants[editingIndex]
+      setCurrentGrade(p.grade || '')  // grade があればセット、なければ空文字
+    } else {
+      setCurrentGrade('')              // 新規モードならリセット
+    }
+  }, [editingIndex, participants])
 
   const updateSchedule = (day: string, period: number, value: string) => {
     const key = `${day}-${period}`
@@ -63,32 +103,38 @@ export default function ScheduleForm({
       updated[key] = bulkScheduleType
     }
     setCurrentSchedule(updated)
-    toast({ title: "一括適用", description: `${selectedCellCount}コマの予定を設定しました` })
+    toast({ title: '一括適用', description: `${selectedCellCount}コマの予定を設定しました` })
     setSelectedCells({})
-    setBulkScheduleType("")
+    setBulkScheduleType('')
   }
 
   const submit = async () => {
     if (!currentName.trim()) {
-      toast({ title: "エラー", description: "名前を入力してください", variant: "destructive" })
+      toast({ title: 'エラー', description: '名前を入力してください', variant: 'destructive' })
+      return
+    }
+    if (!currentGrade) {
+      toast({ title: 'エラー', description: '学年を選択してください', variant: 'destructive' })
       return
     }
 
     const filled = Object.values(currentSchedule).filter(Boolean).length
-    if (filled < 5 && !confirm("入力が少ないようです。本当に登録しますか？")) return    
+    if (filled < 5 && !confirm('入力が少ないようです。本当に登録しますか？')) return
 
-    const payload = { 
+    const payload = {
       eventId,
-      name: currentName, 
-      schedule: currentSchedule       
+      name: currentName,
+      grade: currentGrade,          // ← 追加
+      schedule: currentSchedule,
     }
 
     try {
       if (editingIndex !== null) {
+        // 編集
         const id = participants[editingIndex].id
         const res = await fetch(`/api/events/${eventId}/participants/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
@@ -97,28 +143,31 @@ export default function ScheduleForm({
         setParticipants(updated)
         setEditingIndex(null)
       } else {
+        // 新規登録
         const res = await fetch(`/api/events/${eventId}/participants`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
         const { id } = await res.json()
         setParticipants([...participants, { id, ...payload }])
       }
 
-      toast({ title: "完了", description: "スケジュールを登録しました" })
-      setCurrentName("")
+      toast({ title: '完了', description: 'スケジュールを登録しました' })
+      // フォーム初期化
+      setCurrentName('')
+      setCurrentGrade('')                 // ← クリア
       setCurrentSchedule(createEmptySchedule())
       setSelectedCells({})
-      setBulkScheduleType("")
-      setActiveTab("summary")
+      setBulkScheduleType('')
+      setActiveTab('summary')
     } catch {
-      toast({ title: "エラー", description: "保存に失敗しました", variant: "destructive" })
+      toast({ title: 'エラー', description: '保存に失敗しました', variant: 'destructive' })
     }
   }
 
   const toggleSelectionMode = () => {
-    setSelectionMode((prev) => (prev === "tap" ? "drag" : "tap"))
+    setSelectionMode((prev) => (prev === 'tap' ? 'drag' : 'tap'))
     setSelectedCells({})
   }
 
@@ -127,15 +176,41 @@ export default function ScheduleForm({
       <CardHeader className="pb-2">
         <CardTitle>スケジュール入力</CardTitle>
         <CardDescription>
-          {editingIndex !== null ? "スケジュールを編集してください" : "名前と予定を入力してください"}
+          {editingIndex !== null ? 'スケジュールを編集してください' : '名前と予定を入力してください'}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <Label htmlFor="name">名前</Label>
-          <Input id="name" value={currentName} onChange={(e) => setCurrentName(e.target.value)} placeholder="名前" />
-        </div>
+        <div className="mb-4 grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">名前</Label>
+            <Input
+              id="name"
+              value={currentName}
+              onChange={(e) => setCurrentName(e.target.value)}
+              placeholder="名前"
+            />
+          </div>
+          <div>
+            <Label htmlFor="grade-select">学年</Label>
+            <Select
+              value={currentGrade}
+              onValueChange={setCurrentGrade}              
+            >
+              {/* id はここに移動 */}
+              <SelectTrigger id="grade-select" className="w-full">
+                <SelectValue placeholder="学年を選択" />
+              </SelectTrigger>
 
+              <SelectContent>
+                {gradeOptions.map((g) => (
+                  <SelectItem key={g} value={g}>
+                    {g}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium">一括入力</h3>
@@ -197,8 +272,8 @@ export default function ScheduleForm({
                 </div>
               </div>
             ))}
-          </div>
-        ) : (
+          </div>        
+        ) : (          
           <ScheduleTable
             schedule={currentSchedule}
             updateSchedule={updateSchedule}
@@ -210,7 +285,7 @@ export default function ScheduleForm({
       </CardContent>
       <CardFooter>
         <Button onClick={submit} className="w-full md:w-auto">
-          {editingIndex !== null ? "更新する" : "登録する"}
+          {editingIndex !== null ? '更新する' : '登録する'}
         </Button>
       </CardFooter>
     </Card>
