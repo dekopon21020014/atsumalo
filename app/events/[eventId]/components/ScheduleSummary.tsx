@@ -1,44 +1,95 @@
-"use client"
+// app/events/[eventId]/components/ScheduleSummary.tsx
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Participant } from "./types"
-import { scheduleTypes, days, periods } from "./constants"
+import React, { useEffect, useState } from 'react'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import type { Participant } from './types'
+import { scheduleTypes } from './constants'
+
+type AvailabilityDetail = {
+  type: string
+  label: string
+  count: number
+  participants: string[]
+}
+
+type AvailabilityEntry = {
+  available: number
+  total: number
+  details: AvailabilityDetail[]
+  availableParticipants: string[]
+}
+
+type AvailabilityMap = Record<string, AvailabilityEntry>
 
 type Props = {
   participants: Participant[]
+  availableOptions: string[]
+  xAxis: string[]
+  yAxis: string[]
 }
 
-export default function ScheduleSummary({ participants }: Props) {
-  const availability = calculateAvailability(participants)
+export default function ScheduleSummary({
+  participants,
+  xAxis,
+  yAxis,
+  availableOptions,
+}: Props) {
+  const [availability, setAvailability] = useState<AvailabilityMap>({})
 
-  function calculateAvailability(participants: Participant[]) {
-    const availability: { [key: string]: any } = {}
+  useEffect(() => {
+    const newAvail: AvailabilityMap = {}
 
-    days.forEach((day) => {
-      periods.forEach((period) => {
+    for (const day of xAxis) {
+      for (const period of yAxis) {
         const key = `${day}-${period}`
 
-        const details = scheduleTypes
+        // 各ステータスごとの件数と参加者名
+        const details: AvailabilityDetail[] = scheduleTypes
           .map((type) => ({
             type: type.id,
             label: type.label,
-            count: participants.filter((p) => p.schedule[key] === type.id).length,
-            participants: participants.filter((p) => p.schedule[key] === type.id).map((p) => p.name),
+            count: participants.filter((p) => p.schedule[key] === type.id)
+              .length,
+            participants: participants
+              .filter((p) => p.schedule[key] === type.id)
+              .map((p) => p.name),
           }))
-          .filter((item) => item.count > 0)
+          .filter((d) => d.count > 0)
 
-        availability[key] = {
-          available: participants.filter((p) => p.schedule[key] === "available").length,
+        // availableOptions に含まれるステータスを「参加可能」と見なす
+        const availableParticipants = participants
+          .filter(
+            (p) =>
+              p.schedule[key] != null &&
+              availableOptions &&
+              availableOptions.includes(p.schedule[key])
+          )
+          .map((p) => p.name)        
+
+        newAvail[key] = {
+          available: availableParticipants.length,
           total: participants.length,
           details,
-          availableParticipants: participants.filter((p) => p.schedule[key] === "available").map((p) => p.name),
+          availableParticipants,
         }
-      })
-    })
+      }
+    }
 
-    return availability
-  }
+    setAvailability(newAvail)
+  }, [participants, xAxis, yAxis, availableOptions])
 
   return (
     <Card>
@@ -52,31 +103,45 @@ export default function ScheduleSummary({ participants }: Props) {
             <thead>
               <tr>
                 <th className="border p-2"></th>
-                {days.map((day) => (
-                  <th key={day} className="border p-2 text-center">{day}</th>
+                {xAxis.map((day) => (
+                  <th
+                    key={day}
+                    className="border p-2 text-center"
+                  >
+                    {day}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {periods.map((period) => (
+              {yAxis.map((period) => (
                 <tr key={period}>
-                  <td className="border p-2 text-center font-medium">{period}限</td>
-                  {days.map((day) => {
+                  <td className="border p-2 text-center font-medium">
+                    {period}
+                  </td>
+                  {xAxis.map((day) => {
                     const key = `${day}-${period}`
-                    const data = availability[key]
-
+                    const data = availability[key] || {
+                      available: 0,
+                      total: participants.length,
+                      details: [],
+                      availableParticipants: [],
+                    }
                     return (
-                      <td key={key} className="border p-2">
+                      <td
+                        key={key}
+                        className="border p-2"
+                      >
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
                                 className={`p-2 rounded cursor-help text-sm ${
                                   data.available === data.total && data.total > 0
-                                    ? "bg-green-100"
+                                    ? 'bg-green-100'
                                     : data.available > 0
-                                      ? "bg-yellow-100"
-                                      : "bg-red-100"
+                                    ? 'bg-yellow-100'
+                                    : 'bg-red-100'
                                 }`}
                               >
                                 {data.available}/{data.total}
@@ -84,8 +149,17 @@ export default function ScheduleSummary({ participants }: Props) {
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="text-xs">
-                                参加可能者: {data.availableParticipants.join(", ") || "なし"}
+                                参加可能者:{' '}
+                                {data.availableParticipants.join(', ') || 'なし'}
                               </div>
+                              {data.details.map((d) => (
+                                <div
+                                  key={d.type}
+                                  className="text-xs mt-1"
+                                >
+                                  {d.label}: {d.count}人
+                                </div>
+                              ))}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

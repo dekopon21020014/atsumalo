@@ -1,4 +1,4 @@
-// app/events/ParticipantList.tsx
+// app/events/[eventId]/components/ParticipantList.tsx
 'use client'
 
 import { useState } from 'react'
@@ -21,8 +21,8 @@ import {
 import useMediaQuery from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
 import { useParams } from 'next/navigation'
-import { Participant } from './types'
-import { days, periods, scheduleTypes } from './constants'
+import type { Participant } from './types'
+import { scheduleTypes } from './constants'
 
 type Props = {
   participants: Participant[]
@@ -32,6 +32,8 @@ type Props = {
   setCurrentSchedule: (s: Participant['schedule']) => void
   setEditingIndex: (i: number | null) => void
   setActiveTab: (t: string) => void
+  xAxis: string[]
+  yAxis: string[]
 }
 
 export default function ParticipantList({
@@ -42,20 +44,23 @@ export default function ParticipantList({
   setCurrentSchedule,
   setEditingIndex,
   setActiveTab,
+  xAxis,
+  yAxis,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
 
   // 学年フィルタ／ソート／ビュー切り替え
-  const gradeOrder = ['Teacher','M2','M1','B4','B3','B2','B1','Other']
+  const gradeOrder = ['Teacher', 'M2', 'M1', 'B4', 'B3', 'B2', 'B1', 'Other']
   const [filterGrade, setFilterGrade] = useState<string>('All')
   const [sortAscending, setSortAscending] = useState<boolean>(true)
   const [isGrid, setIsGrid] = useState<boolean>(false)
 
   // フィルタ・ソート適用
-  let displayed = filterGrade === 'All'
-    ? [...participants]
-    : participants.filter((p) => p.grade === filterGrade)
+  let displayed =
+    filterGrade === 'All'
+      ? [...participants]
+      : participants.filter((p) => p.grade === filterGrade)
 
   displayed.sort((a, b) => {
     const ai = gradeOrder.indexOf(a.grade)
@@ -108,17 +113,16 @@ export default function ParticipantList({
       <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
         <div className="flex items-center gap-2">
           <Label htmlFor="filter-grade">学年フィルタ</Label>
-          <Select
-            value={filterGrade}
-            onValueChange={setFilterGrade}
-          >
+          <Select value={filterGrade} onValueChange={setFilterGrade}>
             <SelectTrigger id="filter-grade" className="w-36">
               <SelectValue placeholder="全学年" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">全学年</SelectItem>
               {gradeOrder.map((g) => (
-                <SelectItem key={g} value={g}>{g}</SelectItem>
+                <SelectItem key={g} value={g}>
+                  {g}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -150,8 +154,8 @@ export default function ParticipantList({
             <thead>
               <tr>
                 <th className="border p-1">名前</th>
-                {days.map((day) =>
-                  periods.map((period) => (
+                {xAxis.map((day) =>
+                  yAxis.map((period) => (
                     <th
                       key={`${day}-${period}`}
                       className="border p-1 text-center whitespace-nowrap"
@@ -168,15 +172,19 @@ export default function ParticipantList({
                   <td className="border p-1 font-medium">
                     {part.grade}：{part.name}
                   </td>
-                  {days.map((day) =>
-                    periods.map((period) => {
+                  {xAxis.map((day) =>
+                    yAxis.map((period) => {
                       const key = `${day}-${period}`
                       const value = part.schedule[key]
                       const type = scheduleTypes.find((t) => t.id === value)
                       return (
                         <td key={key} className="border p-1 text-center">
                           {value ? (
-                            <span className={`px-2 py-1 rounded text-xs ${type?.color}`}>
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                type?.color
+                              }`}
+                            >
                               {type?.label}
                             </span>
                           ) : (
@@ -215,17 +223,22 @@ export default function ParticipantList({
                 {isMobile ? (
                   <div>
                     <div className="grid grid-cols-5 gap-1 mb-1">
-                      {days.map((day) => (
-                        <div key={day} className="text-center text-xs font-medium">
+                      {xAxis.map((day) => (
+                        <div
+                          key={day}
+                          className="text-center text-xs font-medium"
+                        >
                           {day}
                         </div>
                       ))}
                     </div>
-                    {periods.map((period) => (
+                    {yAxis.map((period) => (
                       <div key={period} className="mb-2">
-                        <div className="font-medium text-xs mb-1">{period}限</div>
-                        <div className="grid grid-cols-5 gap-1">
-                          {days.map((day) => {
+                        <div className="font-medium text-xs mb-1">
+                          {period}限
+                        </div>
+                        <div className={`grid grid-cols-${xAxis.length} gap-1`}>
+                          {xAxis.map((day) => {
                             const key = `${day}-${period}`
                             const value = part.schedule[key]
                             const type = scheduleTypes.find((t) => t.id === value)
@@ -233,9 +246,11 @@ export default function ParticipantList({
                             return (
                               <div
                                 key={key}
-                                className={`h-8 flex items-center justify-center rounded border border-gray-200 text-xs ${type?.color || "bg-gray-50"}`}
+                                className={`h-8 flex items-center justify-center rounded border border-gray-200 text-xs ${
+                                  type?.color || 'bg-gray-50'
+                                }`}
                               >
-                                {value ? type?.label.charAt(0) : "-"}
+                                {value ? type?.label.charAt(0) : '-'}
                               </div>
                             )
                           })}
@@ -249,24 +264,35 @@ export default function ParticipantList({
                       <thead>
                         <tr>
                           <th className="border p-1"></th>
-                          {days.map((day) => (
-                            <th key={day} className="border p-1 text-center">{day}</th>
+                          {xAxis.map((day) => (
+                            <th key={day} className="border p-1 text-center">
+                              {day}
+                            </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {periods.map((period) => (
+                        {yAxis.map((period) => (
                           <tr key={period}>
-                            <td className="border p-1 text-center font-medium">{period}限</td>
-                            {days.map((day) => {
+                            <td className="border p-1 text-center font-medium">
+                              {period}限
+                            </td>
+                            {xAxis.map((day) => {
                               const key = `${day}-${period}`
                               const value = part.schedule[key]
                               const type = scheduleTypes.find((t) => t.id === value)
 
                               return (
-                                <td key={key} className="border p-1 text-center">
+                                <td
+                                  key={key}
+                                  className="border p-1 text-center"
+                                >
                                   {value ? (
-                                    <span className={`px-2 py-1 rounded text-xs ${type?.color || ""}`}>
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs ${
+                                        type?.color || ''
+                                      }`}
+                                    >
                                       {type?.label}
                                     </span>
                                   ) : (
@@ -282,7 +308,7 @@ export default function ParticipantList({
                   </div>
                 )}
               </CardContent>
-              </Card>
+            </Card>
           ))}
         </div>
       )}

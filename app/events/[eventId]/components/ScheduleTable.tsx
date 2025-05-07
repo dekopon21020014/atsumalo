@@ -1,47 +1,53 @@
 "use client"
 
+import React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { scheduleTypes, days, periods } from "@/app/events/[eventId]/components/constants" 
-import type { Schedule } from './types' 
+import { ScheduleType } from "@/app/events/[eventId]/components/constants"
+import type { Schedule } from './types'
 
-type Props = {
-  schedule: Schedule                             // ← Schedule 型を使う
-  updateSchedule: (day: string, period: number, value: string) => void
-  selectedCells: Record<string, boolean>         // ← Record<string,boolean> を使う
-  setSelectedCells: React.Dispatch< React.SetStateAction<Record<string, boolean>> >
+export type Props = {
+  xAxis: string[]
+  yAxis: string[]
+  scheduleTypes: ScheduleType[]
+  schedule: Schedule
+  updateSchedule: (labelX: string, labelY: string, value: string) => void
+  selectedCells: Record<string, boolean>
+  setSelectedCells: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
   selectionMode: 'tap' | 'drag'
 }
 
-
 export default function ScheduleTable({
+  xAxis,
+  yAxis,
+  scheduleTypes,
   schedule,
   updateSchedule,
   selectedCells,
   setSelectedCells,
   selectionMode,
 }: Props) {
-  const handleMouseDown = (day: string, period: number, e: React.MouseEvent) => {
+  const handleMouseDown = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "drag" || e.button !== 0) return
-    const key = `${day}-${period}`
+    const key = `${labelX}-${labelY}`
     setSelectedCells({ [key]: true })
   }
 
-  const handleMouseEnter = (day: string, period: number, e: React.MouseEvent) => {
+  const handleMouseEnter = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "drag" || !(e.buttons & 1)) return
-    const key = `${day}-${period}`
+    const key = `${labelX}-${labelY}`
     setSelectedCells((prev) => ({ ...prev, [key]: true }))
   }
 
-  const handleClick = (day: string, period: number) => {
+  const handleClick = (labelX: string, labelY: string) => {
     if (selectionMode !== "tap") return
-    const key = `${day}-${period}`
+    const key = `${labelX}-${labelY}`
     setSelectedCells((prev) => {
       const newCells = { ...prev }
       if (newCells[key]) delete newCells[key]
       else newCells[key] = true
       return newCells
     })
-  }  
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -49,17 +55,21 @@ export default function ScheduleTable({
         <thead>
           <tr>
             <th className="border p-2"></th>
-            {days.map((day) => (
-              <th key={day} className="border p-2 text-center">{day}</th>
+            {xAxis.map((labelX) => (
+              <th key={labelX} className="border p-2 text-center">
+                {labelX}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {periods.map((period) => (
-            <tr key={period}>
-              <td className="border p-2 text-center font-medium">{period}限</td>
-              {days.map((day) => {
-                const key = `${day}-${period}`
+          {yAxis.map((labelY) => (
+            <tr key={labelY}>
+              <td className="border p-2 text-center font-medium">
+                {labelY}
+              </td>
+              {xAxis.map((labelX) => {
+                const key = `${labelX}-${labelY}`
                 const isSelected = !!selectedCells[key]
                 const value = schedule[key]
 
@@ -67,11 +77,14 @@ export default function ScheduleTable({
                   <td
                     key={key}
                     className={`border p-2 ${isSelected ? "bg-blue-200" : ""}`}
-                    onMouseDown={(e) => handleMouseDown(day, period, e)}
-                    onMouseEnter={(e) => handleMouseEnter(day, period, e)}
-                    onClick={() => handleClick(day, period)}
+                    onMouseDown={(e) => handleMouseDown(labelX, labelY, e)}
+                    onMouseEnter={(e) => handleMouseEnter(labelX, labelY, e)}
+                    onClick={() => handleClick(labelX, labelY)}
                   >
-                    <Select value={value} onValueChange={(v) => updateSchedule(day, period, v)}>
+                    <Select
+                      value={value}
+                      onValueChange={(v) => updateSchedule(labelX, labelY, v)}
+                    >
                       <SelectTrigger
                         className={`w-full ${
                           scheduleTypes.find((t) => t.id === value)?.color || ""

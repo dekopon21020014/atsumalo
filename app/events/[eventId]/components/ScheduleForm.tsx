@@ -1,5 +1,6 @@
-// app/events/ScheduleForm.tsx
+// app/events/[eventId]/components/ScheduleForm.tsx
 'use client'
+
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from '@/components/ui/use-toast'
-import { scheduleTypes, days, periods, gradeOptions } from '@/app/events/[eventId]/components/constants'
+import { gradeOptions, type ScheduleType } from '@/app/events/[eventId]/components/constants'
 import { Schedule, Participant } from './types'
 import { createEmptySchedule } from './utils'
 import useMediaQuery from '@/hooks/use-mobile'
@@ -30,6 +31,9 @@ import ScheduleCellMobile from './ScheduleCellMobile'
 import { useParams } from 'next/navigation'
 
 type Props = {
+  xAxis: string[]                        // 横軸ラベル
+  yAxis: string[]                        // 縦軸ラベル
+  scheduleTypes: ScheduleType[]         // ← ここで受け取る
   currentName: string
   setCurrentName: Dispatch<SetStateAction<string>>
   currentGrade: string
@@ -43,8 +47,10 @@ type Props = {
   setActiveTab: (tab: string) => void
 }
 
-
 export default function ScheduleForm({
+  xAxis,
+  yAxis,
+  scheduleTypes,
   currentName,
   setCurrentName,
   currentGrade,
@@ -59,7 +65,7 @@ export default function ScheduleForm({
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
-  const [bulkScheduleType, setBulkScheduleType] = useState('')
+  const [bulkScheduleType, setBulkScheduleType] = useState<string>('')
   const [selectionMode, setSelectionMode] = useState<'tap' | 'drag'>(isMobile ? 'tap' : 'drag')
   const { eventId } = useParams()
 
@@ -72,27 +78,16 @@ export default function ScheduleForm({
   useEffect(() => {
     if (editingIndex !== null) {
       const p = participants[editingIndex]
-      // 以前入力した名前／学年も同様にセットしているか確認
       setCurrentName(p.name)
-      setCurrentGrade(p.grade || "")
+      setCurrentGrade(p.grade || '')
       setCurrentSchedule({ ...p.schedule })
     } else {
-      // 新規モードならクリア
-      setCurrentSchedule(createEmptySchedule())
+      setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
     }
-  }, [editingIndex, participants])
+  }, [editingIndex, participants, xAxis, yAxis])
 
-  useEffect(() => {
-    if (editingIndex !== null) {
-      const p = participants[editingIndex]
-      setCurrentGrade(p.grade || '')  // grade があればセット、なければ空文字
-    } else {
-      setCurrentGrade('')              // 新規モードならリセット
-    }
-  }, [editingIndex, participants])
-
-  const updateSchedule = (day: string, period: number, value: string) => {
-    const key = `${day}-${period}`
+  const updateSchedule = (labelX: string, labelY: string, value: string) => {
+    const key = `${labelX}-${labelY}`
     setCurrentSchedule((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -108,7 +103,7 @@ export default function ScheduleForm({
     setBulkScheduleType('')
   }
 
-  const submit = async () => {
+  const submit = async () => {    
     if (!currentName.trim()) {
       toast({ title: 'エラー', description: '名前を入力してください', variant: 'destructive' })
       return
@@ -117,20 +112,19 @@ export default function ScheduleForm({
       toast({ title: 'エラー', description: '学年を選択してください', variant: 'destructive' })
       return
     }
-
+    
     const filled = Object.values(currentSchedule).filter(Boolean).length
     if (filled < 5 && !confirm('入力が少ないようです。本当に登録しますか？')) return
 
     const payload = {
       eventId,
       name: currentName,
-      grade: currentGrade,          // ← 追加
+      grade: currentGrade,
       schedule: currentSchedule,
     }
 
     try {
       if (editingIndex !== null) {
-        // 編集
         const id = participants[editingIndex].id
         const res = await fetch(`/api/events/${eventId}/participants/${id}`, {
           method: 'PUT',
@@ -143,7 +137,6 @@ export default function ScheduleForm({
         setParticipants(updated)
         setEditingIndex(null)
       } else {
-        // 新規登録
         const res = await fetch(`/api/events/${eventId}/participants`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -154,10 +147,9 @@ export default function ScheduleForm({
       }
 
       toast({ title: '完了', description: 'スケジュールを登録しました' })
-      // フォーム初期化
       setCurrentName('')
-      setCurrentGrade('')                 // ← クリア
-      setCurrentSchedule(createEmptySchedule())
+      setCurrentGrade('')
+      setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
       setSelectedCells({})
       setBulkScheduleType('')
       setActiveTab('summary')
@@ -180,6 +172,7 @@ export default function ScheduleForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* 名前・学年入力 */}
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">名前</Label>
@@ -194,13 +187,11 @@ export default function ScheduleForm({
             <Label htmlFor="grade-select">学年</Label>
             <Select
               value={currentGrade}
-              onValueChange={setCurrentGrade}              
+              onValueChange={setCurrentGrade}
             >
-              {/* id はここに移動 */}
               <SelectTrigger id="grade-select" className="w-full">
                 <SelectValue placeholder="学年を選択" />
               </SelectTrigger>
-
               <SelectContent>
                 {gradeOptions.map((g) => (
                   <SelectItem key={g} value={g}>
@@ -211,12 +202,14 @@ export default function ScheduleForm({
             </Select>
           </div>
         </div>
+
+        {/* 一括入力 */}
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium">一括入力</h3>
             <Button size="sm" variant="outline" onClick={toggleSelectionMode} className="text-xs flex items-center gap-1">
-              {selectionMode === "tap" ? <Smartphone className="w-3 h-3" /> : <MousePointer className="w-3 h-3" />}
-              {selectionMode === "tap" ? "タップ" : "ドラッグ"}
+              {selectionMode === 'tap' ? <Smartphone className="w-3 h-3" /> : <MousePointer className="w-3 h-3" />}
+              {selectionMode === 'tap' ? 'タップ' : 'ドラッグ'}
             </Button>
           </div>
           <div className="flex gap-2 items-center">
@@ -225,8 +218,12 @@ export default function ScheduleForm({
                 <SelectValue placeholder="予定" />
               </SelectTrigger>
               <SelectContent>
-                {scheduleTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id} className={type.color}>
+                {scheduleTypes.map((type, idx) => (
+                  <SelectItem 
+                    key={`${type.id}-${idx}`} 
+                    value={type.id} 
+                    className={type.color}
+                  >
                     {type.label}
                   </SelectItem>
                 ))}
@@ -237,29 +234,27 @@ export default function ScheduleForm({
               適用
             </Button>
           </div>
-          {selectedCellCount > 0 && <div className="text-sm text-blue-600 mt-2">{selectedCellCount}コマ選択中</div>}
+          {selectedCellCount > 0 && (
+            <div className="text-sm text-blue-600 mt-2">{selectedCellCount}コマ選択中</div>
+          )}
         </div>
 
+        {/* グリッド or モバイルビュー */}
         {isMobile ? (
-          <div className="grid grid-cols-5 gap-1 mb-3">
-            {days.map((day) => (
-              <div key={day} className="text-sm text-center font-medium col-span-1">
-                {day}
-              </div>
-            ))}
-            {periods.map((period) => (
-              <div key={period} className="col-span-5">
-                <div className="font-medium text-sm">{period}限</div>
-                <div className="grid grid-cols-5 gap-1">
-                  {days.map((day) => (
+          <div className="grid grid-cols-1 gap-1 mb-3">
+            {yAxis.map((labelY) => (
+              <div key={labelY} className="mb-2">
+                <div className="font-medium text-sm">{labelY}</div>
+                <div className={`grid grid-cols-${xAxis.length} gap-1`}>
+                  {xAxis.map((labelX) => (
                     <ScheduleCellMobile
-                      key={`${day}-${period}`}
-                      day={day}
-                      period={period}
-                      value={currentSchedule[`${day}-${period}`]}
-                      selected={!!selectedCells[`${day}-${period}`]}
+                      key={`${labelX}-${labelY}`}
+                      day={labelX}
+                      period={labelY}
+                      value={currentSchedule[`${labelX}-${labelY}`]}
+                      selected={!!selectedCells[`${labelX}-${labelY}`]}
                       onTap={() => {
-                        const key = `${day}-${period}`
+                        const key = `${labelX}-${labelY}`
                         setSelectedCells((prev) => {
                           const updated = { ...prev }
                           if (updated[key]) delete updated[key]
@@ -272,9 +267,12 @@ export default function ScheduleForm({
                 </div>
               </div>
             ))}
-          </div>        
-        ) : (          
+          </div>
+        ) : (
           <ScheduleTable
+            xAxis={xAxis}
+            yAxis={yAxis}
+            scheduleTypes={scheduleTypes}
             schedule={currentSchedule}
             updateSchedule={updateSchedule}
             selectedCells={selectedCells}

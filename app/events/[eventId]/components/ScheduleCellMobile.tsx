@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
 import { scheduleTypes } from "./constants"
 
 type Props = {
   day: string
-  period: number
+  period: string  // 数字からラベル文字列に変更
   value: string
   selected: boolean
   onTap: () => void
@@ -15,15 +15,23 @@ export default function ScheduleCellMobile({ day, period, value, selected, onTap
 
   return (
     <div
-      className={`
+      className={
+        `
         w-full h-12 flex items-center justify-center rounded border
         ${selected ? "bg-blue-200 border-blue-400" : "border-gray-200"}
         ${scheduleType?.color || ""}
         transition-colors text-xs font-medium text-center
-      `}
+      `
+      }
       onClick={onTap}
+      data-day={day}
+      data-period={period}
     >
-      {scheduleType ? scheduleType.label : <span className="text-gray-400">タップ</span>}
+      {scheduleType ? (
+        scheduleType.label
+      ) : (
+        <span className="text-gray-400">タップ</span>
+      )}
     </div>
   )
 }
