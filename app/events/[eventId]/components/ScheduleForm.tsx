@@ -25,15 +25,15 @@ import { toast } from '@/components/ui/use-toast'
 import { gradeOptions, type ScheduleType } from '@/app/events/[eventId]/components/constants'
 import { Schedule, Participant } from './types'
 import { createEmptySchedule } from './utils'
-import useMediaQuery from '@/hooks/use-mobile'
+import { useMediaQuery } from '@/hooks/use-mobile'
 import ScheduleTable from './ScheduleTable'
 import ScheduleCellMobile from './ScheduleCellMobile'
 import { useParams } from 'next/navigation'
 
 type Props = {
-  xAxis: string[]                        // 横軸ラベル
-  yAxis: string[]                        // 縦軸ラベル
-  scheduleTypes: ScheduleType[]         // ← ここで受け取る
+  xAxis: string[]
+  yAxis: string[]
+  scheduleTypes: ScheduleType[]
   currentName: string
   setCurrentName: Dispatch<SetStateAction<string>>
   currentGrade: string

@@ -8,14 +8,29 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/use-toast'
 import SchedulePage from '@/app/events/[eventId]/components/SchedulePage'
+import OneTimePage from '@/app/events/[eventId]/components/OneTimePage' // 単発用のコンポーネントを用意しておく
 import { ScheduleType } from '@/app/events/[eventId]/components/constants'
 
 type EventData = {
   name: string
   description: string
+  eventType: 'recurring' | 'onetime'
   xAxis: string[]
   yAxis: string[]
+  dateTimeOptions: string[]
   scheduleTypes: ScheduleType[]
+  existingResponses: Response[]
+}
+
+type Response = {
+  id: string
+  name: string
+  grade?: string
+  schedule: {
+    dateTime: string
+    typeId: string
+    comment?: string
+  }[]
 }
 
 export default function EventPage() {
@@ -24,9 +39,12 @@ export default function EventPage() {
   const [data, setData] = useState<EventData>({
     name: '読み込み中…',
     description: '読み込み中…',
+    eventType: 'recurring',
     xAxis: [],
     yAxis: [],
+    dateTimeOptions: [],
     scheduleTypes: [],
+    existingResponses: [],
   })
   const [name, setName] = useState(data.name)
   const [description, setDescription] = useState(data.description)
@@ -46,17 +64,26 @@ export default function EventPage() {
           })
           return
         }
-        const xAxis = Array.isArray(resData.xAxis) ? resData.xAxis : []
-        const yAxis = Array.isArray(resData.yAxis) ? resData.yAxis : []        
-        const scheduleTypes = Array.isArray(resData.scheduleTypes) // 原因ここ
-          ? resData.scheduleTypes
-          : []
         setData({
           name: resData.name,
           description: resData.description ?? '',
-          xAxis,
-          yAxis,
-          scheduleTypes,
+          eventType: resData.eventType === 'onetime' ? 'onetime' : 'recurring',
+          xAxis: Array.isArray(resData.xAxis) ? resData.xAxis : [],
+          yAxis: Array.isArray(resData.yAxis) ? resData.yAxis : [],
+          dateTimeOptions: Array.isArray(resData.dateTimeOptions)
+            ? resData.dateTimeOptions
+            : [],
+          scheduleTypes: Array.isArray(resData.scheduleTypes)
+            ? resData.scheduleTypes
+            : [],
+          existingResponses: Array.isArray(resData.participants)
+            ? resData.participants.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                grade: p.grade,
+                schedule: p.schedule,
+              }))
+            : [],
         })
         setName(resData.name)
         setDescription(resData.description ?? '')
@@ -71,7 +98,6 @@ export default function EventPage() {
       })
   }, [eventId])
 
-  // 編集内容を保存
   const saveEdit = async () => {
     if (!name.trim()) {
       toast({
@@ -137,7 +163,6 @@ export default function EventPage() {
           </div>
         </div>
       ) : (
-        // 表示モード
         <div className="space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold">{data.name}</h1>
           <p className="text-gray-700">{data.description}</p>
@@ -147,13 +172,22 @@ export default function EventPage() {
         </div>
       )}
 
-      {/* スケジュール調整UI */}
+      {/* イベントタイプに応じてビュー切り替え */}
       <div className="mt-6">
-        <SchedulePage
-          xAxis={data.xAxis}
-          yAxis={data.yAxis}
-          scheduleTypes={data.scheduleTypes}
-        />
+        {data.eventType === 'recurring' ? (
+          <SchedulePage
+            xAxis={data.xAxis}
+            yAxis={data.yAxis}
+            scheduleTypes={data.scheduleTypes}
+          />
+        ) : (
+          <OneTimePage
+            eventId={eventId ? String(eventId) : ""}
+            dateTimeOptions={data.dateTimeOptions}
+            scheduleTypes={data.scheduleTypes}
+            responses={data.existingResponses}
+          />
+        )}
       </div>
     </div>
   )

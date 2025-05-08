@@ -18,7 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
-import useMediaQuery from '@/hooks/use-mobile'
+import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
 import { useParams } from 'next/navigation'
 import type { Participant } from './types'

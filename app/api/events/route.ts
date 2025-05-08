@@ -11,43 +11,69 @@ interface ScheduleType {
 
 export async function POST(req: NextRequest) {
   const json = await req.json()
-  const { name, description, xAxis, yAxis, scheduleTypes } = json
+  const {
+    name,
+    description,
+    eventType,
+    xAxis,
+    yAxis,
+    dateTimeOptions,
+    scheduleTypes,
+  } = json
 
-  // 必須チェック
+  // --- 基本項目チェック ---
   if (!name || typeof name !== "string") {
-    return NextResponse.json(
-      { error: "イベント名が必要です" },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "イベント名が必要です" }, { status: 400 })
   }
   if (description != null && typeof description !== "string") {
+    return NextResponse.json({ error: "説明は文字列で入力してください" }, { status: 400 })
+  }
+
+  // --- eventType のチェック ---
+  if (
+    !eventType ||
+    (eventType !== "recurring" && eventType !== "onetime")
+  ) {
     return NextResponse.json(
-      { error: "説明は文字列で入力してください" },
+      { error: "eventType は \"recurring\" または \"onetime\" で指定してください" },
       { status: 400 }
     )
   }
 
-  // xAxis, yAxis の検証
-  if (
-    !Array.isArray(xAxis) ||
-    !xAxis.every((v) => typeof v === "string")
-  ) {
-    return NextResponse.json(
-      { error: "横軸 (xAxis) は文字列の配列で指定してください" },
-      { status: 400 }
-    )
-  }
-  if (
-    !Array.isArray(yAxis) ||
-    !yAxis.every((v) => typeof v === "string")
-  ) {
-    return NextResponse.json(
-      { error: "縦軸 (yAxis) は文字列の配列で指定してください" },
-      { status: 400 }
-    )
+  // --- イベントタイプ別の検証 ---
+  if (eventType === "recurring") {
+    if (
+      !Array.isArray(xAxis) ||
+      !xAxis.every((v) => typeof v === "string")
+    ) {
+      return NextResponse.json(
+        { error: "recurring の場合、xAxis は文字列の配列で指定してください" },
+        { status: 400 }
+      )
+    }
+    if (
+      !Array.isArray(yAxis) ||
+      !yAxis.every((v) => typeof v === "string")
+    ) {
+      return NextResponse.json(
+        { error: "recurring の場合、yAxis は文字列の配列で指定してください" },
+        { status: 400 }
+      )
+    }
+  } else {
+    // onetime
+    if (
+      !Array.isArray(dateTimeOptions) ||
+      !dateTimeOptions.every((v) => typeof v === "string")
+    ) {
+      return NextResponse.json(
+        { error: "onetime の場合、dateTimeOptions は文字列の配列で指定してください" },
+        { status: 400 }
+      )
+    }
   }
 
-  // scheduleTypes の検証
+  // --- scheduleTypes の検証 ---
   if (
     !Array.isArray(scheduleTypes) ||
     !scheduleTypes.every((t) =>
@@ -64,15 +90,23 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // --- Firestore に保存 ---
   try {
-    const docRef = await db.collection("events").add({
+    const payload: any = {
       name,
       description: description || "",
-      xAxis,
-      yAxis,
+      eventType,
       scheduleTypes,
       createdAt: new Date(),
-    })
+    }
+    if (eventType === "recurring") {
+      payload.xAxis = xAxis
+      payload.yAxis = yAxis
+    } else {
+      payload.dateTimeOptions = dateTimeOptions
+    }
+
+    const docRef = await db.collection("events").add(payload)
     return NextResponse.json({ id: docRef.id })
   } catch (err) {
     console.error("イベント作成エラー:", err)
