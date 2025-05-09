@@ -1,3 +1,5 @@
+import { Teachers } from "next/font/google"
+
 // スケジュールの種類と対応する表示色など
 export const scheduleTypes = [
     { id: "class", label: "授業", color: "bg-red-100 text-red-800" },
@@ -20,6 +22,18 @@ export const gradeOptions = [
   'B1',
   'Other',
 ]
+
+export const gradeOrder: {[key: string]: number} = {
+  'Teacher': 1,
+  'Dr': 2,
+  'M2': 3,
+  'M1': 4,
+  'B4': 5,
+  'B3': 6,
+  'B2': 7,
+  'B1': 8,
+  'Others': 9,
+}
 
 export const colorPalettes = [
   { bg: "bg-red-100", text: "text-red-800", name: "赤" },
@@ -47,4 +61,26 @@ export type ScheduleType = {
   label: string
   color: string
   isAvailable: boolean
+}
+
+export type Response = {
+  id: string
+  name: string
+  grade?: string
+  schedule: {
+    dateTime: string
+    typeId: string
+    comment?: string
+  }[]
+}
+
+export type EventData = {
+  name: string
+  description: string
+  eventType: 'recurring' | 'onetime'
+  xAxis: string[]
+  yAxis: string[]
+  dateTimeOptions: string[]
+  scheduleTypes: ScheduleType[]
+  existingResponses: Response[]
 }

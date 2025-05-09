@@ -8,30 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/use-toast'
 import SchedulePage from '@/app/events/[eventId]/components/SchedulePage'
-import OneTimePage from '@/app/events/[eventId]/components/OneTimePage' // 単発用のコンポーネントを用意しておく
-import { ScheduleType } from '@/app/events/[eventId]/components/constants'
-
-type EventData = {
-  name: string
-  description: string
-  eventType: 'recurring' | 'onetime'
-  xAxis: string[]
-  yAxis: string[]
-  dateTimeOptions: string[]
-  scheduleTypes: ScheduleType[]
-  existingResponses: Response[]
-}
-
-type Response = {
-  id: string
-  name: string
-  grade?: string
-  schedule: {
-    dateTime: string
-    typeId: string
-    comment?: string
-  }[]
-}
+import OneTimePage from '@/app/events/[eventId]/components/OneTimePage' 
+import type { EventData } from '@/app/events/[eventId]/components/constants'
 
 export default function EventPage() {
   const { eventId } = useParams()

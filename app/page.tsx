@@ -26,6 +26,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { colorPalettes  } from "./events/[eventId]/components/constants"
 
 // 予定タイプの型定義
 interface ScheduleType {
@@ -34,28 +35,6 @@ interface ScheduleType {
   color: string
   isAvailable: boolean
 }
-
-// カラーパレット
-const colorPalettes = [
-  { bg: "bg-red-100", text: "text-red-800", name: "赤" },
-  { bg: "bg-pink-100", text: "text-pink-800", name: "ピンク" },
-  { bg: "bg-orange-100", text: "text-orange-800", name: "オレンジ" },
-  { bg: "bg-amber-100", text: "text-amber-800", name: "琥珀" },
-  { bg: "bg-yellow-100", text: "text-yellow-800", name: "黄" },
-  { bg: "bg-lime-100", text: "text-lime-800", name: "ライム" },
-  { bg: "bg-green-100", text: "text-green-800", name: "緑" },
-  { bg: "bg-emerald-100", text: "text-emerald-800", name: "エメラルド" },
-  { bg: "bg-teal-100", text: "text-teal-800", name: "ティール" },
-  { bg: "bg-cyan-100", text: "text-cyan-800", name: "シアン" },
-  { bg: "bg-sky-100", text: "text-sky-800", name: "スカイ" },
-  { bg: "bg-blue-100", text: "text-blue-800", name: "青" },
-  { bg: "bg-indigo-100", text: "text-indigo-800", name: "インディゴ" },
-  { bg: "bg-violet-100", text: "text-violet-800", name: "バイオレット" },
-  { bg: "bg-purple-100", text: "text-purple-800", name: "紫" },
-  { bg: "bg-fuchsia-100", text: "text-fuchsia-800", name: "フクシア" },
-  { bg: "bg-gray-100", text: "text-gray-800", name: "グレー" },
-  { bg: "bg-slate-100", text: "text-slate-800", name: "スレート" },
-]
 
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
@@ -439,9 +418,15 @@ export default function HomePage() {
                             value={item}
                             onChange={(e) => updateXItem(i, e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
+                              const isComposing = (e.nativeEvent as any).isComposing as boolean
+                              if (e.key === "Enter" && !isComposing) {
                                 e.preventDefault()
                                 addXItem()
+                              }
+                              if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
+                                e.preventDefault();  // 必要ならデフォルト動作を抑止
+                                removeXItem(i);
+                                return;
                               }
                             }}
                             className="flex-1"
@@ -480,9 +465,15 @@ export default function HomePage() {
                             value={item}
                             onChange={(e) => updateYItem(i, e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
+                              const isComposing = (e.nativeEvent as any).isComposing as boolean
+                              if (e.key === "Enter" && !isComposing) {
                                 e.preventDefault()
                                 addYItem()
+                              }
+                              if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
+                                e.preventDefault();  // 必要ならデフォルト動作を抑止
+                                removeYItem(i);
+                                return;
                               }
                             }}
                             className="flex-1"
@@ -522,9 +513,15 @@ export default function HomePage() {
                           value={item}
                           onChange={(e) => updateDateTimeOption(index, e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
+                            const isComposing = (e.nativeEvent as any).isComposing as boolean
+                            if (e.key === "Enter" && !isComposing) {
                               e.preventDefault()
-                              addDateTimeOption()
+                              addDateTimeOption()                              
+                            }
+                            if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
+                              e.preventDefault();  // 必要ならデフォルト動作を抑止
+                              removeDateTimeOption(index);
+                              return;
                             }
                           }}
                           placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
@@ -583,9 +580,15 @@ export default function HomePage() {
                           value={type.label}
                           onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
+                            const isComposing = (e.nativeEvent as any).isComposing as boolean
+                            if (e.key === "Enter" && !isComposing) {
                               e.preventDefault()
                               addScheduleType()
+                            }
+                            if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
+                              e.preventDefault();  // 必要ならデフォルト動作を抑止
+                              removeScheduleType(index);
+                              return;
                             }
                           }}
                           placeholder="予定タイプの名前"
