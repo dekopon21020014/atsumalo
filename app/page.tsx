@@ -260,14 +260,33 @@ export default function HomePage() {
       return
     }
 
+
+    // から文字列が選択肢にあれば除外するためのヘルパー
+    function removeEmptyStrings(arr: string[]): string[] {
+      return arr.filter((v) => v.trim() !== "")
+    }
+    
+    function removeEmptyScheduleTypes(
+      arr: ScheduleType[]
+    ): ScheduleType[] {
+      return arr.filter((t) => t.id.trim() !== "")
+    }
+
     try {
+      const cleanedScheduleTypes = removeEmptyScheduleTypes(scheduleTypes)
+      const cleanedXAxis         = removeEmptyStrings(xAxis)
+      const cleanedYAxis         = removeEmptyStrings(yAxis)
+      const cleanedDateTimes     = removeEmptyStrings(dateTimeOptions)
+
       // イベントタイプに応じたデータを準備
       const eventData = {
         name: eventName,
         description: eventDesc,
         eventType,
-        scheduleTypes,
-        ...(eventType === "recurring" ? { xAxis, yAxis } : { dateTimeOptions }),
+        scheduleTypes: cleanedScheduleTypes,
+        xAxis: eventType === "recurring" ? cleanedXAxis : undefined,
+        yAxis: eventType === "recurring" ? cleanedYAxis : undefined,
+        dateTimeOptions: eventType === "onetime" ? cleanedDateTimes : undefined,
       }
 
       const res = await fetch("/api/events", {

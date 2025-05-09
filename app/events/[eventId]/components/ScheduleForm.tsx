@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Check, MousePointer, Smartphone } from 'lucide-react'
+import { Check, MousePointer, Smartphone, PenSquare } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -166,7 +166,10 @@ export default function ScheduleForm({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle>スケジュール入力</CardTitle>
+        <CardTitle>
+        スケジュール入力
+        </CardTitle>
+        
         <CardDescription>
           {editingIndex !== null ? 'スケジュールを編集してください' : '名前と予定を入力してください'}
         </CardDescription>

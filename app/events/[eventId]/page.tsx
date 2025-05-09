@@ -325,7 +325,6 @@ export default function EventPage() {
           ? { xAxis: cleanedXAxis, yAxis: cleanedYAxis }
           : { dateTimeOptions: cleanedDateTimes }),
       }
-      console.log("更新データ:", updateData)
 
       const res = await fetch(`/api/events/${eventId}`, {
         method: "PUT",

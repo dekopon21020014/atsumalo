@@ -2,13 +2,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
 
-interface ScheduleType {
-  id: string
-  label: string
-  color: string
-  isAvailable: boolean
-}
-
 export async function POST(req: NextRequest) {
   const json = await req.json()
   const {
@@ -27,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
   if (description != null && typeof description !== "string") {
     return NextResponse.json({ error: "説明は文字列で入力してください" }, { status: 400 })
-  }
+  }  
 
   // --- eventType のチェック ---
   if (
@@ -38,14 +31,15 @@ export async function POST(req: NextRequest) {
       { error: "eventType は \"recurring\" または \"onetime\" で指定してください" },
       { status: 400 }
     )
-  }
+  }  
 
   // --- イベントタイプ別の検証 ---
-  if (eventType === "recurring") {
+  if (eventType === "recurring") {    
     if (
       !Array.isArray(xAxis) ||
       !xAxis.every((v) => typeof v === "string")
-    ) {
+    ) {      
+      console.log(xAxis)
       return NextResponse.json(
         { error: "recurring の場合、xAxis は文字列の配列で指定してください" },
         { status: 400 }
@@ -54,12 +48,12 @@ export async function POST(req: NextRequest) {
     if (
       !Array.isArray(yAxis) ||
       !yAxis.every((v) => typeof v === "string")
-    ) {
+    ) {      
       return NextResponse.json(
         { error: "recurring の場合、yAxis は文字列の配列で指定してください" },
         { status: 400 }
       )
-    }
+    }    
   } else {
     // onetime
     if (

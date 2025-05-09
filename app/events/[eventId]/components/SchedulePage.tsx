@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Download, UserPlus } from 'lucide-react'
+import { Download, UserPlus, PenSquare, BarChart3, Users } from 'lucide-react'
 import {
   Dialog,
   DialogTrigger,
@@ -167,12 +167,15 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
       <Tabs defaultValue="input" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="input" className="flex-1">
-            スケジュール入力
+            <PenSquare className="h-4 w-4 mr-2" />
+            入力
           </TabsTrigger>
           <TabsTrigger value="participants" className="flex-1">
-            参加者一覧
+            <Users className="h-4 w-4 mr-2" />
+            回答状況
           </TabsTrigger>
           <TabsTrigger value="summary" className="flex-1">
+            <BarChart3 className="h-4 w-4 mr-2" />
             集計結果
           </TabsTrigger>
         </TabsList>
