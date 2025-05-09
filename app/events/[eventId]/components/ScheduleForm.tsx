@@ -1,34 +1,20 @@
-// app/events/[eventId]/components/ScheduleForm.tsx
-'use client'
+"use client"
 
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Check, MousePointer, Smartphone, PenSquare } from 'lucide-react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { toast } from '@/components/ui/use-toast'
-import { gradeOptions, type ScheduleType } from '@/app/events/[eventId]/components/constants'
-import { Schedule, Participant } from './types'
-import { createEmptySchedule } from './utils'
-import { useMediaQuery } from '@/hooks/use-mobile'
-import ScheduleTable from './ScheduleTable'
-import ScheduleCellMobile from './ScheduleCellMobile'
-import { useParams } from 'next/navigation'
+import { type Dispatch, type SetStateAction, useEffect, useState, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { MousePointer, Smartphone } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
+import { gradeOptions, type ScheduleType } from "@/app/events/[eventId]/components/constants"
+import type { Schedule, Participant } from "./types"
+import { createEmptySchedule } from "./utils"
+import { useMediaQuery } from "@/hooks/use-mobile"
+import ScheduleTable from "./ScheduleTable"
+import ScheduleCellMobile from "./ScheduleCellMobile"
+import { useParams } from "next/navigation"
 
 type Props = {
   xAxis: string[]
@@ -63,23 +49,25 @@ export default function ScheduleForm({
   setEditingIndex,
   setActiveTab,
 }: Props) {
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useMediaQuery("(max-width: 768px)")
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
-  const [bulkScheduleType, setBulkScheduleType] = useState<string>('')
-  const [selectionMode, setSelectionMode] = useState<'tap' | 'drag'>(isMobile ? 'tap' : 'drag')
+  const [bulkScheduleType, setBulkScheduleType] = useState<string>("")
+  const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
   const { eventId } = useParams()
+
+  const tableRef = useRef<HTMLDivElement>(null)
 
   const selectedCellCount = Object.keys(selectedCells).length
 
   useEffect(() => {
-    setSelectionMode(isMobile ? 'tap' : 'drag')
+    setSelectionMode(isMobile ? "tap" : "drag")
   }, [isMobile])
 
   useEffect(() => {
     if (editingIndex !== null) {
       const p = participants[editingIndex]
       setCurrentName(p.name)
-      setCurrentGrade(p.grade || '')
+      setCurrentGrade(p.grade || "")
       setCurrentSchedule({ ...p.schedule })
     } else {
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
@@ -91,6 +79,7 @@ export default function ScheduleForm({
     setCurrentSchedule((prev) => ({ ...prev, [key]: value }))
   }
 
+  // 一括適用ボタンを押したときの処理
   const applyBulkSchedule = () => {
     if (!bulkScheduleType || selectedCellCount === 0) return
     const updated = { ...currentSchedule }
@@ -98,23 +87,37 @@ export default function ScheduleForm({
       updated[key] = bulkScheduleType
     }
     setCurrentSchedule(updated)
-    toast({ title: '一括適用', description: `${selectedCellCount}コマの予定を設定しました` })
+    toast({ title: "一括適用", description: `${selectedCellCount}コマの予定を設定しました` })
     setSelectedCells({})
-    setBulkScheduleType('')
   }
 
-  const submit = async () => {    
+  // 選択タイプが変更されたときの処理
+  const handleBulkTypeChange = (value: string) => {
+    setBulkScheduleType(value)
+
+    // 既に選択されているセルがある場合は即時適用
+    if (Object.keys(selectedCells).length > 0) {
+      const updated = { ...currentSchedule }
+      for (const key of Object.keys(selectedCells)) {
+        updated[key] = value
+      }
+      setCurrentSchedule(updated)
+      // 選択状態は維持する（setSelectedCellsを呼び出さない）
+    }
+  }
+
+  const submit = async () => {
     if (!currentName.trim()) {
-      toast({ title: 'エラー', description: '名前を入力してください', variant: 'destructive' })
+      toast({ title: "エラー", description: "名前を入力してください", variant: "destructive" })
       return
     }
     if (!currentGrade) {
-      toast({ title: 'エラー', description: '学年を選択してください', variant: 'destructive' })
+      toast({ title: "エラー", description: "学年を選択してください", variant: "destructive" })
       return
     }
-    
+
     const filled = Object.values(currentSchedule).filter(Boolean).length
-    if (filled < 5 && !confirm('入力が少ないようです。本当に登録しますか？')) return
+    if (filled < 5 && !confirm("入力が少ないようです。本当に登録しますか？")) return
 
     const payload = {
       eventId,
@@ -127,8 +130,8 @@ export default function ScheduleForm({
       if (editingIndex !== null) {
         const id = participants[editingIndex].id
         const res = await fetch(`/api/events/${eventId}/participants/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
@@ -138,40 +141,97 @@ export default function ScheduleForm({
         setEditingIndex(null)
       } else {
         const res = await fetch(`/api/events/${eventId}/participants`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
         const { id } = await res.json()
         setParticipants([...participants, { id, ...payload }])
       }
 
-      toast({ title: '完了', description: 'スケジュールを登録しました' })
-      setCurrentName('')
-      setCurrentGrade('')
+      toast({ title: "完了", description: "スケジュールを登録しました" })
+      setCurrentName("")
+      setCurrentGrade("")
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
       setSelectedCells({})
-      setBulkScheduleType('')
-      setActiveTab('summary')
+      setBulkScheduleType("")
+      setActiveTab("summary")
     } catch {
-      toast({ title: 'エラー', description: '保存に失敗しました', variant: 'destructive' })
+      toast({ title: "エラー", description: "保存に失敗しました", variant: "destructive" })
     }
   }
 
   const toggleSelectionMode = () => {
-    setSelectionMode((prev) => (prev === 'tap' ? 'drag' : 'tap'))
+    setSelectionMode((prev) => (prev === "tap" ? "drag" : "tap"))
     setSelectedCells({})
+  }
+
+  // セルをクリアする
+  const clearSelectedCells = () => {
+    if (selectedCellCount === 0) return
+
+    const updated = { ...currentSchedule }
+    for (const key of Object.keys(selectedCells)) {
+      updated[key] = ""
+    }
+    setCurrentSchedule(updated)
+    toast({ title: "クリア", description: `${selectedCellCount}コマの予定をクリアしました` })
+    setSelectedCells({})
+  }
+
+  // 列（曜日）を全選択
+  const selectColumn = (labelX: string) => {
+    const newSelectedCells: Record<string, boolean> = {}
+
+    yAxis.forEach((labelY) => {
+      const key = `${labelX}-${labelY}`
+      newSelectedCells[key] = true
+    })
+
+    setSelectedCells(newSelectedCells)
+
+    // バルク選択タイプが設定されている場合は即時適用
+    if (bulkScheduleType) {
+      const updated = { ...currentSchedule }
+      Object.keys(newSelectedCells).forEach((key) => {
+        updated[key] = bulkScheduleType
+      })
+      setCurrentSchedule(updated)
+    }
+
+    toast({ title: "列選択", description: `${labelX}曜日の全ての時限を選択しました` })
+  }
+
+  // 行（時限）を全選択
+  const selectRow = (labelY: string) => {
+    const newSelectedCells: Record<string, boolean> = {}
+
+    xAxis.forEach((labelX) => {
+      const key = `${labelX}-${labelY}`
+      newSelectedCells[key] = true
+    })
+
+    setSelectedCells(newSelectedCells)
+
+    // バルク選択タイプが設定されている場合は即時適用
+    if (bulkScheduleType) {
+      const updated = { ...currentSchedule }
+      Object.keys(newSelectedCells).forEach((key) => {
+        updated[key] = bulkScheduleType
+      })
+      setCurrentSchedule(updated)
+    }
+
+    toast({ title: "行選択", description: `${labelY}時限の全ての曜日を選択しました` })
   }
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle>
-        スケジュール入力
-        </CardTitle>
-        
+        <CardTitle>スケジュール入力</CardTitle>
+
         <CardDescription>
-          {editingIndex !== null ? 'スケジュールを編集してください' : '名前と予定を入力してください'}
+          {editingIndex !== null ? "スケジュールを編集してください" : "名前と予定を入力してください"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -179,19 +239,11 @@ export default function ScheduleForm({
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">名前</Label>
-            <Input
-              id="name"
-              value={currentName}
-              onChange={(e) => setCurrentName(e.target.value)}
-              placeholder="名前"
-            />
+            <Input id="name" value={currentName} onChange={(e) => setCurrentName(e.target.value)} placeholder="名前" />
           </div>
           <div>
             <Label htmlFor="grade-select">学年</Label>
-            <Select
-              value={currentGrade}
-              onValueChange={setCurrentGrade}
-            >
+            <Select value={currentGrade} onValueChange={setCurrentGrade}>
               <SelectTrigger id="grade-select" className="w-full">
                 <SelectValue placeholder="学年を選択" />
               </SelectTrigger>
@@ -210,35 +262,45 @@ export default function ScheduleForm({
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium">一括入力</h3>
-            <Button size="sm" variant="outline" onClick={toggleSelectionMode} className="text-xs flex items-center gap-1">
-              {selectionMode === 'tap' ? <Smartphone className="w-3 h-3" /> : <MousePointer className="w-3 h-3" />}
-              {selectionMode === 'tap' ? 'タップ' : 'ドラッグ'}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={toggleSelectionMode}
+              className="text-xs flex items-center gap-1"
+            >
+              {selectionMode === "tap" ? <Smartphone className="w-3 h-3" /> : <MousePointer className="w-3 h-3" />}
+              {selectionMode === "tap" ? "タップ" : "ドラッグ"}
             </Button>
           </div>
           <div className="flex gap-2 items-center">
-            <Select value={bulkScheduleType} onValueChange={setBulkScheduleType} disabled={selectedCellCount === 0}>
+            <Select value={bulkScheduleType} onValueChange={handleBulkTypeChange}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="予定" />
               </SelectTrigger>
               <SelectContent>
                 {scheduleTypes.map((type, idx) => (
-                  <SelectItem 
-                    key={`${type.id}-${idx}`} 
-                    value={type.id} 
-                    className={type.color}
-                  >
+                  <SelectItem key={`${type.id}-${idx}`} value={type.id} className={type.color}>
                     {type.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={applyBulkSchedule} size="sm" disabled={!bulkScheduleType || selectedCellCount === 0}>
-              <Check className="w-4 h-4 mr-1" />
-              適用
-            </Button>
+
+            {selectedCellCount > 0 && (
+              <Button variant="outline" size="sm" onClick={clearSelectedCells}>
+                クリア
+              </Button>
+            )}
           </div>
           {selectedCellCount > 0 && (
-            <div className="text-sm text-blue-600 mt-2">{selectedCellCount}コマ選択中</div>
+            <div className="text-sm text-blue-600 mt-2">
+              {selectedCellCount}コマ選択中
+              {bulkScheduleType && (
+                <span className="ml-1">
+                  （{scheduleTypes.find((t) => t.id === bulkScheduleType)?.label || ""}を適用中）
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -264,6 +326,11 @@ export default function ScheduleForm({
                           else updated[key] = true
                           return updated
                         })
+
+                        // バルク選択タイプが設定されている場合は即時適用
+                        if (bulkScheduleType) {
+                          updateSchedule(labelX, labelY, bulkScheduleType)
+                        }
                       }}
                     />
                   ))}
@@ -272,21 +339,26 @@ export default function ScheduleForm({
             ))}
           </div>
         ) : (
-          <ScheduleTable
-            xAxis={xAxis}
-            yAxis={yAxis}
-            scheduleTypes={scheduleTypes}
-            schedule={currentSchedule}
-            updateSchedule={updateSchedule}
-            selectedCells={selectedCells}
-            setSelectedCells={setSelectedCells}
-            selectionMode={selectionMode}
-          />
+          <div ref={tableRef}>
+            <ScheduleTable
+              xAxis={xAxis}
+              yAxis={yAxis}
+              scheduleTypes={scheduleTypes}
+              schedule={currentSchedule}
+              updateSchedule={updateSchedule}
+              selectedCells={selectedCells}
+              setSelectedCells={setSelectedCells}
+              selectionMode={selectionMode}
+              bulkScheduleType={bulkScheduleType}
+              onSelectColumn={selectColumn}
+              onSelectRow={selectRow}
+            />
+          </div>
         )}
       </CardContent>
       <CardFooter>
         <Button onClick={submit} className="w-full md:w-auto">
-          {editingIndex !== null ? '更新する' : '登録する'}
+          {editingIndex !== null ? "更新する" : "登録する"}
         </Button>
       </CardFooter>
     </Card>

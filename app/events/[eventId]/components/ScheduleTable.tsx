@@ -1,9 +1,9 @@
 "use client"
 
-import React from "react"
+import type React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ScheduleType } from "@/app/events/[eventId]/components/constants"
-import type { Schedule } from './types'
+import type { ScheduleType } from "@/app/events/[eventId]/components/constants"
+import type { Schedule } from "./types"
 
 export type Props = {
   xAxis: string[]
@@ -13,7 +13,10 @@ export type Props = {
   updateSchedule: (labelX: string, labelY: string, value: string) => void
   selectedCells: Record<string, boolean>
   setSelectedCells: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
-  selectionMode: 'tap' | 'drag'
+  selectionMode: "tap" | "drag"
+  bulkScheduleType: string
+  onSelectColumn: (labelX: string) => void
+  onSelectRow: (labelY: string) => void
 }
 
 export default function ScheduleTable({
@@ -25,21 +28,46 @@ export default function ScheduleTable({
   selectedCells,
   setSelectedCells,
   selectionMode,
+  bulkScheduleType,
+  onSelectColumn,
+  onSelectRow,
 }: Props) {
   const handleMouseDown = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "drag" || e.button !== 0) return
+
+    // セレクトボックスをクリックした場合は選択処理をスキップ
+    if ((e.target as HTMLElement).closest(".select-trigger")) return
+
     const key = `${labelX}-${labelY}`
     setSelectedCells({ [key]: true })
+
+    // バルク選択タイプが設定されている場合は即時適用
+    if (bulkScheduleType) {
+      updateSchedule(labelX, labelY, bulkScheduleType)
+    }
   }
 
   const handleMouseEnter = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "drag" || !(e.buttons & 1)) return
     const key = `${labelX}-${labelY}`
+
+    // 既に選択済みのセルは処理しない
+    if (selectedCells[key]) return
+
     setSelectedCells((prev) => ({ ...prev, [key]: true }))
+
+    // バルク選択タイプが設定されている場合は即時適用
+    if (bulkScheduleType) {
+      updateSchedule(labelX, labelY, bulkScheduleType)
+    }
   }
 
-  const handleClick = (labelX: string, labelY: string) => {
+  const handleClick = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "tap") return
+
+    // セレクトボックスをクリックした場合は選択処理をスキップ
+    if ((e.target as HTMLElement).closest(".select-trigger")) return
+
     const key = `${labelX}-${labelY}`
     setSelectedCells((prev) => {
       const newCells = { ...prev }
@@ -47,6 +75,11 @@ export default function ScheduleTable({
       else newCells[key] = true
       return newCells
     })
+
+    // バルク選択タイプが設定されている場合は即時適用
+    if (bulkScheduleType) {
+      updateSchedule(labelX, labelY, bulkScheduleType)
+    }
   }
 
   return (
@@ -56,7 +89,11 @@ export default function ScheduleTable({
           <tr>
             <th className="border p-2"></th>
             {xAxis.map((labelX) => (
-              <th key={labelX} className="border p-2 text-center">
+              <th
+                key={labelX}
+                className="border p-2 text-center cursor-pointer hover:bg-blue-50"
+                onClick={() => onSelectColumn(labelX)}
+              >
                 {labelX}
               </th>
             ))}
@@ -65,7 +102,10 @@ export default function ScheduleTable({
         <tbody>
           {yAxis.map((labelY) => (
             <tr key={labelY}>
-              <td className="border p-2 text-center font-medium">
+              <td
+                className="border p-2 text-center font-medium cursor-pointer hover:bg-blue-50"
+                onClick={() => onSelectRow(labelY)}
+              >
                 {labelY}
               </td>
               {xAxis.map((labelX) => {
@@ -76,17 +116,14 @@ export default function ScheduleTable({
                 return (
                   <td
                     key={key}
-                    className={`border p-2 ${isSelected ? "bg-blue-200" : ""}`}
+                    className={`border p-4 ${isSelected ? "bg-blue-200" : ""} cursor-pointer`}
                     onMouseDown={(e) => handleMouseDown(labelX, labelY, e)}
                     onMouseEnter={(e) => handleMouseEnter(labelX, labelY, e)}
-                    onClick={() => handleClick(labelX, labelY)}
+                    onClick={(e) => handleClick(labelX, labelY, e)}
                   >
-                    <Select
-                      value={value}
-                      onValueChange={(v) => updateSchedule(labelX, labelY, v)}
-                    >
+                    <Select value={value} onValueChange={(v) => updateSchedule(labelX, labelY, v)}>
                       <SelectTrigger
-                        className={`w-full ${
+                        className={`w-full select-trigger h-8 min-h-0 px-2 py-1 ${
                           scheduleTypes.find((t) => t.id === value)?.color || ""
                         }`}
                       >
