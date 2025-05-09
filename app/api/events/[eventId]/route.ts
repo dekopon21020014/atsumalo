@@ -77,7 +77,7 @@ export async function PUT(
 ) {
   const { eventId } = params
   const json = await req.json()
-  const {
+  let {
     name,
     description,
     eventType,
@@ -112,7 +112,7 @@ export async function PUT(
     !Array.isArray(scheduleTypes) ||
     !scheduleTypes.every((t) =>
       t &&
-      typeof t.id === "string" &&
+      typeof t.id === "string" && t.id.trim() !== "" &&
       typeof t.label === "string" &&
       typeof t.color === "string" &&
       typeof t.isAvailable === "boolean"

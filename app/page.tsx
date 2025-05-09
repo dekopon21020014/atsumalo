@@ -26,15 +26,15 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { colorPalettes  } from "./events/[eventId]/components/constants"
-
-// 予定タイプの型定義
-interface ScheduleType {
-  id: string
-  label: string
-  color: string
-  isAvailable: boolean
-}
+import { 
+  colorPalettes, 
+  recurringTemplates, 
+  onetimeTemplates,
+  scheduleTypeTamplate,
+  xAxisTamplate,
+  yAxisTamplate
+} from "./events/[eventId]/components/constants"
+import type { ScheduleType } from "./events/[eventId]/components/constants"
 
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
@@ -42,8 +42,8 @@ export default function HomePage() {
   const [eventType, setEventType] = useState<"recurring" | "onetime">("recurring")
 
   // 定期イベント用の軸
-  const [xAxis, setXAxis] = useState(["月", "火", "水", "木", "金"])
-  const [yAxis, setYAxis] = useState(["1", "2", "3", "4", "5"])
+  const [xAxis, setXAxis] = useState(xAxisTamplate)
+  const [yAxis, setYAxis] = useState(yAxisTamplate)
 
   // 単発イベント用の軸（日時の組み合わせ）
   const [dateTimeOptions, setDateTimeOptions] = useState(["5/1 19:00", "5/2 19:00", "5/3 20:00"])
@@ -52,35 +52,7 @@ export default function HomePage() {
   const router = useRouter()
 
   // 予定タイプの初期値
-  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([
-    { id: "class", label: "授業", color: "bg-red-100 text-red-800", isAvailable: false },
-    { id: "parttime", label: "バイト", color: "bg-blue-100 text-blue-800", isAvailable: false },
-    { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800", isAvailable: false },
-    { id: "available", label: "可能", color: "bg-green-100 text-green-800", isAvailable: true },
-    { id: "unavailable", label: "不可", color: "bg-gray-100 text-gray-800", isAvailable: false },
-  ])
-
-  // テンプレートの定義
-  const recurringTemplates = [
-    { name: "平日（月〜金）", x: ["月", "火", "水", "木", "金"], y: ["1", "2", "3", "4", "5"] },
-    { name: "週末含む（月〜日）", x: ["月", "火", "水", "木", "金", "土", "日"], y: ["1", "2", "3", "4", "5"] },
-    { name: "時間帯（午前/午後）", x: ["月", "火", "水", "木", "金"], y: ["午前", "午後", "夕方", "夜"] },
-  ]
-
-  const onetimeTemplates = [
-    {
-      name: "平日夕方",
-      options: ["5/1(月) 19:00", "5/2(火) 19:00", "5/3(水) 19:00", "5/4(木) 19:00", "5/5(金) 19:00"],
-    },
-    {
-      name: "週末",
-      options: ["5/6(土) 10:00", "5/6(土) 14:00", "5/7(日) 10:00", "5/7(日) 14:00"],
-    },
-    {
-      name: "来週平日",
-      options: ["5/8(月) 19:00", "5/9(火) 19:00", "5/10(水) 19:00", "5/11(木) 19:00", "5/12(金) 19:00"],
-    },
-  ]
+  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>(scheduleTypeTamplate)
 
   // X軸の項目を追加
   const addXItem = () => {
