@@ -90,6 +90,20 @@ export default function EventPage() {
       })
   }, [eventId])
 
+  useEffect(() => {
+    // ドキュメントタイトルを設定
+    document.title = name
+
+    // meta[name="description"] を探して、なければ生成
+    let meta = document.querySelector('meta[name="description"]')
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('name', 'description')
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', description)
+  }, [name, description])
+
   // X軸の項目を追加
   const addXItem = () => {
     setEditXAxis((prev) => {
