@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ScheduleType } from "@/app/events/[eventId]/components/constants"
 import type { Schedule } from "./types"
+import { Plus } from "lucide-react"
 
 export type Props = {
   xAxis: string[]
@@ -11,12 +11,8 @@ export type Props = {
   scheduleTypes: ScheduleType[]
   schedule: Schedule
   updateSchedule: (labelX: string, labelY: string, value: string) => void
-  selectedCells: Record<string, boolean>
-  setSelectedCells: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
   selectionMode: "tap" | "drag"
   bulkScheduleType: string
-  onSelectColumn: (labelX: string) => void
-  onSelectRow: (labelY: string) => void
 }
 
 export default function ScheduleTable({
@@ -25,21 +21,11 @@ export default function ScheduleTable({
   scheduleTypes,
   schedule,
   updateSchedule,
-  selectedCells,
-  setSelectedCells,
   selectionMode,
   bulkScheduleType,
-  onSelectColumn,
-  onSelectRow,
 }: Props) {
   const handleMouseDown = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "drag" || e.button !== 0) return
-
-    // セレクトボックスをクリックした場合は選択処理をスキップ
-    if ((e.target as HTMLElement).closest(".select-trigger")) return
-
-    const key = `${labelX}-${labelY}`
-    setSelectedCells({ [key]: true })
 
     // バルク選択タイプが設定されている場合は即時適用
     if (bulkScheduleType) {
@@ -49,12 +35,6 @@ export default function ScheduleTable({
 
   const handleMouseEnter = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "drag" || !(e.buttons & 1)) return
-    const key = `${labelX}-${labelY}`
-
-    // 既に選択済みのセルは処理しない
-    if (selectedCells[key]) return
-
-    setSelectedCells((prev) => ({ ...prev, [key]: true }))
 
     // バルク選択タイプが設定されている場合は即時適用
     if (bulkScheduleType) {
@@ -65,21 +45,40 @@ export default function ScheduleTable({
   const handleClick = (labelX: string, labelY: string, e: React.MouseEvent) => {
     if (selectionMode !== "tap") return
 
-    // セレクトボックスをクリックした場合は選択処理をスキップ
-    if ((e.target as HTMLElement).closest(".select-trigger")) return
-
-    const key = `${labelX}-${labelY}`
-    setSelectedCells((prev) => {
-      const newCells = { ...prev }
-      if (newCells[key]) delete newCells[key]
-      else newCells[key] = true
-      return newCells
-    })
-
     // バルク選択タイプが設定されている場合は即時適用
     if (bulkScheduleType) {
       updateSchedule(labelX, labelY, bulkScheduleType)
     }
+  }
+
+  // セルの内容を表示するヘルパー関数
+  const getCellContent = (value: string) => {
+    if (!value) return null // 空の場合はnullを返す
+
+    const scheduleType = scheduleTypes.find((type) => type.id === value)
+    return scheduleType ? scheduleType.label : null
+  }
+
+  // セルの背景色クラスを取得するヘルパー関数
+  const getCellColorClass = (value: string) => {
+    if (!value) return ""
+
+    const scheduleType = scheduleTypes.find((type) => type.id === value)
+    return scheduleType ? scheduleType.color : ""
+  }
+
+  // 列（曜日）を全選択
+  const onSelectColumn = (labelX: string) => {
+    yAxis.forEach((labelY) => {
+      updateSchedule(labelX, labelY, bulkScheduleType)
+    })
+  }
+
+  // 行（時限）を全選択
+  const onSelectRow = (labelY: string) => {
+    xAxis.forEach((labelX) => {
+      updateSchedule(labelX, labelY, bulkScheduleType)
+    })
   }
 
   return (
@@ -91,7 +90,7 @@ export default function ScheduleTable({
             {xAxis.map((labelX) => (
               <th
                 key={labelX}
-                className="border p-2 text-center cursor-pointer hover:bg-blue-50"
+                className="border p-2 text-center cursor-pointer hover:bg-blue-50 transition-colors duration-150"
                 onClick={() => onSelectColumn(labelX)}
               >
                 {labelX}
@@ -103,40 +102,43 @@ export default function ScheduleTable({
           {yAxis.map((labelY) => (
             <tr key={labelY}>
               <td
-                className="border p-2 text-center font-medium cursor-pointer hover:bg-blue-50"
+                className="border p-2 text-center font-medium cursor-pointer hover:bg-blue-50 transition-colors duration-150"
                 onClick={() => onSelectRow(labelY)}
               >
                 {labelY}
               </td>
               {xAxis.map((labelX) => {
                 const key = `${labelX}-${labelY}`
-                const isSelected = !!selectedCells[key]
                 const value = schedule[key]
+                const cellContent = getCellContent(value)
+                const cellColorClass = getCellColorClass(value)
 
                 return (
                   <td
                     key={key}
-                    className={`border p-4 ${isSelected ? "bg-blue-200" : ""} cursor-pointer`}
+                    className={`
+                      border p-3 text-center relative
+                      
+                      ${cellColorClass || "hover:bg-gray-50"}
+                      cursor-pointer
+                      transition-all duration-150
+                      ${!cellContent ? "hover:bg-blue-50" : "hover:opacity-90"}
+                      ${bulkScheduleType && !cellContent ? "hover:bg-blue-100" : ""}
+                    `}
                     onMouseDown={(e) => handleMouseDown(labelX, labelY, e)}
                     onMouseEnter={(e) => handleMouseEnter(labelX, labelY, e)}
                     onClick={(e) => handleClick(labelX, labelY, e)}
                   >
-                    <Select value={value} onValueChange={(v) => updateSchedule(labelX, labelY, v)}>
-                      <SelectTrigger
-                        className={`w-full select-trigger h-8 min-h-0 px-2 py-1 ${
-                          scheduleTypes.find((t) => t.id === value)?.color || ""
-                        }`}
-                      >
-                        <SelectValue placeholder="選択" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {scheduleTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id} className={type.color}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {cellContent ? (
+                      <span className="font-medium">{cellContent}</span>
+                    ) : (
+                      <div className="flex items-center justify-center text-gray-400 group">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center">
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span className="text-xs">クリックして入力</span>
+                        </span>
+                      </div>
+                    )}
                   </td>
                 )
               })}

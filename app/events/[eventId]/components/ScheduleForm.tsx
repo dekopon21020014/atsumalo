@@ -1,11 +1,11 @@
 "use client"
 
-import { type Dispatch, type SetStateAction, useEffect, useState, useRef } from "react"
+import { type Dispatch, type SetStateAction, useEffect, useState, useRef, use } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MousePointer, Smartphone } from "lucide-react"
+import { MousePointer, Smartphone, Check } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import { gradeOptions, type ScheduleType } from "@/app/events/[eventId]/components/constants"
@@ -57,8 +57,6 @@ export default function ScheduleForm({
 
   const tableRef = useRef<HTMLDivElement>(null)
 
-  const selectedCellCount = Object.keys(selectedCells).length
-
   useEffect(() => {
     setSelectionMode(isMobile ? "tap" : "drag")
   }, [isMobile])
@@ -74,21 +72,13 @@ export default function ScheduleForm({
     }
   }, [editingIndex, participants, xAxis, yAxis])
 
+  useEffect(() => {
+    setBulkScheduleType(scheduleTypes[0]?.id || "")
+  },[scheduleTypes])
+
   const updateSchedule = (labelX: string, labelY: string, value: string) => {
     const key = `${labelX}-${labelY}`
     setCurrentSchedule((prev) => ({ ...prev, [key]: value }))
-  }
-
-  // 一括適用ボタンを押したときの処理
-  const applyBulkSchedule = () => {
-    if (!bulkScheduleType || selectedCellCount === 0) return
-    const updated = { ...currentSchedule }
-    for (const key of Object.keys(selectedCells)) {
-      updated[key] = bulkScheduleType
-    }
-    setCurrentSchedule(updated)
-    toast({ title: "一括適用", description: `${selectedCellCount}コマの予定を設定しました` })
-    setSelectedCells({})
   }
 
   // 選択タイプが変更されたときの処理
@@ -102,7 +92,6 @@ export default function ScheduleForm({
         updated[key] = value
       }
       setCurrentSchedule(updated)
-      // 選択状態は維持する（setSelectedCellsを呼び出さない）
     }
   }
 
@@ -166,65 +155,6 @@ export default function ScheduleForm({
     setSelectedCells({})
   }
 
-  // セルをクリアする
-  const clearSelectedCells = () => {
-    if (selectedCellCount === 0) return
-
-    const updated = { ...currentSchedule }
-    for (const key of Object.keys(selectedCells)) {
-      updated[key] = ""
-    }
-    setCurrentSchedule(updated)
-    toast({ title: "クリア", description: `${selectedCellCount}コマの予定をクリアしました` })
-    setSelectedCells({})
-  }
-
-  // 列（曜日）を全選択
-  const selectColumn = (labelX: string) => {
-    const newSelectedCells: Record<string, boolean> = {}
-
-    yAxis.forEach((labelY) => {
-      const key = `${labelX}-${labelY}`
-      newSelectedCells[key] = true
-    })
-
-    setSelectedCells(newSelectedCells)
-
-    // バルク選択タイプが設定されている場合は即時適用
-    if (bulkScheduleType) {
-      const updated = { ...currentSchedule }
-      Object.keys(newSelectedCells).forEach((key) => {
-        updated[key] = bulkScheduleType
-      })
-      setCurrentSchedule(updated)
-    }
-
-    toast({ title: "列選択", description: `${labelX}曜日の全ての時限を選択しました` })
-  }
-
-  // 行（時限）を全選択
-  const selectRow = (labelY: string) => {
-    const newSelectedCells: Record<string, boolean> = {}
-
-    xAxis.forEach((labelX) => {
-      const key = `${labelX}-${labelY}`
-      newSelectedCells[key] = true
-    })
-
-    setSelectedCells(newSelectedCells)
-
-    // バルク選択タイプが設定されている場合は即時適用
-    if (bulkScheduleType) {
-      const updated = { ...currentSchedule }
-      Object.keys(newSelectedCells).forEach((key) => {
-        updated[key] = bulkScheduleType
-      })
-      setCurrentSchedule(updated)
-    }
-
-    toast({ title: "行選択", description: `${labelY}時限の全ての曜日を選択しました` })
-  }
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -261,7 +191,6 @@ export default function ScheduleForm({
         {/* 一括入力 */}
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-medium">一括入力</h3>
             <Button
               size="sm"
               variant="outline"
@@ -272,45 +201,31 @@ export default function ScheduleForm({
               {selectionMode === "tap" ? "タップ" : "ドラッグ"}
             </Button>
           </div>
-          <div className="flex gap-2 items-center">
-            <Select value={bulkScheduleType} onValueChange={handleBulkTypeChange}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="予定" />
-              </SelectTrigger>
-              <SelectContent>
-                {scheduleTypes.map((type, idx) => (
-                  <SelectItem key={`${type.id}-${idx}`} value={type.id} className={type.color}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {selectedCellCount > 0 && (
-              <Button variant="outline" size="sm" onClick={clearSelectedCells}>
-                クリア
-              </Button>
-            )}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {scheduleTypes.map((type) => (
+              <button
+                key={type.id}
+                onClick={() => handleBulkTypeChange(type.id)}
+                className={`
+                  px-3 py-1.5 rounded-md text-sm transition-all
+                  ${type.color}
+                  ${bulkScheduleType === type.id ? "ring-2 ring-offset-1 ring-gray-900" : "hover:opacity-80"}
+                `}
+              >
+                {type.label}
+                {bulkScheduleType === type.id && <Check className="inline-block ml-1 h-3 w-3" />}
+              </button>
+            ))}
           </div>
-          {selectedCellCount > 0 && (
-            <div className="text-sm text-blue-600 mt-2">
-              {selectedCellCount}コマ選択中
-              {bulkScheduleType && (
-                <span className="ml-1">
-                  （{scheduleTypes.find((t) => t.id === bulkScheduleType)?.label || ""}を適用中）
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {/* グリッド or モバイルビュー */}
         {isMobile ? (
-          <div className="grid grid-cols-1 gap-1 mb-3">
+          <div className="grid grid-cols-1 gap-1 mb-3"> 
             {yAxis.map((labelY) => (
               <div key={labelY} className="mb-2">
                 <div className="font-medium text-sm">{labelY}</div>
-                <div className={`grid grid-cols-${xAxis.length} gap-1`}>
+                <div className={`grid grid-cols-${xAxis.length} gap-1`}>                  
                   {xAxis.map((labelX) => (
                     <ScheduleCellMobile
                       key={`${labelX}-${labelY}`}
@@ -319,14 +234,6 @@ export default function ScheduleForm({
                       value={currentSchedule[`${labelX}-${labelY}`]}
                       selected={!!selectedCells[`${labelX}-${labelY}`]}
                       onTap={() => {
-                        const key = `${labelX}-${labelY}`
-                        setSelectedCells((prev) => {
-                          const updated = { ...prev }
-                          if (updated[key]) delete updated[key]
-                          else updated[key] = true
-                          return updated
-                        })
-
                         // バルク選択タイプが設定されている場合は即時適用
                         if (bulkScheduleType) {
                           updateSchedule(labelX, labelY, bulkScheduleType)
@@ -346,12 +253,8 @@ export default function ScheduleForm({
               scheduleTypes={scheduleTypes}
               schedule={currentSchedule}
               updateSchedule={updateSchedule}
-              selectedCells={selectedCells}
-              setSelectedCells={setSelectedCells}
               selectionMode={selectionMode}
               bulkScheduleType={bulkScheduleType}
-              onSelectColumn={selectColumn}
-              onSelectRow={selectRow}
             />
           </div>
         )}
