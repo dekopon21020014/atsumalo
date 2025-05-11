@@ -1,6 +1,7 @@
 "use client"
 
-import { type Dispatch, type SetStateAction, useEffect, useState, useRef, use } from "react"
+import { type Dispatch, type SetStateAction, useEffect, useState, useRef } from "react"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -221,30 +222,50 @@ export default function ScheduleForm({
 
         {/* グリッド or モバイルビュー */}
         {isMobile ? (
-          <div className="grid grid-cols-1 gap-1 mb-3"> 
-            {yAxis.map((labelY) => (
-              <div key={labelY} className="mb-2">
-                <div className="font-medium text-sm">{labelY}</div>
-                <div className={`grid grid-cols-${xAxis.length} gap-1`}>                  
-                  {xAxis.map((labelX) => (
-                    <ScheduleCellMobile
-                      key={`${labelX}-${labelY}`}
-                      day={labelX}
-                      period={labelY}
-                      value={currentSchedule[`${labelX}-${labelY}`]}
-                      selected={!!selectedCells[`${labelX}-${labelY}`]}
-                      onTap={() => {
-                        // バルク選択タイプが設定されている場合は即時適用
-                        if (bulkScheduleType) {
-                          updateSchedule(labelX, labelY, bulkScheduleType)
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
+          <div className="mb-3">
+          {/* ─── X軸ヘッダー ─── */}
+          <div
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `min-content repeat(${xAxis.length}, minmax(0, 1fr))` }}
+          >
+            {/* 左上のダミーセル */}
+            <div></div>
+            {xAxis.map((labelX) => (
+              <div key={labelX} className="text-center font-medium text-sm">
+                {labelX}
               </div>
             ))}
           </div>
+        
+          {/* ─── Y軸＋セル ─── */}
+          <div
+            className="grid gap-1 mt-1"
+            style={{ gridTemplateColumns: `min-content repeat(${xAxis.length}, minmax(0, 1fr))` }}
+          >
+            {yAxis.map((labelY) => (
+              <React.Fragment key={labelY}>
+                {/* Y軸ラベル */}
+                <div className="font-medium text-sm">{labelY}</div>
+                {/* 各セル */}
+                {xAxis.map((labelX) => (
+                  <ScheduleCellMobile
+                    key={`${labelX}-${labelY}`}
+                    day={labelX}
+                    period={labelY}
+                    value={currentSchedule[`${labelX}-${labelY}`]}
+                    selected={!!selectedCells[`${labelX}-${labelY}`]}
+                    onTap={() => {
+                      if (bulkScheduleType) {
+                        updateSchedule(labelX, labelY, bulkScheduleType)
+                      }
+                    }}
+                  />
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+        
         ) : (
           <div ref={tableRef}>
             <ScheduleTable
