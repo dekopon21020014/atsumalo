@@ -1,12 +1,40 @@
-import { Teachers } from "next/font/google"
+export type ScheduleType = {
+  id: string
+  label: string
+  color: string
+  isAvailable: boolean
+}
+
+export type Response = {
+  id: string
+  name: string
+  grade?: string
+  schedule: {
+    dateTime: string
+    typeId: string
+    comment?: string
+  }[]
+}
+
+export type EventData = {
+  name: string
+  description: string
+  eventType: 'recurring' | 'onetime'
+  xAxis: string[]
+  yAxis: string[]
+  dateTimeOptions: string[]
+  scheduleTypes: ScheduleType[]
+  existingResponses: Response[]
+}
 
 // スケジュールの種類と対応する表示色など
 export const scheduleTypes = [
-    { id: "class", label: "授業", color: "bg-red-100 text-red-800" },
-    { id: "parttime", label: "バイト", color: "bg-blue-100 text-blue-800" },
-    { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800" },
     { id: "available", label: "可能", color: "bg-green-100 text-green-800" },
+    { id: "not-yet", label: "未定", color: "bg-yellow-100 text-yellow-800" },
+    { id: "class", label: "授業", color: "bg-red-100 text-red-800" },
+    { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800" },
     { id: "unavailable", label: "不可", color: "bg-gray-100 text-gray-800" },
+    { id: "parttime", label: "バイト", color: "bg-blue-100 text-blue-800" },
 ]
 
 // 曜日と時限の定義
@@ -78,41 +106,13 @@ export const onetimeTemplates = [
 ]
 
 export const scheduleTypeTamplate = [
-  { id: "available", label: "可能", color: "bg-green-100 text-green-800", isAvailable: true },
-  { id: "class", label: "授業", color: "bg-red-100 text-red-800", isAvailable: false },
-  { id: "parttime", label: "バイト", color: "bg-blue-100 text-blue-800", isAvailable: false },
-  { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800", isAvailable: false },    
-  { id: "unavailable", label: "不可", color: "bg-gray-100 text-gray-800", isAvailable: false },
+    { id: "available", label: "可能", color: "bg-green-100 text-green-800", isAvailable: true },
+    { id: "not-yet", label: "未定(△)", color: "bg-yellow-100 text-yellow-800", isAvailable: false },
+    { id: "class", label: "授業", color: "bg-red-100 text-red-800", isAvailable: false },
+    { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800", isAvailable: false },
+    { id: "unavailable", label: "不可", color: "bg-gray-100 text-gray-800", isAvailable: false },
+    { id: "parttime", label: "バイト", color: "bg-blue-100 text-blue-800", isAvailable: false },
 ]
 
 export const xAxisTamplate = ["月", "火", "水", "木", "金"]
 export const yAxisTamplate = ["1", "2", "3", "4", "5"]
-
-export type ScheduleType = {
-  id: string
-  label: string
-  color: string
-  isAvailable: boolean
-}
-
-export type Response = {
-  id: string
-  name: string
-  grade?: string
-  schedule: {
-    dateTime: string
-    typeId: string
-    comment?: string
-  }[]
-}
-
-export type EventData = {
-  name: string
-  description: string
-  eventType: 'recurring' | 'onetime'
-  xAxis: string[]
-  yAxis: string[]
-  dateTimeOptions: string[]
-  scheduleTypes: ScheduleType[]
-  existingResponses: Response[]
-}
