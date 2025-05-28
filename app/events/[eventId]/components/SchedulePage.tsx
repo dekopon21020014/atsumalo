@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Download, UserPlus, PenSquare, BarChart3, Users } from 'lucide-react'
+import { Download, UserPlus, PenSquare, BarChart3, Users, Check } from 'lucide-react'
 import {
   Dialog,
   DialogTrigger,
@@ -17,13 +17,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Toaster } from '@/components/ui/toaster'
 import { toast } from '@/components/ui/use-toast'
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 
 import ScheduleForm from './ScheduleForm'
@@ -53,7 +46,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
     () => createEmptySchedule(xAxis, yAxis)
   )
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [filterGrade, setFilterGrade] = useState<string>('All')
+  const [filterGrades, setFilterGrades] = useState<string[]>([])
   const { eventId } = useParams()
 
   useEffect(() => {
@@ -89,6 +82,10 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
     }
   }, [editingIndex, participants, xAxis, yAxis])
+
+  const toggleGradeFilter = (g: string) => {
+    setFilterGrades(prev => prev.includes(g) ? prev.filter(x=>x!==g) : [...prev, g])
+  }
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -126,9 +123,9 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
 
   // 学年フィルタリング
   const filteredParticipants =
-    filterGrade === 'All'
+    filterGrades.length === 0
       ? participants
-      : participants.filter((p) => p.grade === filterGrade)
+      : participants.filter((p) => filterGrades.includes(p.grade || ''))
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -214,22 +211,60 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
         </TabsContent>
 
         <TabsContent value="summary">
-          <div className="mb-4 flex items-center gap-2">
-            <Label htmlFor="filter-grade">学年で絞り込み</Label>
-            <Select value={filterGrade} onValueChange={setFilterGrade}>
-              <SelectTrigger id="filter-grade" className="w-40">
-                <SelectValue placeholder="全学年" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">全学年</SelectItem>
-                {gradeOptions.map((g) => (
-                  <SelectItem key={g} value={g}>
-                    {g}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+           <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+        <div className="flex items-center justify-between mb-3">
+          <Label className="text-sm font-medium">学年で絞り込み</Label>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setFilterGrades(gradeOptions)} className="text-xs">
+              全選択
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setFilterGrades([])} className="text-xs">
+              全解除
+            </Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {gradeOptions.map((g) => {
+            const isSelected = filterGrades.includes(g)
+            const count = participants.filter((p) => p.grade === g).length
+
+            return (
+              <button
+                key={g}
+                onClick={() => toggleGradeFilter(g)}
+                className={`
+            px-3 py-2 rounded-md text-sm font-medium transition-all
+            flex items-center gap-2 min-w-[100px] justify-between
+            ${
+              isSelected
+                ? "bg-blue-100 text-blue-800 border-2 border-blue-300"
+                : "bg-white text-gray-700 border-2 border-gray-200 hover:border-gray-300"
+            }
+          `}
+              >
+                <span>{g}</span>
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded ${
+                      isSelected ? "bg-blue-200 text-blue-900" : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                  {isSelected && <Check className="h-3 w-3" />}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {filterGrades.length > 0 && (
+          <div className="mt-3 text-sm text-gray-600">
+            {filterGrades.length}個の学年を選択中 ({filteredParticipants.length}名が対象)
+          </div>
+        )}
+      </div>
 
           <div className="grid gap-6 md:grid-cols-3">
             <ScheduleSummary 
