@@ -557,7 +557,7 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <div className="space-y-3 max-h-[400px] overflow-y-auto p-1">
+              <div className="space-y-3 overflow-y-auto p-1">
                 {scheduleTypes.map((type, index) => (
                   <div key={`type-${index}`} className="border rounded-md p-3 bg-white">
                     <div className="flex flex-col md:flex-row gap-3">
