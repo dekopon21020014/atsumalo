@@ -266,7 +266,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
         )}
       </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2">
             <ScheduleSummary 
               participants={filteredParticipants} 
               xAxis={xAxis}
