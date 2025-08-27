@@ -30,6 +30,7 @@ export type EventData = {
 // スケジュールの種類と対応する表示色など
 export const scheduleTypes = [
     { id: "available", label: "可能", color: "bg-green-100 text-green-800" },
+    { id: "social", label: "🐈", color: "bg-orange-100 text-orange-800" },
     { id: "not-yet", label: "未定", color: "bg-yellow-100 text-yellow-800" },
     { id: "class", label: "授業", color: "bg-red-100 text-red-800" },
     { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800" },
@@ -107,6 +108,7 @@ export const onetimeTemplates = [
 
 export const scheduleTypeTamplate = [
     { id: "available", label: "可能", color: "bg-green-100 text-green-800", isAvailable: true },
+    { id: "social", label: "🐈", color: "bg-orange-100 text-orange-800", isAvailable: false },
     { id: "not-yet", label: "未定(△)", color: "bg-yellow-100 text-yellow-800", isAvailable: false },
     { id: "class", label: "授業", color: "bg-red-100 text-red-800", isAvailable: false },
     { id: "ta", label: "TA", color: "bg-purple-100 text-purple-800", isAvailable: false },
