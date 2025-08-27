@@ -299,20 +299,15 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-6">イベント管理アプリ</h1>
+    <div className="min-h-screen bg-gradient-to-b from-black to-gray-950 text-white">
+      <section className="py-24">
+        <div className="container mx-auto text-center space-y-4">
+          <h1 className="text-5xl font-bold tracking-tight">Lab Scheduling</h1>
+          <p className="text-lg text-gray-400">研究室の予定調整をスマートに</p>
+        </div>
+      </section>
 
-      <p className="mb-4 text-gray-700">
-        このアプリは、研究室ゼミや勉強会などの「日程調整」を簡単に行うためのツールです。
-      </p>
-
-      <ol className="list-decimal list-inside mb-8 text-gray-600">
-        <li>イベント名と説明を入力し、「イベントを作成」をクリック。</li>
-        <li>生成されたリンクを参加者に共有。</li>
-        <li>参加者は各自の空きコマを入力。</li>
-        <li>管理画面で全員の回答を集計し、最適な日程を確認。</li>
-      </ol>
-
+      <div className="container mx-auto py-10 px-4 bg-gray-900/50 rounded-xl">
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
         <div className="grid md:grid-cols-2 gap-4">
           <div>
@@ -793,6 +788,7 @@ export default function HomePage() {
           イベントを作成
         </Button>
       </form>
+      </div>
     </div>
   )
 }

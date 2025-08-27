@@ -1,3 +1,7 @@
 export default function Footer() {
-  return <footer className="text-center p-4">© dekopon21020014</footer>
+  return (
+    <footer className="bg-black border-t border-gray-800 text-gray-400 text-center py-6">
+      © {new Date().getFullYear()} Lab Scheduling
+    </footer>
+  )
 }

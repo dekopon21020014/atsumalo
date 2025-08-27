@@ -10,17 +10,21 @@ export default function Header() {
     { href: "/events", label: "Events" },
   ]
   return (
-    <header className="bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="container mx-auto flex items-center justify-between">
-        <h1 className="text-xl font-bold">
-          <Link href="/">Lab Scheduling</Link>
+    <header className="bg-black/80 backdrop-blur border-b border-gray-800">
+      <div className="container mx-auto flex items-center justify-between py-4">
+        <h1 className="text-xl font-semibold tracking-tight">
+          <Link href="/" className="text-white">
+            Lab Scheduling
+          </Link>
         </h1>
-        <nav className="space-x-4">
+        <nav className="space-x-6 text-sm">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={pathname === item.href ? "font-semibold underline" : ""}
+              className={`text-gray-300 hover:text-white transition-colors ${
+                pathname === item.href ? "text-white underline" : ""
+              }`}
             >
               {item.label}
             </Link>
