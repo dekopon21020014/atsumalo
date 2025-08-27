@@ -106,8 +106,12 @@ export default function ScheduleForm({
       return
     }
 
+    const total = Object.keys(currentSchedule).length
     const filled = Object.values(currentSchedule).filter(Boolean).length
-    if (filled < 5 && !confirm("入力が少ないようです。本当に登録しますか？")) return
+    if (filled !== total) {
+      toast({ title: "エラー", description: "すべてのセルに予定を入力してください", variant: "destructive" })
+      return
+    }
 
     const payload = {
       eventId,
