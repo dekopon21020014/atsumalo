@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useParticipantForm } from "./useParticipantFrom"
+import { useParticipantForm } from "./useParticipantForm"
 import {
   Check, Save, User, MessageSquare, X, GraduationCap, BarChart3,
   Users, PenSquare, Edit, Trash2, AlertTriangle,
@@ -39,7 +39,7 @@ type Props = {
 
 export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [] }: Props) {  
   const [activeTab, setActiveTab] = useState("input")
-  const form = useParticipantForm(eventId, scheduleTypes, responses, setActiveTab)
+  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab)
   const isMobile = useMediaQuery("(max-width: 768px)")      
 
   // 最適な日時を取得

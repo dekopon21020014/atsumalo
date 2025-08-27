@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -41,6 +41,11 @@ export default function EventPage() {
   const [editDateTimeOptions, setEditDateTimeOptions] = useState<string[]>([])
   const [editScheduleTypes, setEditScheduleTypes] = useState<ScheduleType[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const xAxisRefs = useRef<HTMLInputElement[]>([])
+  const yAxisRefs = useRef<HTMLInputElement[]>([])
+  const dateTimeRefs = useRef<HTMLInputElement[]>([])
+  const typeLabelRefs = useRef<HTMLInputElement[]>([])
 
   // イベント情報の取得
   useEffect(() => {
@@ -94,11 +99,10 @@ export default function EventPage() {
   const addXItem = () => {
     setEditXAxis((prev) => {
       const newItems = [...prev, `項目${prev.length + 1}`]
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newItems.length - 1
-        const inputElement = document.getElementById(`x-axis-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
+        xAxisRefs.current[newIndex]?.focus()
+      })
       return newItems
     })
   }
@@ -107,11 +111,10 @@ export default function EventPage() {
   const addYItem = () => {
     setEditYAxis((prev) => {
       const newItems = [...prev, `項目${prev.length + 1}`]
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newItems.length - 1
-        const inputElement = document.getElementById(`y-axis-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
+        yAxisRefs.current[newIndex]?.focus()
+      })
       return newItems
     })
   }
@@ -120,11 +123,10 @@ export default function EventPage() {
   const addDateTimeOption = () => {
     setEditDateTimeOptions((prev) => {
       const newOptions = [...prev, `日時${prev.length + 1}`]
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
-        const inputElement = document.getElementById(`datetime-option-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
+        dateTimeRefs.current[newIndex]?.focus()
+      })
       return newOptions
     })
   }
@@ -176,10 +178,7 @@ export default function EventPage() {
 
   // 予定タイプを追加
   const addScheduleType = () => {
-    // IDを生成
     const newId = `type_${Date.now()}`
-
-    // デフォルトの色をランダムに選択
     const randomColorIndex = Math.floor(Math.random() * colorPalettes.length)
     const randomColor = `${colorPalettes[randomColorIndex].bg} ${colorPalettes[randomColorIndex].text}`
 
@@ -193,13 +192,10 @@ export default function EventPage() {
           isAvailable: false,
         },
       ]
-
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newTypes.length - 1
-        const inputElement = document.getElementById(`type-label-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
-
+        typeLabelRefs.current[newIndex]?.focus()
+      })
       return newTypes
     })
   }
@@ -414,6 +410,7 @@ export default function EventPage() {
                       {editXAxis.map((item, i) => (
                         <div key={`x-${i}`} className="flex items-center gap-2">
                           <Input
+                            ref={(el) => (xAxisRefs.current[i] = el)}
                             id={`x-axis-${i}`}
                             value={item}
                             onChange={(e) => updateXItem(i, e.target.value)}
@@ -452,6 +449,7 @@ export default function EventPage() {
                       {editYAxis.map((item, i) => (
                         <div key={`y-${i}`} className="flex items-center gap-2">
                           <Input
+                            ref={(el) => (yAxisRefs.current[i] = el)}
                             id={`y-axis-${i}`}
                             value={item}
                             onChange={(e) => updateYItem(i, e.target.value)}
@@ -491,6 +489,7 @@ export default function EventPage() {
                     {editDateTimeOptions.map((item, index) => (
                       <div key={`datetime-${index}`} className="flex items-center gap-2">
                         <Input
+                          ref={(el) => (dateTimeRefs.current[index] = el)}
                           id={`datetime-option-${index}`}
                           value={item}
                           onChange={(e) => updateDateTimeOption(index, e.target.value)}
@@ -550,6 +549,7 @@ export default function EventPage() {
                           ラベル
                         </Label>
                         <Input
+                          ref={(el) => (typeLabelRefs.current[index] = el)}
                           id={`type-label-${index}`}
                           value={type.label}
                           onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}

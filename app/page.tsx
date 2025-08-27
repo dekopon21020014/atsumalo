@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -27,12 +27,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { 
-  colorPalettes, 
-  recurringTemplates, 
+  colorPalettes,
+  recurringTemplates,
   onetimeTemplates,
-  scheduleTypeTamplate,
-  xAxisTamplate,
-  yAxisTamplate
+  scheduleTypeTemplate,
+  xAxisTemplate,
+  yAxisTemplate
 } from "./events/[eventId]/components/constants"
 import type { ScheduleType } from "./events/[eventId]/components/constants"
 
@@ -42,8 +42,8 @@ export default function HomePage() {
   const [eventType, setEventType] = useState<"recurring" | "onetime">("recurring")
 
   // 定期イベント用の軸
-  const [xAxis, setXAxis] = useState(xAxisTamplate)
-  const [yAxis, setYAxis] = useState(yAxisTamplate)
+  const [xAxis, setXAxis] = useState(xAxisTemplate)
+  const [yAxis, setYAxis] = useState(yAxisTemplate)
 
   // 単発イベント用の軸（日時の組み合わせ）
   const [dateTimeOptions, setDateTimeOptions] = useState(["5/1 19:00", "5/2 19:00", "5/3 20:00"])
@@ -52,17 +52,21 @@ export default function HomePage() {
   const router = useRouter()
 
   // 予定タイプの初期値
-  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>(scheduleTypeTamplate)
+  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>(scheduleTypeTemplate)
+
+  const xAxisRefs = useRef<HTMLInputElement[]>([])
+  const yAxisRefs = useRef<HTMLInputElement[]>([])
+  const dateTimeRefs = useRef<HTMLInputElement[]>([])
+  const typeLabelRefs = useRef<HTMLInputElement[]>([])
 
   // X軸の項目を追加
   const addXItem = () => {
     setXAxis((prev) => {
       const newItems = [...prev, `項目${prev.length + 1}`]
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newItems.length - 1
-        const inputElement = document.getElementById(`x-axis-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
+        xAxisRefs.current[newIndex]?.focus()
+      })
       return newItems
     })
   }
@@ -71,11 +75,10 @@ export default function HomePage() {
   const addYItem = () => {
     setYAxis((prev) => {
       const newItems = [...prev, `項目${prev.length + 1}`]
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newItems.length - 1
-        const inputElement = document.getElementById(`y-axis-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
+        yAxisRefs.current[newIndex]?.focus()
+      })
       return newItems
     })
   }
@@ -84,12 +87,10 @@ export default function HomePage() {
   const addDateTimeOption = () => {
     setDateTimeOptions((prev) => {
       const newOptions = [...prev, `日時${prev.length + 1}`]
-      // フォーカスは新しい配列の長さに基づいて設定
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
-        const inputElement = document.getElementById(`datetime-option-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
+        dateTimeRefs.current[newIndex]?.focus()
+      })
       return newOptions
     })
   }
@@ -141,10 +142,7 @@ export default function HomePage() {
 
   // 予定タイプを追加する関数を修正して、フォーカス移動の処理を追加
   const addScheduleType = () => {
-    // IDを生成（単純な方法）
     const newId = `type_${Date.now()}`
-
-    // デフォルトの色をランダムに選択
     const randomColorIndex = Math.floor(Math.random() * colorPalettes.length)
     const randomColor = `${colorPalettes[randomColorIndex].bg} ${colorPalettes[randomColorIndex].text}`
 
@@ -158,14 +156,10 @@ export default function HomePage() {
           isAvailable: false,
         },
       ]
-
-      // フォーカスは新しい配列の長さに基づいて設定
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const newIndex = newTypes.length - 1
-        const inputElement = document.getElementById(`type-label-${newIndex}`)
-        if (inputElement) inputElement.focus()
-      }, 10)
-
+        typeLabelRefs.current[newIndex]?.focus()
+      })
       return newTypes
     })
   }
@@ -405,6 +399,7 @@ export default function HomePage() {
                       {xAxis.map((item, i) => (
                         <div key={`x-${i}`} className="flex items-center gap-2">
                           <Input
+                            ref={(el) => (xAxisRefs.current[i] = el)}
                             id={`x-axis-${i}`}
                             value={item}
                             onChange={(e) => updateXItem(i, e.target.value)}
@@ -452,6 +447,7 @@ export default function HomePage() {
                       {yAxis.map((item, i) => (
                         <div key={`y-${i}`} className="flex items-center gap-2">
                           <Input
+                            ref={(el) => (yAxisRefs.current[i] = el)}
                             id={`y-axis-${i}`}
                             value={item}
                             onChange={(e) => updateYItem(i, e.target.value)}
@@ -500,6 +496,7 @@ export default function HomePage() {
                     {dateTimeOptions.map((item, index) => (
                       <div key={`datetime-${index}`} className="flex items-center gap-2">
                         <Input
+                          ref={(el) => (dateTimeRefs.current[index] = el)}
                           id={`datetime-option-${index}`}
                           value={item}
                           onChange={(e) => updateDateTimeOption(index, e.target.value)}
@@ -567,6 +564,7 @@ export default function HomePage() {
                           ラベル
                         </Label>
                         <Input
+                          ref={(el) => (typeLabelRefs.current[index] = el)}
                           id={`type-label-${index}`}
                           value={type.label}
                           onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}

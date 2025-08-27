@@ -51,7 +51,7 @@ export default function ParticipantList({
   const { eventId } = useParams()
 
   // 学年フィルタ／ソート／ビュー切り替え
-  const gradeOrder = ['Teacher', 'M2', 'M1', 'B4', 'B3', 'B2', 'B1', 'Other']
+  const gradeOrder = ['Teacher', 'Dr', 'M2', 'M1', 'B4', 'B3', 'B2', 'B1', 'Others']
   const [filterGrade, setFilterGrade] = useState<string>('All')
   const [sortAscending, setSortAscending] = useState<boolean>(true)
   const [isGrid, setIsGrid] = useState<boolean>(false)

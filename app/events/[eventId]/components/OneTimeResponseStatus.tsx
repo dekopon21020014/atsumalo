@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useParticipantForm } from "./useParticipantFrom"
+import { useParticipantForm } from "./useParticipantForm"
 type ParticipantFormHook = ReturnType<typeof useParticipantForm>
 
 type Props = {
