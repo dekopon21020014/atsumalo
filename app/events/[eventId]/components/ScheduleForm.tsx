@@ -55,6 +55,8 @@ export default function ScheduleForm({
   const [bulkScheduleType, setBulkScheduleType] = useState<string>("")
   const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
   const [scheduleError, setScheduleError] = useState("")
+  const [nameError, setNameError] = useState("")
+  const [gradeError, setGradeError] = useState("")
   const { eventId } = useParams()
 
   const tableRef = useRef<HTMLDivElement>(null)
@@ -99,13 +101,19 @@ export default function ScheduleForm({
 
   const submit = async () => {
     if (!currentName.trim()) {
-      toast({ title: "エラー", description: "名前を入力してください", variant: "destructive" })
+      const message = "名前を入力してください"
+      setNameError(message)
+      toast({ title: "エラー", description: message, variant: "destructive" })
       return
     }
+    setNameError("")
     if (!currentGrade) {
-      toast({ title: "エラー", description: "学年を選択してください", variant: "destructive" })
+      const message = "学年を選択してください"
+      setGradeError(message)
+      toast({ title: "エラー", description: message, variant: "destructive" })
       return
     }
+    setGradeError("")
 
     const total = Object.keys(currentSchedule).length
     const filled = Object.values(currentSchedule).filter(Boolean).length
@@ -179,11 +187,26 @@ export default function ScheduleForm({
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">名前</Label>
-            <Input id="name" value={currentName} onChange={(e) => setCurrentName(e.target.value)} placeholder="名前" />
+            <Input
+              id="name"
+              value={currentName}
+              onChange={(e) => {
+                setCurrentName(e.target.value)
+                setNameError("")
+              }}
+              placeholder="名前"
+            />
+            {nameError && <p className="mt-2 text-sm text-red-500">{nameError}</p>}
           </div>
           <div>
             <Label htmlFor="grade-select">学年</Label>
-            <Select value={currentGrade} onValueChange={setCurrentGrade}>
+            <Select
+              value={currentGrade}
+              onValueChange={(v) => {
+                setCurrentGrade(v)
+                setGradeError("")
+              }}
+            >
               <SelectTrigger id="grade-select" className="w-full">
                 <SelectValue placeholder="学年を選択" />
               </SelectTrigger>
@@ -195,6 +218,7 @@ export default function ScheduleForm({
                 ))}
               </SelectContent>
             </Select>
+            {gradeError && <p className="mt-2 text-sm text-red-500">{gradeError}</p>}
           </div>
         </div>
 
