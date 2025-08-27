@@ -7,12 +7,13 @@ import type { Schedule } from './types'
  */
 export function createEmptySchedule(
   xAxis: string[],
-  yAxis: string[]
+  yAxis: string[],
+  defaultTypeId = ''
 ): Schedule {
   const schedule: Schedule = {}
   xAxis.forEach((labelX) => {
     yAxis.forEach((labelY) => {
-      schedule[`${labelX}-${labelY}`] = ''
+      schedule[`${labelX}-${labelY}`] = defaultTypeId
     })
   })
   return schedule

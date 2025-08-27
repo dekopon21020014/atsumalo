@@ -35,6 +35,7 @@ type Props = {
 }
 
 export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
+  const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
   const [participants, setParticipants] = useState<Participant[]>([])
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -43,7 +44,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
   const [currentGrade, setCurrentGrade] = useState('')
 
   const [currentSchedule, setCurrentSchedule] = useState<Schedule>(
-    () => createEmptySchedule(xAxis, yAxis)
+    () => createEmptySchedule(xAxis, yAxis, defaultTypeId)
   )
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [filterGrades, setFilterGrades] = useState<string[]>([])
@@ -79,9 +80,9 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
       setCurrentGrade(p.grade || '')
       setCurrentSchedule({ ...p.schedule })
     } else {
-      setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
+      setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
     }
-  }, [editingIndex, participants, xAxis, yAxis])
+  }, [editingIndex, participants, xAxis, yAxis, defaultTypeId])
 
   const toggleGradeFilter = (g: string) => {
     setFilterGrades(prev => prev.includes(g) ? prev.filter(x=>x!==g) : [...prev, g])
