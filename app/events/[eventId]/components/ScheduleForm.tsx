@@ -51,8 +51,9 @@ export default function ScheduleForm({
   setActiveTab,
 }: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ""
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
-  const [bulkScheduleType, setBulkScheduleType] = useState<string>("")
+  const [bulkScheduleType, setBulkScheduleType] = useState<string>(defaultTypeId)
   const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
   const [scheduleError, setScheduleError] = useState("")
   const [nameError, setNameError] = useState("")
@@ -72,13 +73,13 @@ export default function ScheduleForm({
       setCurrentGrade(p.grade || "")
       setCurrentSchedule({ ...p.schedule })
     } else {
-      setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
+      setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
     }
-  }, [editingIndex, participants, xAxis, yAxis])
+  }, [editingIndex, participants, xAxis, yAxis, defaultTypeId])
 
   useEffect(() => {
-    setBulkScheduleType(scheduleTypes[0]?.id || "")
-  },[scheduleTypes])
+    setBulkScheduleType(defaultTypeId)
+  },[defaultTypeId])
 
   const updateSchedule = (labelX: string, labelY: string, value: string) => {
     const key = `${labelX}-${labelY}`
@@ -158,9 +159,9 @@ export default function ScheduleForm({
       toast({ title: "完了", description: "スケジュールを登録しました" })
       setCurrentName("")
       setCurrentGrade("")
-      setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
+      setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
       setSelectedCells({})
-      setBulkScheduleType("")
+      setBulkScheduleType(defaultTypeId)
       setScheduleError("")
       setActiveTab("summary")
     } catch {
