@@ -45,7 +45,14 @@ export default function OneTimeInputTab({
 }: Props) {
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
-  const [selections, setSelections] = useState<Record<string, string>>({})
+  const available = scheduleTypes.find((t) => t.isAvailable)
+  const initialSelections: Record<string, string> = {}
+  if (available) {
+    dateTimeOptions.forEach((dt) => {
+      initialSelections[dt] = available.id
+    })
+  }
+  const [selections, setSelections] = useState<Record<string, string>>(initialSelections)
   const [comments, setComments] = useState<Record<string, string>>({})
   const [showComments, setShowComments] = useState<Record<string, boolean>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -133,7 +140,7 @@ export default function OneTimeInputTab({
     }
   }
   const clearResponses = () => {
-    setSelections({})
+    setSelections(initialSelections)
     setComments({})
   }
 
