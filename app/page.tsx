@@ -300,8 +300,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-950 text-white">
-      <section className="py-24">
-        <div className="container mx-auto text-center space-y-4">
+      <section className="relative flex flex-col items-center justify-center py-32 overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 left-1/2 w-[80rem] h-[80rem] -translate-x-1/2 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 opacity-20 blur-3xl animate-[spin_20s_linear_infinite]" />
+          <div className="animate-blob absolute top-1/2 left-[10%] w-72 h-72 bg-purple-700 rounded-full mix-blend-multiply filter blur-2xl opacity-30" />
+          <div className="animate-blob animation-delay-2000 absolute top-[60%] right-[10%] w-72 h-72 bg-cyan-700 rounded-full mix-blend-multiply filter blur-2xl opacity-30" />
+          <div className="animate-blob animation-delay-4000 absolute top-1/3 right-[30%] w-72 h-72 bg-pink-700 rounded-full mix-blend-multiply filter blur-2xl opacity-30" />
+        </div>
+        <div className="container mx-auto text-center space-y-6 relative">
           <h1 className="text-5xl font-bold tracking-tight">Lab Scheduling</h1>
           <p className="text-lg text-gray-400">研究室の予定調整をスマートに</p>
         </div>
