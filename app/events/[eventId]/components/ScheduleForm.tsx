@@ -54,6 +54,7 @@ export default function ScheduleForm({
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
   const [bulkScheduleType, setBulkScheduleType] = useState<string>("")
   const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
+  const [scheduleError, setScheduleError] = useState("")
   const { eventId } = useParams()
 
   const tableRef = useRef<HTMLDivElement>(null)
@@ -109,9 +110,12 @@ export default function ScheduleForm({
     const total = Object.keys(currentSchedule).length
     const filled = Object.values(currentSchedule).filter(Boolean).length
     if (filled !== total) {
-      toast({ title: "エラー", description: "すべてのセルに予定を入力してください", variant: "destructive" })
+      const message = "すべてのセルに予定を入力してください"
+      setScheduleError(message)
+      toast({ title: "エラー", description: message, variant: "destructive" })
       return
     }
+    setScheduleError("")
 
     const payload = {
       eventId,
@@ -149,6 +153,7 @@ export default function ScheduleForm({
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis))
       setSelectedCells({})
       setBulkScheduleType("")
+      setScheduleError("")
       setActiveTab("summary")
     } catch {
       toast({ title: "エラー", description: "保存に失敗しました", variant: "destructive" })
@@ -282,6 +287,9 @@ export default function ScheduleForm({
               bulkScheduleType={bulkScheduleType}
             />
           </div>
+        )}
+        {scheduleError && (
+          <p className="mt-2 text-sm text-red-500">{scheduleError}</p>
         )}
       </CardContent>
       <CardFooter>
