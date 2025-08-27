@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/use-toast"
 
 export function useParticipantForm(
   eventId: string,
+  dateTimeOptions: string[],
   scheduleTypes: ScheduleType[],
   responses: Response[],
   setActiveTab: (tab: string) => void,
@@ -293,22 +294,17 @@ export function useParticipantForm(
     existingResponses.filter(r=>r.schedule.some(s=>s.dateTime===dateTime && scheduleTypes.find(t=>t.id===s.typeId)?.isAvailable)).length
 
   const getBestDateTime = () => {
-    // scheduleTypes の各要素から t.id を取り出す
-    const options = scheduleTypes.map(t => t.id);
-    if (options.length === 0) return null;
-  
-    let best = options[0];
-    let max  = getAvailableCount(best);
-  
-    for (const dt of options) {
-      const cnt = getAvailableCount(dt);
+    if (!dateTimeOptions.length) return null
+    let best = dateTimeOptions[0]
+    let max = getAvailableCount(best)
+    dateTimeOptions.forEach((dt) => {
+      const cnt = getAvailableCount(dt)
       if (cnt > max) {
-        max = cnt;
-        best = dt;
+        max = cnt
+        best = dt
       }
-    }
-  
-    return { dateTime: best, count: max };
+    })
+    return { dateTime: best, count: max }
   }
 
   return {

@@ -43,25 +43,26 @@ export const days = ["月", "火", "水", "木", "金"]
 export const periods = [1, 2, 3, 4, 5]
 export const gradeOptions = [
   'Teacher',
+  'Dr',
   'M2',
   'M1',
   'B4',
   'B3',
   'B2',
   'B1',
-  'Other',
+  'Others',
 ]
 
-export const gradeOrder: {[key: string]: number} = {
-  'Teacher': 1,
-  'Dr': 2,
-  'M2': 3,
-  'M1': 4,
-  'B4': 5,
-  'B3': 6,
-  'B2': 7,
-  'B1': 8,
-  'Others': 9,
+export const gradeOrder: { [key: string]: number } = {
+  Teacher: 1,
+  Dr: 2,
+  M2: 3,
+  M1: 4,
+  B4: 5,
+  B3: 6,
+  B2: 7,
+  B1: 8,
+  Others: 9,
 }
 
 export const colorPalettes = [
@@ -106,7 +107,7 @@ export const onetimeTemplates = [
   },
 ]
 
-export const scheduleTypeTamplate = [
+export const scheduleTypeTemplate = [
     { id: "available", label: "可能", color: "bg-green-100 text-green-800", isAvailable: true },
     { id: "social", label: "🐈", color: "bg-orange-100 text-orange-800", isAvailable: false },
     { id: "not-yet", label: "未定(△)", color: "bg-yellow-100 text-yellow-800", isAvailable: false },
@@ -116,5 +117,5 @@ export const scheduleTypeTamplate = [
     { id: "parttime", label: "バイト", color: "bg-blue-100 text-blue-800", isAvailable: false },
 ]
 
-export const xAxisTamplate = ["月", "火", "水", "木", "金"]
-export const yAxisTamplate = ["1", "2", "3", "4", "5"]
+export const xAxisTemplate = ["月", "火", "水", "木", "金"]
+export const yAxisTemplate = ["1", "2", "3", "4", "5"]
