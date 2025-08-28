@@ -302,7 +302,7 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto py-10 px-4 space-y-8">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-8 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-black p-8 text-white">
         <h1 className="text-4xl font-extrabold tracking-tight">イベント管理アプリ</h1>
         <p className="mt-2 text-lg">
           研究室ゼミや勉強会などの「日程調整」をスマートに行うためのツールです。
@@ -329,7 +329,7 @@ export default function HomePage() {
 
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
         <div className="grid md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-gray-800 dark:to-gray-900 border-0 shadow-sm">
+          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -346,7 +346,7 @@ export default function HomePage() {
               />
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 border-0 shadow-sm">
+          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -366,7 +366,7 @@ export default function HomePage() {
         </div>
 
         {/* イベントタイプ選択 */}
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 shadow-sm border-0">
+        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-medium flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -383,7 +383,7 @@ export default function HomePage() {
               <ToggleGroupItem
                 value="recurring"
                 aria-label="定期イベント"
-                className="w-full data-[state=on]:bg-indigo-600 data-[state=on]:text-white"
+                className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
               >
                 <CalendarDays className="mr-2 h-4 w-4" />
                 定期イベント
@@ -391,7 +391,7 @@ export default function HomePage() {
               <ToggleGroupItem
                 value="onetime"
                 aria-label="単発イベント"
-                className="w-full data-[state=on]:bg-indigo-600 data-[state=on]:text-white"
+                className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 単発イベント
@@ -406,7 +406,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900 shadow-sm border-0">
+        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-medium flex items-center gap-2">
               {eventType === "recurring" ? (
