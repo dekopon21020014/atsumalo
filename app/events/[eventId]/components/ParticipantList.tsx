@@ -54,7 +54,7 @@ export default function ParticipantList({
   const gradeOrder = ['Teacher', 'Dr', 'M2', 'M1', 'B4', 'B3', 'B2', 'B1', 'Others']
   const [filterGrade, setFilterGrade] = useState<string>('All')
   const [sortAscending, setSortAscending] = useState<boolean>(true)
-  const [isGrid, setIsGrid] = useState<boolean>(false)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
   // フィルタ・ソート適用
   let displayed =
@@ -140,15 +140,15 @@ export default function ParticipantList({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsGrid((p) => !p)}
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
           >
-            {isGrid ? 'リスト表示' : 'グリッド表示'}
+            {viewMode === 'grid' ? 'リスト表示' : 'グリッド表示'}
           </Button>
         </div>
       </div>
 
       {/* ── グリッドビュー ── */}
-      {isGrid ? (
+      {viewMode === 'grid' ? (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
