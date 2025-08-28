@@ -7,7 +7,7 @@ export default function Header() {
   const pathname = usePathname()
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/events", label: "Events" },
+    { href: "/builder", label: "Builder" },
   ]
   return (
     <header className="bg-gray-100 dark:bg-gray-900 p-4">
