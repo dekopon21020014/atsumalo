@@ -431,7 +431,7 @@ export default function HomePage() {
                 // 定期イベント用のグリッドビルダー
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* X軸設定 */}
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1">
                     <div className="flex justify-between items-center">
                       <Label className="text-base font-medium flex items-center">
                         <ArrowRight className="h-4 w-4 mr-1" />
@@ -479,7 +479,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Y軸設定 */}
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1">
                     <div className="flex justify-between items-center">
                       <Label className="text-base font-medium flex items-center">
                         <ArrowDown className="h-4 w-4 mr-1" />
@@ -490,7 +490,7 @@ export default function HomePage() {
                         追加
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
+                    <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto p-1">
                       {yAxis.map((item, i) => (
                         <div key={`y-${i}`} className="flex items-center gap-2">
                           <Input
