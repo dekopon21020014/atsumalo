@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Plus,
   Trash2,
@@ -351,41 +351,64 @@ export default function HomePage() {
         </div>
 
         {/* イベントタイプ選択 */}
-        <div className="border rounded-lg p-4">
-          <h2 className="text-lg font-medium mb-4">イベントタイプ</h2>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            value={eventType}
-            onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
-            className="grid w-full grid-cols-2 gap-2 md:w-1/2"
-          >
-            <ToggleGroupItem value="recurring" aria-label="定期イベント" className="w-full">
-              <CalendarDays className="mr-2 h-4 w-4" />
-              定期イベント
-            </ToggleGroupItem>
-            <ToggleGroupItem value="onetime" aria-label="単発イベント" className="w-full">
-              <Calendar className="mr-2 h-4 w-4" />
-              単発イベント
-            </ToggleGroupItem>
-          </ToggleGroup>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 shadow-sm border-0">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              イベントタイプ
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ToggleGroup
+              type="single"
+              value={eventType}
+              onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
+              className="grid w-full grid-cols-2 gap-2 md:w-1/2"
+            >
+              <ToggleGroupItem
+                value="recurring"
+                aria-label="定期イベント"
+                className="w-full data-[state=on]:bg-indigo-600 data-[state=on]:text-white"
+              >
+                <CalendarDays className="mr-2 h-4 w-4" />
+                定期イベント
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="onetime"
+                aria-label="単発イベント"
+                className="w-full data-[state=on]:bg-indigo-600 data-[state=on]:text-white"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                単発イベント
+              </ToggleGroupItem>
+            </ToggleGroup>
 
-          <div className="mt-2 text-sm text-gray-600">
-            {eventType === "recurring"
-              ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
-              : "単発のイベントや会議など、特定の日時のリストから選択して調整します。"}
-          </div>
-        </div>
+            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              {eventType === "recurring"
+                ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
+                : "単発のイベントや会議など、特定の日時のリストから選択して調整します。"}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="border rounded-lg p-4">
-          <h2 className="text-lg font-medium mb-4">{eventType === "recurring" ? "グリッド設定" : "日時設定"}</h2>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center">
-              <TabsTrigger value="builder">{eventType === "recurring" ? "グリッドビルダー" : "日時リスト"}</TabsTrigger>
-              <TabsTrigger value="scheduleTypes">予定タイプ</TabsTrigger>
-              <TabsTrigger value="preview">プレビュー</TabsTrigger>
-              <TabsTrigger value="templates">テンプレート</TabsTrigger>
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900 shadow-sm border-0">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              {eventType === "recurring" ? (
+                <CalendarDays className="h-5 w-5" />
+              ) : (
+                <Clock className="h-5 w-5" />
+              )}
+              {eventType === "recurring" ? "グリッド設定" : "日時設定"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center bg-white/60 dark:bg-gray-700/50 p-1 rounded-lg">
+            <TabsTrigger value="builder">{eventType === "recurring" ? "グリッドビルダー" : "日時リスト"}</TabsTrigger>
+            <TabsTrigger value="scheduleTypes">予定タイプ</TabsTrigger>
+            <TabsTrigger value="preview">プレビュー</TabsTrigger>
+            <TabsTrigger value="templates">テンプレート</TabsTrigger>
             </TabsList>
 
             <TabsContent value="builder" className="space-y-6">
@@ -795,7 +818,8 @@ export default function HomePage() {
               )}
             </TabsContent>
           </Tabs>
-        </div>
+          </CardContent>
+        </Card>
 
         <Button type="submit" className="w-full">
           <Save className="h-4 w-4 mr-2" />
