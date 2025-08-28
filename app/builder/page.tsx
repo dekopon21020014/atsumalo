@@ -381,7 +381,7 @@ export default function HomePage() {
           <h2 className="text-lg font-medium mb-4">{eventType === "recurring" ? "グリッド設定" : "日時設定"}</h2>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center">
               <TabsTrigger value="builder">{eventType === "recurring" ? "グリッドビルダー" : "日時リスト"}</TabsTrigger>
               <TabsTrigger value="scheduleTypes">予定タイプ</TabsTrigger>
               <TabsTrigger value="preview">プレビュー</TabsTrigger>
