@@ -442,7 +442,7 @@ export default function HomePage() {
                         追加
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
+                    <div className="flex flex-wrap gap-2 max-h-[300px] overflow-y-auto p-1">
                       {xAxis.map((item, i) => (
                         <div key={`x-${i}`} className="flex items-center gap-2">
                           <Input
@@ -462,7 +462,7 @@ export default function HomePage() {
                                 return;
                               }
                             }}
-                            className="flex-1"
+                            className="w-24"
                           />
                           <Button
                             type="button"
