@@ -300,19 +300,31 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-6">イベント管理アプリ</h1>
-
-      <p className="mb-4 text-gray-700">
-        このアプリは、研究室ゼミや勉強会などの「日程調整」を簡単に行うためのツールです。
-      </p>
-
-      <ol className="list-decimal list-inside mb-8 text-gray-600">
-        <li>イベント名と説明を入力し、「イベントを作成」をクリック。</li>
-        <li>生成されたリンクを参加者に共有。</li>
-        <li>参加者は各自の空きコマを入力。</li>
-        <li>管理画面で全員の回答を集計し、最適な日程を確認。</li>
-      </ol>
+    <div className="container mx-auto py-10 px-4 space-y-8">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-8 text-white">
+        <h1 className="text-4xl font-extrabold tracking-tight">イベント管理アプリ</h1>
+        <p className="mt-2 text-lg">
+          研究室ゼミや勉強会などの「日程調整」をスマートに行うためのツールです。
+        </p>
+        <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 md:grid-cols-4">
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-5 w-5" />
+            <span>イベントを作成</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <ArrowRight className="h-5 w-5" />
+            <span>リンクを共有</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Check className="h-5 w-5" />
+            <span>参加者が回答</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Settings className="h-5 w-5" />
+            <span>結果を確認</span>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
         <div className="grid md:grid-cols-2 gap-4">
