@@ -25,7 +25,8 @@ import {
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Textarea } from "@/components/ui/textarea"
 import { 
   colorPalettes,
   recurringTemplates,
@@ -327,12 +328,12 @@ export default function HomePage() {
           </div>
           <div>
             <Label htmlFor="eventDesc">イベント説明</Label>
-            <textarea
+            <Textarea
               id="eventDesc"
               value={eventDesc}
               onChange={(e) => setEventDesc(e.target.value)}
               placeholder="このイベントの概要を入力"
-              className="w-full p-2 border rounded resize-none h-10"
+              className="h-24"
             />
           </div>
         </div>
@@ -340,26 +341,22 @@ export default function HomePage() {
         {/* イベントタイプ選択 */}
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-medium mb-4">イベントタイプ</h2>
-          <RadioGroup
+          <ToggleGroup
+            type="single"
+            variant="outline"
             value={eventType}
             onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
-            className="flex flex-col md:flex-row gap-4"
+            className="grid w-full grid-cols-2 gap-2 md:w-1/2"
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="recurring" id="recurring" />
-              <Label htmlFor="recurring" className="flex items-center cursor-pointer">
-                <CalendarDays className="h-4 w-4 mr-2" />
-                定期イベント（グリッド形式）
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="onetime" id="onetime" />
-              <Label htmlFor="onetime" className="flex items-center cursor-pointer">
-                <Calendar className="h-4 w-4 mr-2" />
-                単発イベント（リスト形式）
-              </Label>
-            </div>
-          </RadioGroup>
+            <ToggleGroupItem value="recurring" aria-label="定期イベント" className="w-full">
+              <CalendarDays className="mr-2 h-4 w-4" />
+              定期イベント
+            </ToggleGroupItem>
+            <ToggleGroupItem value="onetime" aria-label="単発イベント" className="w-full">
+              <Calendar className="mr-2 h-4 w-4" />
+              単発イベント
+            </ToggleGroupItem>
+          </ToggleGroup>
 
           <div className="mt-2 text-sm text-gray-600">
             {eventType === "recurring"
