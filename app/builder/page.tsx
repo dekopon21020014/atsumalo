@@ -22,6 +22,7 @@ import {
   Calendar,
   CalendarDays,
   Clock,
+  FileText,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -328,26 +329,40 @@ export default function HomePage() {
 
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
         <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="eventName">イベント名</Label>
-            <Input
-              id="eventName"
-              value={eventName}
-              onChange={(e) => setEventName(e.target.value)}
-              placeholder="例：ゼミ日程調整"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="eventDesc">イベント説明</Label>
-            <Textarea
-              id="eventDesc"
-              value={eventDesc}
-              onChange={(e) => setEventDesc(e.target.value)}
-              placeholder="このイベントの概要を入力"
-              className="h-24"
-            />
-          </div>
+          <Card className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-gray-800 dark:to-gray-900 border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                イベント名
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input
+                id="eventName"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                placeholder="例：ゼミ日程調整"
+                required
+              />
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                イベント説明
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                id="eventDesc"
+                value={eventDesc}
+                onChange={(e) => setEventDesc(e.target.value)}
+                placeholder="このイベントの概要を入力"
+                className="h-24"
+              />
+            </CardContent>
+          </Card>
         </div>
 
         {/* イベントタイプ選択 */}
