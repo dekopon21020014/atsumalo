@@ -4,7 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { Settings, Calendar, CalendarDays, Share2 } from "lucide-react"
+import Link from "next/link"
+import { Settings, Calendar, CalendarDays, Share2, BarChart3 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import EventSettings from "./EventSettings"
 import type { ScheduleType } from "./constants"
@@ -81,6 +82,13 @@ export default function EventHeader({
             <Button variant="outline" size="sm" onClick={copyEventUrl}>
               <Share2 className="h-4 w-4 mr-1" />
               共有
+            </Button>
+
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/events/${eventId}/analytics`}>
+                <BarChart3 className="h-4 w-4 mr-1" />
+                統計
+              </Link>
             </Button>
 
             <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>

@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Save, X } from "lucide-react"
+import { Plus, Trash2, Save, X, BarChart3 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
 import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
 import { colorPalettes } from "@/app/events/[eventId]/components/constants"
+import Link from "next/link"
 
 export default function EventPage() {
   const { eventId } = useParams()
@@ -638,9 +639,17 @@ export default function EventPage() {
         <div className="space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold">{data.name}</h1>
           <p className="text-gray-700">{data.description}</p>
-          <Button variant="outline" onClick={() => setEditMode(true)}>
-            編集
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setEditMode(true)}>
+              編集
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/events/${eventId}/analytics`}>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                統計
+              </Link>
+            </Button>
+          </div>
         </div>
       )}
 
