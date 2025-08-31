@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/delete-old-events",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
