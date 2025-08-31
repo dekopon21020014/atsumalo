@@ -8,11 +8,13 @@ export default function Header() {
   const isEnglish = pathname.startsWith("/en")
   const prefix = isEnglish ? "/en" : ""
   const navItems = [
-    { href: prefix || "/", label: isEnglish ? "Home" : "ホーム" },
-    { href: `${prefix}/builder`, label: isEnglish ? "Builder" : "作成" },
+    { href: prefix || "/", label: "Home" },
+    { href: `${prefix}/builder`, label: "Builder" },
   ]
-  const langHref = isEnglish ? pathname.replace(/^\/en/, "") || "/" : `/en${pathname === "/" ? "" : pathname}`
-  const langLabel = isEnglish ? "日本語" : "English"
+  const langHref = isEnglish
+    ? pathname.replace(/^\/en/, "") || "/"
+    : `/en${pathname === "/" ? "" : pathname}`
+  const langLabel = isEnglish ? "Japanese" : "English"
   return (
     <header className="bg-gray-100 dark:bg-gray-900 p-4">
       <div className="container mx-auto flex items-center justify-between">

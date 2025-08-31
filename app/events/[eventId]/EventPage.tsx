@@ -13,18 +13,19 @@ import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
 import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
-import { defaultGradeOrder, defaultGradeOptions } from "@/app/events/[eventId]/components/constants"
-import { colorPalettes } from "@/app/events/[eventId]/components/constants"
+import * as ja from "@/app/events/[eventId]/components/constants"
+import * as en from "@/app/en/events/[eventId]/components/constants"
 import Link from "next/link"
 
 export default function EventPage() {
   const { eventId } = useParams()
   const pathname = usePathname()
   const isEnglish = pathname.startsWith("/en")
+  const { defaultGradeOrder, defaultGradeOptions, colorPalettes } = isEnglish ? en : ja
 
   const [data, setData] = useState<EventData>({
-    name: "読み込み中…",
-    description: "読み込み中…",
+    name: isEnglish ? "Loading..." : "読み込み中…",
+    description: isEnglish ? "Loading..." : "読み込み中…",
     eventType: "recurring",
     xAxis: [],
     yAxis: [],
