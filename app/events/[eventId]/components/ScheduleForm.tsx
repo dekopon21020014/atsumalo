@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { MousePointer, Smartphone, Check } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
-import { gradeOptions, type ScheduleType } from "@/app/events/[eventId]/components/constants"
+import { type ScheduleType } from "@/app/events/[eventId]/components/constants"
 import type { Schedule, Participant } from "./types"
 import { createEmptySchedule } from "./utils"
 import { useMediaQuery } from "@/hooks/use-mobile"
@@ -21,6 +21,7 @@ type Props = {
   xAxis: string[]
   yAxis: string[]
   scheduleTypes: ScheduleType[]
+  gradeOptions: string[]
   currentName: string
   setCurrentName: Dispatch<SetStateAction<string>>
   currentGrade: string
@@ -38,6 +39,7 @@ export default function ScheduleForm({
   xAxis,
   yAxis,
   scheduleTypes,
+  gradeOptions,
   currentName,
   setCurrentName,
   currentGrade,
@@ -58,6 +60,7 @@ export default function ScheduleForm({
   const [scheduleError, setScheduleError] = useState("")
   const [nameError, setNameError] = useState("")
   const [gradeError, setGradeError] = useState("")
+  const [gradeOpts, setGradeOpts] = useState<string[]>(gradeOptions)
   const { eventId } = useParams()
 
   const tableRef = useRef<HTMLDivElement>(null)
@@ -109,7 +112,7 @@ export default function ScheduleForm({
     }
     setNameError("")
     if (!currentGrade) {
-      const message = "学年を選択してください"
+      const message = "所属/役職を選択してください"
       setGradeError(message)
       toast({ title: "エラー", description: message, variant: "destructive" })
       return
@@ -184,7 +187,7 @@ export default function ScheduleForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* 名前・学年入力 */}
+        {/* 名前・所属/役職入力 */}
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">名前</Label>
@@ -200,23 +203,35 @@ export default function ScheduleForm({
             {nameError && <p className="mt-2 text-sm text-red-500">{nameError}</p>}
           </div>
           <div>
-            <Label htmlFor="grade-select">学年</Label>
+            <Label htmlFor="grade-select">所属/役職</Label>
             <Select
               value={currentGrade}
               onValueChange={(v) => {
+                if (v === "__add__") {
+                  const newGrade = prompt("所属/役職を入力してください")
+                  if (newGrade) {
+                    const trimmed = newGrade.trim()
+                    if (trimmed && !gradeOpts.includes(trimmed)) {
+                      setGradeOpts([...gradeOpts, trimmed])
+                    }
+                    setCurrentGrade(trimmed)
+                  }
+                  return
+                }
                 setCurrentGrade(v)
                 setGradeError("")
               }}
             >
               <SelectTrigger id="grade-select" className="w-full">
-                <SelectValue placeholder="学年を選択" />
+                <SelectValue placeholder="所属/役職を選択" />
               </SelectTrigger>
               <SelectContent>
-                {gradeOptions.map((g) => (
+                {gradeOpts.map((g) => (
                   <SelectItem key={g} value={g}>
                     {g}
                   </SelectItem>
                 ))}
+                <SelectItem value="__add__">追加</SelectItem>
               </SelectContent>
             </Select>
             {gradeError && <p className="mt-2 text-sm text-red-500">{gradeError}</p>}
