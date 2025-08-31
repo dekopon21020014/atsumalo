@@ -202,6 +202,24 @@ export default function EventPage() {
 
   const shareEvent = () => {
     const url = window.location.href
+
+    navigator.clipboard.writeText(url).then(
+      () => {
+        toast({
+          title: "URLをコピーしました",
+          description: "イベントのURLがクリップボードにコピーされました。",
+        })
+      },
+      (err) => {
+        console.error("URLのコピーに失敗しました:", err)
+        toast({
+          title: "コピーに失敗しました",
+          description: "URLのコピーに失敗しました。もう一度お試しください。",
+          variant: "destructive",
+        })
+      },
+    )
+
     if (navigator.share) {
       navigator
         .share({
@@ -217,23 +235,6 @@ export default function EventPage() {
             variant: "destructive",
           })
         })
-    } else {
-      navigator.clipboard.writeText(url).then(
-        () => {
-          toast({
-            title: "URLをコピーしました",
-            description: "イベントのURLがクリップボードにコピーされました。",
-          })
-        },
-        (err) => {
-          console.error("URLのコピーに失敗しました:", err)
-          toast({
-            title: "コピーに失敗しました",
-            description: "URLのコピーに失敗しました。もう一度お試しください。",
-            variant: "destructive",
-          })
-        },
-      )
     }
   }
 
