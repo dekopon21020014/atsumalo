@@ -1,4 +1,3 @@
-// app/api/events/[eventId]/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
@@ -11,11 +10,10 @@ interface ScheduleType {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: {
-    // Next.js 14 では params が Promise になる
     params: Promise<{ eventId: string }>
-  }
+  },
 ) {
   const { eventId } = await context.params
   const eventSnap = await db.collection("events").doc(eventId).get()
@@ -24,6 +22,13 @@ export async function GET(
   }
 
   const data = eventSnap.data() || {}
+
+  const url = new URL(req.url)
+  const provided = url.searchParams.get("password") || ""
+  if (data.password && data.password !== provided) {
+    return NextResponse.json({ error: "password required" }, { status: 401 })
+  }
+
   const eventType =
     data.eventType === "recurring" || data.eventType === "onetime"
       ? data.eventType
@@ -66,17 +71,15 @@ export async function GET(
     eventType,
     scheduleTypes,
     gradeOptions: Array.isArray(data.gradeOptions) ? data.gradeOptions : defaultGradeOptions,
-    gradeOrder: typeof data.gradeOrder === 'object' ? data.gradeOrder : defaultGradeOrder,
-    ...(eventType === "recurring"
-      ? { xAxis, yAxis }
-      : { dateTimeOptions }),
+    gradeOrder: typeof data.gradeOrder === "object" ? data.gradeOrder : defaultGradeOrder,
+    ...(eventType === "recurring" ? { xAxis, yAxis } : { dateTimeOptions }),
     participants,
   })
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { eventId: string } }
+  { params }: { params: { eventId: string } },
 ) {
   const { eventId } = params
   const json = await req.json()
@@ -90,42 +93,51 @@ export async function PUT(
     dateTimeOptions,
     gradeOptions,
     gradeOrder,
+    password,
   } = json
 
   // 基本バリデーション
   if (!name || typeof name !== "string") {
     return NextResponse.json(
       { error: "イベント名が必要です" },
-      { status: 400 }
+      { status: 400 },
     )
   }
   if (description != null && typeof description !== "string") {
     return NextResponse.json(
       { error: "説明は文字列で入力してください" },
-      { status: 400 }
+      { status: 400 },
     )
   }
   if (eventType !== "recurring" && eventType !== "onetime") {
     return NextResponse.json(
       { error: 'eventType は "recurring" または "onetime" で指定してください' },
-      { status: 400 }
+      { status: 400 },
+    )
+  }
+  if (password != null && typeof password !== "string") {
+    return NextResponse.json(
+      { error: "password は文字列で指定してください" },
+      { status: 400 },
     )
   }
 
   // scheduleTypes の検証
   if (
     !Array.isArray(scheduleTypes) ||
-    !scheduleTypes.every((t) =>
-      t &&
-      typeof t.id === "string" && t.id.trim() !== "" &&
-      typeof t.label === "string" &&
-      typeof t.color === "string" &&
-      typeof t.isAvailable === "boolean"
+    !scheduleTypes.every(
+      (t: any) =>
+        t &&
+        typeof t.id === "string" &&
+        t.id.trim() !== "" &&
+        typeof t.label === "string" &&
+        typeof t.color === "string" &&
+        typeof t.isAvailable === "boolean",
     )
   ) {
     return NextResponse.json(
       { error: "scheduleTypes は正しい形式で指定してください" },
-      { status: 400 }
+      { status: 400 },
     )
   }
 
@@ -148,31 +160,30 @@ export async function PUT(
   if (eventType === "recurring") {
     if (
       !Array.isArray(xAxis) ||
-      !xAxis.every((v) => typeof v === "string")
+      !xAxis.every((v: any) => typeof v === "string")
     ) {
       return NextResponse.json(
         { error: "recurring の場合、xAxis は文字列の配列で指定してください" },
-        { status: 400 }
+        { status: 400 },
       )
     }
     if (
       !Array.isArray(yAxis) ||
-      !yAxis.every((v) => typeof v === "string")
+      !yAxis.every((v: any) => typeof v === "string")
     ) {
       return NextResponse.json(
         { error: "recurring の場合、yAxis は文字列の配列で指定してください" },
-        { status: 400 }
+        { status: 400 },
       )
     }
   } else {
-    // onetime
     if (
       !Array.isArray(dateTimeOptions) ||
-      !dateTimeOptions.every((v) => typeof v === "string")
+      !dateTimeOptions.every((v: any) => typeof v === "string")
     ) {
       return NextResponse.json(
         { error: "onetime の場合、dateTimeOptions は文字列の配列で指定してください" },
-        { status: 400 }
+        { status: 400 },
       )
     }
   }
@@ -188,14 +199,16 @@ export async function PUT(
     updatedAt: new Date(),
   }
 
+  if (typeof password === "string") {
+    updateData.password = password
+  }
+
   if (eventType === "recurring") {
     updateData.xAxis = xAxis
     updateData.yAxis = yAxis
-    // onetime 用フィールドは空配列でリセット
     updateData.dateTimeOptions = []
   } else {
     updateData.dateTimeOptions = dateTimeOptions
-    // recurring 用フィールドは空配列でリセット
     updateData.xAxis = []
     updateData.yAxis = []
   }
@@ -207,7 +220,8 @@ export async function PUT(
     console.error("イベント更新エラー:", err)
     return NextResponse.json(
       { error: "更新に失敗しました" },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
+

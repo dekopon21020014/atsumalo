@@ -38,6 +38,8 @@ export default function EventPage() {
   const [description, setDescription] = useState(data.description)
   const [editMode, setEditMode] = useState(false)
   const [activeTab, setActiveTab] = useState("basic")
+  const [needPassword, setNeedPassword] = useState(false)
+  const [passwordInput, setPasswordInput] = useState("")
 
   // 編集用の日程候補と選択肢
   const [editXAxis, setEditXAxis] = useState<string[]>([])
@@ -53,71 +55,95 @@ export default function EventPage() {
   const typeLabelRefs = useRef<HTMLInputElement[]>([])
   const gradeOptionRefs = useRef<HTMLInputElement[]>([])
 
-  // イベント情報の取得
-  useEffect(() => {
+  const loadEvent = async (pass?: string) => {
     if (!eventId) return
-    fetch(`/api/events/${eventId}`)
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.error) {
-          toast({
-            title: "読み込みエラー",
-            description: resData.error,
-            variant: "destructive",
-          })
-          return
-        }
-        setData({
-          name: resData.name,
-          description: resData.description ?? "",
-          eventType: resData.eventType === "onetime" ? "onetime" : "recurring",
-          xAxis: Array.isArray(resData.xAxis) ? resData.xAxis : [],
-          yAxis: Array.isArray(resData.yAxis) ? resData.yAxis : [],
-          dateTimeOptions: Array.isArray(resData.dateTimeOptions) ? resData.dateTimeOptions : [],
-          scheduleTypes: Array.isArray(resData.scheduleTypes) ? resData.scheduleTypes : [],
-          existingResponses: Array.isArray(resData.participants)
-            ? resData.participants.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                grade: p.grade,
-                schedule: p.schedule,
-              }))
-            : [],
-          gradeOptions: Array.isArray(resData.gradeOptions) ? resData.gradeOptions.sort((a: string,b: string)=>(resData.gradeOrder?.[a]??999)-(resData.gradeOrder?.[b]??999)) : [],
-          gradeOrder: typeof resData.gradeOrder === 'object' ? resData.gradeOrder : defaultGradeOrder,
-        })
-        setName(resData.name)
-        setDescription(resData.description ?? "")
-        setEditXAxis(Array.isArray(resData.xAxis) ? [...resData.xAxis] : [])
-        setEditYAxis(Array.isArray(resData.yAxis) ? [...resData.yAxis] : [])
-        setEditDateTimeOptions(Array.isArray(resData.dateTimeOptions) ? [...resData.dateTimeOptions] : [])
-        setEditScheduleTypes(Array.isArray(resData.scheduleTypes) ? [...resData.scheduleTypes] : [])
-        setEditGradeOptions(
-          Array.isArray(resData.gradeOptions)
-            ? resData.gradeOptions
-                .map((g: string) => ({
-                  name: g,
-                  priority:
-                    (resData.gradeOrder && typeof resData.gradeOrder[g] === "number"
-                      ? resData.gradeOrder[g]
-                      : defaultGradeOrder[g]) ?? 0,
-                }))
-                .sort((a, b) => a.priority - b.priority)
-            : defaultGradeOptions.map((g) => ({
-                name: g,
-                priority: defaultGradeOrder[g] ?? 0,
-              }))
-        )
-      })
-      .catch((err) => {
-        console.error(err)
+    try {
+      const url = `/api/events/${eventId}${pass ? `?password=${encodeURIComponent(pass)}` : ""}`
+      const res = await fetch(url)
+      if (res.status === 401) {
+        setNeedPassword(true)
+        return
+      }
+      const resData = await res.json()
+      if (resData.error) {
         toast({
           title: "読み込みエラー",
-          description: "通信に失敗しました",
+          description: resData.error,
           variant: "destructive",
         })
+        return
+      }
+      setData({
+        name: resData.name,
+        description: resData.description ?? "",
+        eventType: resData.eventType === "onetime" ? "onetime" : "recurring",
+        xAxis: Array.isArray(resData.xAxis) ? resData.xAxis : [],
+        yAxis: Array.isArray(resData.yAxis) ? resData.yAxis : [],
+        dateTimeOptions: Array.isArray(resData.dateTimeOptions) ? resData.dateTimeOptions : [],
+        scheduleTypes: Array.isArray(resData.scheduleTypes) ? resData.scheduleTypes : [],
+        existingResponses: Array.isArray(resData.participants)
+          ? resData.participants.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              grade: p.grade,
+              schedule: p.schedule,
+            }))
+          : [],
+        gradeOptions: Array.isArray(resData.gradeOptions)
+          ? resData.gradeOptions.sort(
+              (a: string, b: string) =>
+                (resData.gradeOrder?.[a] ?? 999) - (resData.gradeOrder?.[b] ?? 999)
+            )
+          : [],
+        gradeOrder:
+          typeof resData.gradeOrder === "object" ? resData.gradeOrder : defaultGradeOrder,
       })
+      setName(resData.name)
+      setDescription(resData.description ?? "")
+      setEditXAxis(Array.isArray(resData.xAxis) ? [...resData.xAxis] : [])
+      setEditYAxis(Array.isArray(resData.yAxis) ? [...resData.yAxis] : [])
+      setEditDateTimeOptions(
+        Array.isArray(resData.dateTimeOptions) ? [...resData.dateTimeOptions] : []
+      )
+      setEditScheduleTypes(
+        Array.isArray(resData.scheduleTypes) ? [...resData.scheduleTypes] : []
+      )
+      setEditGradeOptions(
+        Array.isArray(resData.gradeOptions)
+          ? resData.gradeOptions
+              .map((g: string) => ({
+                name: g,
+                priority:
+                  (resData.gradeOrder && typeof resData.gradeOrder[g] === "number"
+                    ? resData.gradeOrder[g]
+                    : defaultGradeOrder[g]) ?? 0,
+              }))
+              .sort((a, b) => a.priority - b.priority)
+          : defaultGradeOptions.map((g) => ({
+              name: g,
+              priority: defaultGradeOrder[g] ?? 0,
+            }))
+      )
+      setNeedPassword(false)
+      setPasswordInput("")
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "読み込みエラー",
+        description: "通信に失敗しました",
+        variant: "destructive",
+      })
+    }
+  }
+
+  useEffect(() => {
+    loadEvent()
   }, [eventId])
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await loadEvent(passwordInput)
+  }
 
   // X軸の項目を追加
   const addXItem = () => {
@@ -474,6 +500,25 @@ export default function EventPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (needPassword) {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <form onSubmit={handlePasswordSubmit} className="max-w-sm mx-auto space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="password">合言葉</Label>
+            <Input
+              id="password"
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+            />
+          </div>
+          <Button type="submit">送信</Button>
+        </form>
+      </div>
+    )
   }
 
   return (

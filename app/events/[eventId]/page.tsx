@@ -7,16 +7,19 @@ export async function generateMetadata({
 }: {
   params: { eventId: string }
 }): Promise<Metadata> {
-  // API からイベント情報を取得
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/events/${params.eventId}`)
-  const data = await res.json()
-
-  const title = data.name
-  const description = data.description
-
-  return {
-    title,
-    description,
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/events/${params.eventId}`)
+    if (!res.ok) throw new Error("failed")
+    const data = await res.json()
+    return {
+      title: data.name,
+      description: data.description,
+    }
+  } catch {
+    return {
+      title: "イベント",
+      description: "",
+    }
   }
 }
 

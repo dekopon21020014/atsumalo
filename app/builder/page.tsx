@@ -24,6 +24,7 @@ import {
   Clock,
   FileText,
   UserPlus,
+  Lock,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -44,6 +45,8 @@ import type { ScheduleType } from "../events/[eventId]/components/constants"
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
   const [eventDesc, setEventDesc] = useState("")
+  const [usePassword, setUsePassword] = useState(false)
+  const [eventPassword, setEventPassword] = useState("")
   const [eventType, setEventType] = useState<"recurring" | "onetime">("recurring")
 
   // 定期イベント用の軸
@@ -333,6 +336,7 @@ export default function HomePage() {
         xAxis: eventType === "recurring" ? cleanedXAxis : undefined,
         yAxis: eventType === "recurring" ? cleanedYAxis : undefined,
         dateTimeOptions: eventType === "onetime" ? cleanedDateTimes : undefined,
+        password: usePassword ? eventPassword : undefined,
       }
 
       const res = await fetch("/api/events", {
@@ -414,6 +418,35 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </div>
+        <Card className="bg-white dark:bg-gray-800 border shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              合言葉
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="usePassword"
+                checked={usePassword}
+                onCheckedChange={setUsePassword}
+              />
+              <Label htmlFor="usePassword" className="text-sm">
+                合言葉を設定する
+              </Label>
+            </div>
+            {usePassword && (
+              <Input
+                id="eventPassword"
+                type="text"
+                value={eventPassword}
+                onChange={(e) => setEventPassword(e.target.value)}
+                placeholder="合言葉を入力"
+              />
+            )}
+          </CardContent>
+        </Card>
 
         {/* イベントタイプ選択 */}
         <Card className="bg-white dark:bg-gray-800 shadow-sm border">
