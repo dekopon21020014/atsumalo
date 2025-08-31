@@ -1,29 +1,33 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, GraduationCap, Clock, PieChart } from "lucide-react"
 import type { ScheduleType, Response } from "./constants"
-import { gradeOrder } from "./constants"
 
 type Props = {
   dateTimeOptions: string[]
   scheduleTypes: ScheduleType[]
   existingResponses: Response[]
+  gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 export default function OneTimeSummaryTab({
   dateTimeOptions,
   scheduleTypes,
   existingResponses,
+  gradeOptions,
+  gradeOrder,
 }: Props) {
   const [summaryView, setSummaryView] = useState<"dates" | "grades">("dates")
+  const responses = Array.isArray(existingResponses) ? existingResponses : []
 
   // 指定日時の「参加可能」人数
   const getAvailableCount = (dateTime: string) =>
-    existingResponses.filter((response) => {
+    responses.filter((response) => {
       const sel = response.schedule.find((s) => s.dateTime === dateTime)
       if (!sel) return false
       const type = scheduleTypes.find((t) => t.id === sel.typeId)
@@ -32,7 +36,7 @@ export default function OneTimeSummaryTab({
 
   // 指定日時・指定タイプに回答した人の名前リスト
   const getRespondentsByType = (dateTime: string, typeId: string) =>
-    existingResponses
+    responses
       .filter((response) =>
         response.schedule.some((s) => s.dateTime === dateTime && s.typeId === typeId)
       )
@@ -42,9 +46,9 @@ export default function OneTimeSummaryTab({
   const getResponseCountByType = (dateTime: string, typeId: string) =>
     getRespondentsByType(dateTime, typeId).length
 
-  // 指定学年・指定日時の「参加可能」人数
+  // 指定所属/役職・指定日時の「参加可能」人数
   const getAvailableCountByGradeAndDateTime = (grade: string, dateTime: string) =>
-    existingResponses.filter((response) => {
+    responses.filter((response) => {
       if (response.grade !== grade) return false
       const sel = response.schedule.find((s) => s.dateTime === dateTime)
       if (!sel) return false
@@ -52,11 +56,11 @@ export default function OneTimeSummaryTab({
       return type?.isAvailable
     }).length
 
-  // 指定学年の回答タイプ分布
+  // 指定所属/役職の回答タイプ分布
   const getResponseTypeDistributionByGrade = (grade: string) => {
     const dist: Record<string, number> = {}
     scheduleTypes.forEach((t) => (dist[t.id] = 0))
-    existingResponses
+    responses
       .filter((r) => r.grade === grade)
       .forEach((r) =>
         r.schedule.forEach((s) => {
@@ -68,7 +72,7 @@ export default function OneTimeSummaryTab({
 
   // 最適日時を取得
   const getBestDateTime = () => {
-    if (!dateTimeOptions.length || !existingResponses.length) return null
+    if (!dateTimeOptions.length || !responses.length) return null
     let best = dateTimeOptions[0]
     let maxCount = getAvailableCount(best)
     dateTimeOptions.forEach((dt) => {
@@ -85,7 +89,7 @@ export default function OneTimeSummaryTab({
 
   return (
     <TabsContent value="summary" className="space-y-4">
-      {existingResponses.length > 0 ? (
+      {responses.length > 0 ? (
         <div className="space-y-4">
           {/* 表示切り替えタブ */}
           <div className="flex justify-between items-center">
@@ -107,7 +111,7 @@ export default function OneTimeSummaryTab({
                 onClick={() => setSummaryView("grades")}
               >
                 <GraduationCap className="h-4 w-4 mr-1" />
-                学年別
+                所属/役職別
               </button>
             </div>
           </div>
@@ -245,13 +249,13 @@ export default function OneTimeSummaryTab({
               </CardContent>
             </Card>
           ) : (
-            /* 学年別の集計表 */
+            /* 所属/役職別の集計表 */
             <div className="space-y-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-medium flex items-center">
                     <GraduationCap className="h-4 w-4 mr-2" />
-                    学年別の参加状況
+                    所属/役職別の参加状況
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -260,7 +264,7 @@ export default function OneTimeSummaryTab({
                       <thead>
                         <tr className="bg-gray-50 border-b">
                           <th className="text-left py-2 px-3 font-medium">
-                            学年
+                            所属/役職
                           </th>
                           <th className="py-2 px-2 text-center font-medium">
                             回答者数
@@ -282,7 +286,7 @@ export default function OneTimeSummaryTab({
                       </thead>
                       <tbody className="divide-y">
                         {Object.entries(
-                          existingResponses.reduce(
+                          responses.reduce(
                             (acc, r) => {
                               const g = r.grade || "未設定"
                               if (!acc[g]) acc[g] = []
@@ -294,8 +298,8 @@ export default function OneTimeSummaryTab({
                         )
                           .sort(
                             ([a], [b]) =>
-                              (gradeOrder[a as keyof typeof gradeOrder] || 999) -
-                              (gradeOrder[b as keyof typeof gradeOrder] || 999)
+                              (gradeOrder[a] ?? 999) -
+                              (gradeOrder[b] ?? 999)
                           )
                           .map(([g, names]) => (
                             <tr key={g} className="hover:bg-gray-50">
@@ -342,13 +346,13 @@ export default function OneTimeSummaryTab({
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-medium flex items-center">
                     <PieChart className="h-4 w-4 mr-2" />
-                    学年別の詳細情報
+                    所属/役職別の詳細情報
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {Object.entries(
-                      existingResponses.reduce(
+                      responses.reduce(
                         (acc, r) => {
                           const g = r.grade || "未設定"
                           if (!acc[g]) acc[g] = []
@@ -360,8 +364,8 @@ export default function OneTimeSummaryTab({
                     )
                       .sort(
                         ([a], [b]) =>
-                          (gradeOrder[a as keyof typeof gradeOrder] || 999) -
-                          (gradeOrder[b as keyof typeof gradeOrder] || 999)
+                          (gradeOrder[a] ?? 999) -
+                          (gradeOrder[b] ?? 999)
                       )
                       .map(([g, names]) => {
                         const dist = getResponseTypeDistributionByGrade(g)

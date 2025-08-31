@@ -25,6 +25,8 @@ export type EventData = {
   dateTimeOptions: string[]
   scheduleTypes: ScheduleType[]
   existingResponses: Response[]
+  gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 // スケジュールの種類と対応する表示色など
@@ -41,7 +43,9 @@ export const scheduleTypes = [
 // 曜日と時限の定義
 export const days = ["月", "火", "水", "木", "金"]
 export const periods = [1, 2, 3, 4, 5]
-export const gradeOptions = [
+
+// 所属/役職のデフォルト値
+export const defaultGradeOptions = [
   'Teacher',
   'Dr',
   'M2',
@@ -53,7 +57,7 @@ export const gradeOptions = [
   'Others',
 ]
 
-export const gradeOrder: { [key: string]: number } = {
+export const defaultGradeOrder: { [key: string]: number } = {
   Teacher: 1,
   Dr: 2,
   M2: 3,

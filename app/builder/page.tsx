@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Clock,
   FileText,
+  UserPlus,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -34,7 +35,9 @@ import {
   onetimeTemplates,
   scheduleTypeTemplate,
   xAxisTemplate,
-  yAxisTemplate
+  yAxisTemplate,
+  defaultGradeOptions,
+  defaultGradeOrder,
 } from "../events/[eventId]/components/constants"
 import type { ScheduleType } from "../events/[eventId]/components/constants"
 
@@ -50,6 +53,11 @@ export default function HomePage() {
   // 単発イベント用の軸（日時の組み合わせ）
   const [dateTimeOptions, setDateTimeOptions] = useState(["5/1 19:00", "5/2 19:00", "5/3 20:00"])
 
+  // 所属/役職の選択肢
+  const [gradeOptions, setGradeOptions] = useState(
+    defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 }))
+  )
+
   const [activeTab, setActiveTab] = useState("builder")
   const router = useRouter()
 
@@ -60,6 +68,7 @@ export default function HomePage() {
   const yAxisRefs = useRef<HTMLInputElement[]>([])
   const dateTimeRefs = useRef<HTMLInputElement[]>([])
   const typeLabelRefs = useRef<HTMLInputElement[]>([])
+  const gradeOptionRefs = useRef<HTMLInputElement[]>([])
 
   // X軸の項目を追加
   const addXItem = () => {
@@ -119,6 +128,43 @@ export default function HomePage() {
     const newOptions = [...dateTimeOptions]
     newOptions.splice(index, 1)
     setDateTimeOptions(newOptions)
+  }
+
+  // 所属/役職の項目を追加
+  const addGradeOption = () => {
+    setGradeOptions((prev) => {
+      const newOptions = [
+        ...prev,
+        { name: `選択肢${prev.length + 1}`, priority: prev.length + 1 },
+      ]
+      requestAnimationFrame(() => {
+        const newIndex = newOptions.length - 1
+        gradeOptionRefs.current[newIndex]?.focus()
+      })
+      return newOptions
+    })
+  }
+
+  // 所属/役職の項目を削除
+  const removeGradeOption = (index: number) => {
+    if (gradeOptions.length <= 1) return
+    const newOpts = [...gradeOptions]
+    newOpts.splice(index, 1)
+    setGradeOptions(newOpts)
+  }
+
+  // 所属/役職の名称を更新
+  const updateGradeOptionName = (index: number, value: string) => {
+    const newOpts = [...gradeOptions]
+    newOpts[index].name = value
+    setGradeOptions(newOpts)
+  }
+
+  // 所属/役職の優先度を更新
+  const updateGradeOptionPriority = (index: number, value: number) => {
+    const newOpts = [...gradeOptions]
+    newOpts[index].priority = value
+    setGradeOptions(newOpts)
   }
 
   // X軸の項目を更新
@@ -258,21 +304,23 @@ export default function HomePage() {
 
 
     // から文字列が選択肢にあれば除外するためのヘルパー
-    function removeEmptyStrings(arr: string[]): string[] {
-      return arr.filter((v) => v.trim() !== "")
-    }
-    
-    function removeEmptyScheduleTypes(
-      arr: ScheduleType[]
-    ): ScheduleType[] {
+    function removeEmptyScheduleTypes(arr: ScheduleType[]): ScheduleType[] {
       return arr.filter((t) => t.id.trim() !== "")
     }
 
     try {
       const cleanedScheduleTypes = removeEmptyScheduleTypes(scheduleTypes)
-      const cleanedXAxis         = removeEmptyStrings(xAxis)
-      const cleanedYAxis         = removeEmptyStrings(yAxis)
-      const cleanedDateTimes     = removeEmptyStrings(dateTimeOptions)
+      const cleanedXAxis = xAxis.filter((v) => v.trim() !== "")
+      const cleanedYAxis = yAxis.filter((v) => v.trim() !== "")
+      const cleanedDateTimes = dateTimeOptions.filter((v) => v.trim() !== "")
+      const cleanedGrades = gradeOptions
+        .filter((g) => g.name.trim() !== "")
+        .map((g) => g.name.trim())
+      const gradeOrder = gradeOptions.reduce((acc, g) => {
+        const name = g.name.trim()
+        if (name) acc[name] = g.priority
+        return acc
+      }, {} as Record<string, number>)
 
       // イベントタイプに応じたデータを準備
       const eventData = {
@@ -280,6 +328,8 @@ export default function HomePage() {
         description: eventDesc,
         eventType,
         scheduleTypes: cleanedScheduleTypes,
+        gradeOptions: cleanedGrades,
+        gradeOrder,
         xAxis: eventType === "recurring" ? cleanedXAxis : undefined,
         yAxis: eventType === "recurring" ? cleanedYAxis : undefined,
         dateTimeOptions: eventType === "onetime" ? cleanedDateTimes : undefined,
@@ -402,6 +452,47 @@ export default function HomePage() {
               {eventType === "recurring"
                 ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
                 : "単発のイベントや会議など、特定の日時のリストから選択して調整します。"}
+            </div>
+          </CardContent>
+        </Card>
+        {/* 所属/役職設定 */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              所属/役職の選択肢
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {gradeOptions.map((opt, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    ref={(el) => (gradeOptionRefs.current[i] = el)}
+                    value={opt.name}
+                    onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={opt.priority}
+                    onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                    className="w-24"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeGradeOption(i)}
+                    disabled={gradeOptions.length <= 1}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addGradeOption} className="mt-2">
+                <Plus className="h-4 w-4 mr-1" />追加
+              </Button>
             </div>
           </CardContent>
         </Card>

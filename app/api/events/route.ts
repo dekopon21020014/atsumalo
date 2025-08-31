@@ -1,6 +1,7 @@
 // app/api/events/route.ts
 import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
+import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 
 export async function POST(req: NextRequest) {
   const json = await req.json()
@@ -12,6 +13,8 @@ export async function POST(req: NextRequest) {
     yAxis,
     dateTimeOptions,
     scheduleTypes,
+    gradeOptions,
+    gradeOrder,
   } = json
 
   // --- 基本項目チェック ---
@@ -84,6 +87,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const grades =
+    Array.isArray(gradeOptions) && gradeOptions.every((v: any) => typeof v === "string")
+      ? gradeOptions
+      : defaultGradeOptions
+
+  const order =
+    gradeOrder && typeof gradeOrder === "object"
+      ? Object.entries(gradeOrder).reduce((acc: any, [k, v]) => {
+          if (typeof k === "string" && typeof v === "number") acc[k] = v
+          return acc
+        }, {})
+      : defaultGradeOrder
+
   // --- Firestore に保存 ---
   try {
     const payload: any = {
@@ -91,6 +107,8 @@ export async function POST(req: NextRequest) {
       description: description || "",
       eventType,
       scheduleTypes,
+      gradeOptions: grades,
+      gradeOrder: order,
       createdAt: new Date(),
     }
     if (eventType === "recurring") {

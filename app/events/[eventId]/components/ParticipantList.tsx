@@ -35,6 +35,8 @@ type Props = {
   xAxis: string[]
   yAxis: string[]
   availableOptions: string[]
+  gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 export default function ParticipantList({
@@ -48,12 +50,13 @@ export default function ParticipantList({
   xAxis,
   yAxis,
   availableOptions,
+  gradeOptions,
+  gradeOrder,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
 
-  // 学年フィルタ／ソート／ビュー切り替え
-  const gradeOrder = ['Teacher', 'Dr', 'M2', 'M1', 'B4', 'B3', 'B2', 'B1', 'Others']
+  // 所属/役職フィルタ／ソート／ビュー切り替え
   const [filterGrade, setFilterGrade] = useState<string>('All')
   const [sortAscending, setSortAscending] = useState<boolean>(true)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
@@ -65,8 +68,8 @@ export default function ParticipantList({
       : participants.filter((p) => p.grade === filterGrade)
 
   displayed.sort((a, b) => {
-    const ai = gradeOrder.indexOf(a.grade)
-    const bi = gradeOrder.indexOf(b.grade)
+    const ai = gradeOrder[a.grade] ?? 999
+    const bi = gradeOrder[b.grade] ?? 999
     return sortAscending ? ai - bi : bi - ai
   })
 
@@ -127,14 +130,14 @@ export default function ParticipantList({
       {/* ── フィルタ／ソート／ビュー切替 ── */}
       <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
         <div className="flex items-center gap-2">
-          <Label htmlFor="filter-grade">学年フィルタ</Label>
+          <Label htmlFor="filter-grade">所属/役職フィルタ</Label>
           <Select value={filterGrade} onValueChange={setFilterGrade}>
             <SelectTrigger id="filter-grade" className="w-36">
-              <SelectValue placeholder="全学年" />
+              <SelectValue placeholder="全て" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All">全学年</SelectItem>
-              {gradeOrder.map((g) => (
+              <SelectItem value="All">全て</SelectItem>
+              {gradeOptions.map((g) => (
                 <SelectItem key={g} value={g}>
                   {g}
                 </SelectItem>
@@ -149,7 +152,7 @@ export default function ParticipantList({
             size="sm"
             onClick={() => setSortAscending((p) => !p)}
           >
-            {sortAscending ? '学年↑' : '学年↓'}
+            {sortAscending ? '所属/役職↑' : '所属/役職↓'}
           </Button>
 
           <Button

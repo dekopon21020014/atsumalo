@@ -1,13 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParticipantForm } from "./useParticipantForm"
 import {
   Check, Save, User, MessageSquare, X, GraduationCap, BarChart3,
   Users, PenSquare, Edit, Trash2, AlertTriangle,
 } from "lucide-react"
 import type { ScheduleType, Response } from "./constants"
-import { gradeOptions } from "./constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,11 +34,30 @@ type Props = {
   dateTimeOptions: string[]
   scheduleTypes: ScheduleType[]
   responses?: Response[]
+  gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
-export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [] }: Props) {  
+export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [], gradeOptions, gradeOrder }: Props) {
   const [activeTab, setActiveTab] = useState("input")
-  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab)
+  const [gradeOptionsState, setGradeOptionsState] = useState<string[]>(gradeOptions)
+  const [gradeOrderState, setGradeOrderState] = useState<Record<string, number>>(gradeOrder)
+  // イベント読み込み後に所属/役職の選択肢を同期
+  useEffect(() => {
+    setGradeOptionsState(gradeOptions)
+    setGradeOrderState(gradeOrder)
+  }, [gradeOptions, gradeOrder])
+  const addGrade = (name: string, priority: number) => {
+    setGradeOrderState(prev => {
+      const updated = { ...prev, [name]: priority }
+      setGradeOptionsState(prevOpts => {
+        const next = prevOpts.includes(name) ? prevOpts : [...prevOpts, name]
+        return [...next].sort((a, b) => (updated[a] ?? 999) - (updated[b] ?? 999))
+      })
+      return updated
+    })
+  }
+  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState, gradeOrderState)
   const isMobile = useMediaQuery("(max-width: 768px)")      
 
   // 最適な日時を取得
@@ -71,6 +89,9 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             existingResponses={form.existingResponses}
             setExistingResponses={form.setExistingResponses}
             setActiveTab={setActiveTab}
+            gradeOptions={gradeOptionsState}
+            gradeOrder={gradeOrderState}
+            addGradeOption={addGrade}
         />
 
         {/* 回答状況タブ */}
@@ -79,6 +100,8 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             scheduleTypes={scheduleTypes}
             responses={form.existingResponses}
             form={form}
+            gradeOptions={gradeOptionsState}
+            gradeOrder={gradeOrderState}
         />
 
         {/* 集計結果タブ */}
@@ -86,6 +109,8 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             dateTimeOptions={dateTimeOptions}
             scheduleTypes={scheduleTypes}
             existingResponses={form.existingResponses}
+            gradeOptions={gradeOptionsState}
+            gradeOrder={gradeOrderState}
         />
       </Tabs>
 
@@ -114,7 +139,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
 
           {form.editingResponse && (
             <div className="space-y-4 py-2">
-              {/* 名前と学年入力セクション */}
+              {/* 名前と所属/役職入力セクション */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-name" className="text-sm font-medium mb-1 block">
@@ -132,18 +157,35 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
                 <div>
                   <Label htmlFor="edit-grade" className="text-sm font-medium mb-1 block">
                     <GraduationCap className="h-4 w-4 inline-block mr-1" />
-                    学年
+                    所属/役職
                   </Label>
-                  <Select value={form.editGrade} onValueChange={(value) => form.setEditGrade(value)}>
+                  <Select
+                    value={form.editGrade}
+                    onValueChange={(value) => {
+                      if (value === "__add__") {
+                        const newGrade = prompt("所属/役職を入力してください")
+                        if (newGrade) {
+                          const trimmed = newGrade.trim()
+                          const pr = prompt("優先度を入力してください（数値）")
+                          const priority = pr ? Number(pr) : gradeOptionsState.length + 1
+                          addGrade(trimmed, priority)
+                          form.setEditGrade(trimmed)
+                        }
+                        return
+                      }
+                      form.setEditGrade(value)
+                    }}
+                  >
                     <SelectTrigger id="edit-grade">
-                      <SelectValue placeholder="学年を選択してください" />
+                      <SelectValue placeholder="所属/役職を選択してください" />
                     </SelectTrigger>
                     <SelectContent>
-                      {gradeOptions.map((option) => (
+                      {gradeOptionsState.map((option) => (
                         <SelectItem key={option} value={option}>
                           {option}
                         </SelectItem>
                       ))}
+                      <SelectItem value="__add__">追加</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -10,7 +10,7 @@ import {
   X,
   GraduationCap,
 } from "lucide-react"
-import { type ScheduleType, type Response, gradeOptions } from "./constants"
+import { type ScheduleType, type Response } from "./constants"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,9 @@ type Props = {
   existingResponses: Response[]
   setExistingResponses: React.Dispatch<React.SetStateAction<Response[]>>
   setActiveTab: (tab: string) => void
+  gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
+  addGradeOption: (name: string, priority: number) => void
 }
 
 export default function OneTimeInputTab({
@@ -42,6 +45,9 @@ export default function OneTimeInputTab({
   existingResponses = [],
   setExistingResponses,
   setActiveTab,
+  gradeOptions,
+  gradeOrder,
+  addGradeOption,
 }: Props) {
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
@@ -97,6 +103,7 @@ export default function OneTimeInputTab({
         eventId,
         name,
         grade,
+        gradePriority: gradeOrder[grade],
         schedule: Object.entries(selections).map(([dateTime, typeId]) => ({
           dateTime,
           typeId,
@@ -161,7 +168,7 @@ export default function OneTimeInputTab({
           await handleSubmit()
         }}
       >
-        {/* 名前と学年 */}
+        {/* 名前と所属/役職 */}
         <Card className="mb-4">
           <CardContent className="pt-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -180,18 +187,53 @@ export default function OneTimeInputTab({
             <div>
               <Label htmlFor="participant-grade" className="text-sm font-medium mb-1 block">
                 <GraduationCap className="h-4 w-4 inline-block mr-1" />
-                学年
+                所属/役職
               </Label>
-              <Select value={grade} onValueChange={(v) => setGrade(v)}>
+              <Select
+                value={grade}
+                onValueChange={(v) => {
+                  if (v === "__add__") {
+                    const newGrade = prompt("所属/役職を入力してください")
+                    if (newGrade) {
+                      const trimmed = newGrade.trim()
+                      const existing = gradeOptions
+                        .map((g) => `${g}(${gradeOrder[g] ?? "-"})`)
+                        .join("\n")
+                      const pr = prompt(
+                        `優先度を入力してください（1〜999の半角数字。小さい数字ほど優先度が高く表示順が前になります）\n現在の設定:\n${existing}`
+                      )
+                      let priority: number
+                      if (!pr || pr.trim() === "") {
+                        const maxPri = Math.max(0, ...Object.values(gradeOrder))
+                        priority = maxPri + 1
+                      } else if (/^\d+$/.test(pr.trim())) {
+                        priority = Number(pr)
+                        if (priority < 1 || priority > 999) {
+                          alert("優先度は1〜999の半角数字で入力してください")
+                          return
+                        }
+                      } else {
+                        alert("優先度は1〜999の半角数字で入力してください")
+                        return
+                      }
+                      addGradeOption(trimmed, priority)
+                      setGrade(trimmed)
+                    }
+                    return
+                  }
+                  setGrade(v)
+                }}
+              >
                 <SelectTrigger id="participant-grade">
-                  <SelectValue placeholder="学年を選択してください" />
+                  <SelectValue placeholder="所属/役職を選択してください" />
                 </SelectTrigger>
                 <SelectContent>
                   {gradeOptions.map((opt) => (
                     <SelectItem key={opt} value={opt}>
-                      {opt}
+                      {opt} (優先度: {gradeOrder[opt]})
                     </SelectItem>
                   ))}
+                  <SelectItem value="__add__">追加</SelectItem>
                 </SelectContent>
               </Select>
             </div>

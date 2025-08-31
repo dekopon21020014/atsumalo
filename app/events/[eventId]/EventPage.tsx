@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
 import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
+import { defaultGradeOrder, defaultGradeOptions } from "@/app/events/[eventId]/components/constants"
 import { colorPalettes } from "@/app/events/[eventId]/components/constants"
 import Link from "next/link"
 
@@ -28,6 +29,8 @@ export default function EventPage() {
     dateTimeOptions: [],
     scheduleTypes: [],
     existingResponses: [],
+    gradeOptions: [],
+    gradeOrder: defaultGradeOrder,
   })
 
   // 編集用の状態
@@ -41,12 +44,14 @@ export default function EventPage() {
   const [editYAxis, setEditYAxis] = useState<string[]>([])
   const [editDateTimeOptions, setEditDateTimeOptions] = useState<string[]>([])
   const [editScheduleTypes, setEditScheduleTypes] = useState<ScheduleType[]>([])
+  const [editGradeOptions, setEditGradeOptions] = useState<{ name: string; priority: number }[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const xAxisRefs = useRef<HTMLInputElement[]>([])
   const yAxisRefs = useRef<HTMLInputElement[]>([])
   const dateTimeRefs = useRef<HTMLInputElement[]>([])
   const typeLabelRefs = useRef<HTMLInputElement[]>([])
+  const gradeOptionRefs = useRef<HTMLInputElement[]>([])
 
   // イベント情報の取得
   useEffect(() => {
@@ -78,6 +83,8 @@ export default function EventPage() {
                 schedule: p.schedule,
               }))
             : [],
+          gradeOptions: Array.isArray(resData.gradeOptions) ? resData.gradeOptions.sort((a: string,b: string)=>(resData.gradeOrder?.[a]??999)-(resData.gradeOrder?.[b]??999)) : [],
+          gradeOrder: typeof resData.gradeOrder === 'object' ? resData.gradeOrder : defaultGradeOrder,
         })
         setName(resData.name)
         setDescription(resData.description ?? "")
@@ -85,6 +92,22 @@ export default function EventPage() {
         setEditYAxis(Array.isArray(resData.yAxis) ? [...resData.yAxis] : [])
         setEditDateTimeOptions(Array.isArray(resData.dateTimeOptions) ? [...resData.dateTimeOptions] : [])
         setEditScheduleTypes(Array.isArray(resData.scheduleTypes) ? [...resData.scheduleTypes] : [])
+        setEditGradeOptions(
+          Array.isArray(resData.gradeOptions)
+            ? resData.gradeOptions
+                .map((g: string) => ({
+                  name: g,
+                  priority:
+                    (resData.gradeOrder && typeof resData.gradeOrder[g] === "number"
+                      ? resData.gradeOrder[g]
+                      : defaultGradeOrder[g]) ?? 0,
+                }))
+                .sort((a, b) => a.priority - b.priority)
+            : defaultGradeOptions.map((g) => ({
+                name: g,
+                priority: defaultGradeOrder[g] ?? 0,
+              }))
+        )
       })
       .catch((err) => {
         console.error(err)
@@ -239,6 +262,43 @@ export default function EventPage() {
     setEditScheduleTypes(newTypes)
   }
 
+  // 所属/役職の項目を追加
+  const addGradeOption = () => {
+    setEditGradeOptions((prev) => {
+      const newOptions = [
+        ...prev,
+        { name: `選択肢${prev.length + 1}`, priority: prev.length + 1 },
+      ]
+      requestAnimationFrame(() => {
+        const newIndex = newOptions.length - 1
+        gradeOptionRefs.current[newIndex]?.focus()
+      })
+      return newOptions
+    })
+  }
+
+  // 所属/役職の項目を削除
+  const removeGradeOption = (index: number) => {
+    if (editGradeOptions.length <= 1) return
+    const newOpts = [...editGradeOptions]
+    newOpts.splice(index, 1)
+    setEditGradeOptions(newOpts)
+  }
+
+  // 所属/役職の名称を更新
+  const updateGradeOptionName = (index: number, value: string) => {
+    const newOpts = [...editGradeOptions]
+    newOpts[index].name = value
+    setEditGradeOptions(newOpts)
+  }
+
+  // 所属/役職の優先度を更新
+  const updateGradeOptionPriority = (index: number, value: number) => {
+    const newOpts = [...editGradeOptions]
+    newOpts[index].priority = value
+    setEditGradeOptions(newOpts)
+  }
+
   // 編集をキャンセル
   const cancelEdit = () => {
     setName(data.name)
@@ -247,6 +307,12 @@ export default function EventPage() {
     setEditYAxis([...data.yAxis])
     setEditDateTimeOptions([...data.dateTimeOptions])
     setEditScheduleTypes([...data.scheduleTypes])
+    setEditGradeOptions(
+      data.gradeOptions.map((g) => ({
+        name: g,
+        priority: data.gradeOrder[g] ?? 0,
+      }))
+    )
     setEditMode(false)
     setActiveTab("basic")
   }
@@ -312,12 +378,20 @@ export default function EventPage() {
       const cleanedXAxis         = removeEmptyStrings(editXAxis)
       const cleanedYAxis         = removeEmptyStrings(editYAxis)
       const cleanedDateTimes     = removeEmptyStrings(editDateTimeOptions)
+      const cleanedGrades        = editGradeOptions.filter((o) => o.name.trim() !== "")
+      const gradeOptions         = cleanedGrades.map((o) => o.name)
+      const gradeOrder: Record<string, number> = {}
+      cleanedGrades.forEach((o) => {
+        gradeOrder[o.name] = o.priority
+      })
       // イベントタイプに応じたデータを準備
       const updateData = {
         name,
         description,
         eventType: data.eventType,
         scheduleTypes: cleanedScheduleTypes,
+        gradeOptions,
+        gradeOrder,
         ...(data.eventType === "recurring"
           ? { xAxis: cleanedXAxis, yAxis: cleanedYAxis }
           : { dateTimeOptions: cleanedDateTimes }),
@@ -343,7 +417,13 @@ export default function EventPage() {
         yAxis: cleanedYAxis,
         dateTimeOptions: cleanedDateTimes,
         scheduleTypes: cleanedScheduleTypes,
+        gradeOptions: gradeOptions.sort(
+          (a, b) => (gradeOrder[a] ?? 999) - (gradeOrder[b] ?? 999)
+        ),
+        gradeOrder,
       }))
+
+      setEditGradeOptions(cleanedGrades)
 
       setEditMode(false)
     } catch (err: any) {
@@ -368,6 +448,7 @@ export default function EventPage() {
               <TabsTrigger value="basic">基本情報</TabsTrigger>
               <TabsTrigger value="options">{data.eventType === "recurring" ? "グリッド設定" : "日時設定"}</TabsTrigger>
               <TabsTrigger value="types">回答タイプ</TabsTrigger>
+              <TabsTrigger value="grades">所属/役職</TabsTrigger>
             </TabsList>
 
             {/* 基本情報タブ */}
@@ -622,6 +703,46 @@ export default function EventPage() {
                 ))}
               </div>
             </TabsContent>
+
+            {/* 所属/役職タブ */}
+            <TabsContent value="grades" className="space-y-4">
+              <div className="space-y-2">
+                {editGradeOptions.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      ref={(el) => (gradeOptionRefs.current[i] = el)}
+                      value={opt.name}
+                      onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={opt.priority}
+                      onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                      className="w-24"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeGradeOption(i)}
+                      disabled={editGradeOptions.length <= 1}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addGradeOption}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-1" />追加
+                </Button>
+              </div>
+            </TabsContent>
           </Tabs>
 
           <div className="flex gap-2 pt-4 border-t">
@@ -657,13 +778,21 @@ export default function EventPage() {
       {!editMode && (
         <div className="mt-6">
           {data.eventType === "recurring" ? (
-            <SchedulePage xAxis={data.xAxis} yAxis={data.yAxis} scheduleTypes={data.scheduleTypes} />
+            <SchedulePage
+              xAxis={data.xAxis}
+              yAxis={data.yAxis}
+              scheduleTypes={data.scheduleTypes}
+              gradeOptions={data.gradeOptions}
+              gradeOrder={data.gradeOrder}
+            />
           ) : (
             <OneTimePage
               eventId={eventId ? String(eventId) : ""}
               dateTimeOptions={data.dateTimeOptions}
               scheduleTypes={data.scheduleTypes}
               responses={data.existingResponses}
+              gradeOptions={data.gradeOptions}
+              gradeOrder={data.gradeOrder}
             />
           )}
         </div>

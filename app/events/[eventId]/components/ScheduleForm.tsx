@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { MousePointer, Smartphone, Check } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
-import { gradeOptions, type ScheduleType } from "@/app/events/[eventId]/components/constants"
+import { type ScheduleType } from "@/app/events/[eventId]/components/constants"
 import type { Schedule, Participant } from "./types"
 import { createEmptySchedule } from "./utils"
 import { useMediaQuery } from "@/hooks/use-mobile"
@@ -21,6 +21,9 @@ type Props = {
   xAxis: string[]
   yAxis: string[]
   scheduleTypes: ScheduleType[]
+  gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
+  addGradeOption: (name: string, priority: number) => void
   currentName: string
   setCurrentName: Dispatch<SetStateAction<string>>
   currentGrade: string
@@ -38,6 +41,9 @@ export default function ScheduleForm({
   xAxis,
   yAxis,
   scheduleTypes,
+  gradeOptions,
+  gradeOrder,
+  addGradeOption,
   currentName,
   setCurrentName,
   currentGrade,
@@ -65,6 +71,7 @@ export default function ScheduleForm({
   useEffect(() => {
     setSelectionMode(isMobile ? "tap" : "drag")
   }, [isMobile])
+
 
   useEffect(() => {
     if (editingIndex !== null) {
@@ -109,7 +116,7 @@ export default function ScheduleForm({
     }
     setNameError("")
     if (!currentGrade) {
-      const message = "学年を選択してください"
+      const message = "所属/役職を選択してください"
       setGradeError(message)
       toast({ title: "エラー", description: message, variant: "destructive" })
       return
@@ -130,6 +137,7 @@ export default function ScheduleForm({
       eventId,
       name: currentName,
       grade: currentGrade,
+      gradePriority: gradeOrder[currentGrade],
       schedule: currentSchedule,
     }
 
@@ -184,7 +192,7 @@ export default function ScheduleForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* 名前・学年入力 */}
+        {/* 名前・所属/役職入力 */}
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">名前</Label>
@@ -200,23 +208,53 @@ export default function ScheduleForm({
             {nameError && <p className="mt-2 text-sm text-red-500">{nameError}</p>}
           </div>
           <div>
-            <Label htmlFor="grade-select">学年</Label>
+            <Label htmlFor="grade-select">所属/役職</Label>
             <Select
               value={currentGrade}
               onValueChange={(v) => {
+                if (v === "__add__") {
+                  const newGrade = prompt("所属/役職を入力してください")
+                  if (newGrade) {
+                    const trimmed = newGrade.trim()
+                    const existing = gradeOptions
+                      .map((g) => `${g}(${gradeOrder[g] ?? "-"})`)
+                      .join("\n")
+                    const pr = prompt(
+                      `優先度を入力してください（1〜999の半角数字。小さい数字ほど優先度が高く表示順が前になります）\n現在の設定:\n${existing}`
+                    )
+                    let priority: number
+                    if (!pr || pr.trim() === "") {
+                      const maxPri = Math.max(0, ...Object.values(gradeOrder))
+                      priority = maxPri + 1
+                    } else if (/^\d+$/.test(pr.trim())) {
+                      priority = Number(pr)
+                      if (priority < 1 || priority > 999) {
+                        alert("優先度は1〜999の半角数字で入力してください")
+                        return
+                      }
+                    } else {
+                      alert("優先度は1〜999の半角数字で入力してください")
+                      return
+                    }
+                    addGradeOption(trimmed, priority)
+                    setCurrentGrade(trimmed)
+                  }
+                  return
+                }
                 setCurrentGrade(v)
                 setGradeError("")
               }}
             >
               <SelectTrigger id="grade-select" className="w-full">
-                <SelectValue placeholder="学年を選択" />
+                <SelectValue placeholder="所属/役職を選択" />
               </SelectTrigger>
               <SelectContent>
                 {gradeOptions.map((g) => (
                   <SelectItem key={g} value={g}>
-                    {g}
+                    {g} (優先度: {gradeOrder[g]})
                   </SelectItem>
                 ))}
+                <SelectItem value="__add__">追加</SelectItem>
               </SelectContent>
             </Select>
             {gradeError && <p className="mt-2 text-sm text-red-500">{gradeError}</p>}
