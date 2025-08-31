@@ -78,7 +78,10 @@ export default function OneTimeResponsesTab({
     return bgClass
   } 
 
-  const sorted = form.getSortedResponses() // ここがうまく動いてない
+  // `getSortedResponses` should always return an array, but guard just in case
+  const sortedRaw = form.getSortedResponses()
+  const sorted = Array.isArray(sortedRaw) ? sortedRaw : []
+  const gradeOpts = Array.isArray(gradeOptions) ? gradeOptions : []
 
   const availableTypeIds = scheduleTypes
     .filter((t) => t.isAvailable)
@@ -197,7 +200,7 @@ export default function OneTimeResponsesTab({
                     {/* 所属/役職 */}
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
-                        {gradeOptions.map((g) => (
+                        {gradeOpts.map((g) => (
                           <label key={g} className="flex items-center space-x-2 text-xs">
                             <Checkbox
                               checked={form.filterGrades.includes(g)}

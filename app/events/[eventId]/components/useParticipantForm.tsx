@@ -43,6 +43,11 @@ export function useParticipantForm(
     if (c) setComments(JSON.parse(c))
   }, [eventId])
 
+  // sync external responses when parent data changes
+  useEffect(() => {
+    setExistingResponses(Array.isArray(responses) ? responses : [])
+  }, [responses])
+
   // 回答者の参加可能日数を取得
   const getAvailableDatesCount = (response: Response) => {
     return response.schedule.filter((selection) => {

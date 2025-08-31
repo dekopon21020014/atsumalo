@@ -23,10 +23,11 @@ export default function OneTimeSummaryTab({
   gradeOrder,
 }: Props) {
   const [summaryView, setSummaryView] = useState<"dates" | "grades">("dates")
+  const responses = Array.isArray(existingResponses) ? existingResponses : []
 
   // 指定日時の「参加可能」人数
   const getAvailableCount = (dateTime: string) =>
-    existingResponses.filter((response) => {
+    responses.filter((response) => {
       const sel = response.schedule.find((s) => s.dateTime === dateTime)
       if (!sel) return false
       const type = scheduleTypes.find((t) => t.id === sel.typeId)
@@ -35,7 +36,7 @@ export default function OneTimeSummaryTab({
 
   // 指定日時・指定タイプに回答した人の名前リスト
   const getRespondentsByType = (dateTime: string, typeId: string) =>
-    existingResponses
+    responses
       .filter((response) =>
         response.schedule.some((s) => s.dateTime === dateTime && s.typeId === typeId)
       )
@@ -47,7 +48,7 @@ export default function OneTimeSummaryTab({
 
   // 指定所属/役職・指定日時の「参加可能」人数
   const getAvailableCountByGradeAndDateTime = (grade: string, dateTime: string) =>
-    existingResponses.filter((response) => {
+    responses.filter((response) => {
       if (response.grade !== grade) return false
       const sel = response.schedule.find((s) => s.dateTime === dateTime)
       if (!sel) return false
@@ -59,7 +60,7 @@ export default function OneTimeSummaryTab({
   const getResponseTypeDistributionByGrade = (grade: string) => {
     const dist: Record<string, number> = {}
     scheduleTypes.forEach((t) => (dist[t.id] = 0))
-    existingResponses
+    responses
       .filter((r) => r.grade === grade)
       .forEach((r) =>
         r.schedule.forEach((s) => {
@@ -71,7 +72,7 @@ export default function OneTimeSummaryTab({
 
   // 最適日時を取得
   const getBestDateTime = () => {
-    if (!dateTimeOptions.length || !existingResponses.length) return null
+    if (!dateTimeOptions.length || !responses.length) return null
     let best = dateTimeOptions[0]
     let maxCount = getAvailableCount(best)
     dateTimeOptions.forEach((dt) => {
@@ -88,7 +89,7 @@ export default function OneTimeSummaryTab({
 
   return (
     <TabsContent value="summary" className="space-y-4">
-      {existingResponses.length > 0 ? (
+      {responses.length > 0 ? (
         <div className="space-y-4">
           {/* 表示切り替えタブ */}
           <div className="flex justify-between items-center">
@@ -285,7 +286,7 @@ export default function OneTimeSummaryTab({
                       </thead>
                       <tbody className="divide-y">
                         {Object.entries(
-                          existingResponses.reduce(
+                          responses.reduce(
                             (acc, r) => {
                               const g = r.grade || "未設定"
                               if (!acc[g]) acc[g] = []
@@ -351,7 +352,7 @@ export default function OneTimeSummaryTab({
                 <CardContent>
                   <div className="space-y-4">
                     {Object.entries(
-                      existingResponses.reduce(
+                      responses.reduce(
                         (acc, r) => {
                           const g = r.grade || "未設定"
                           if (!acc[g]) acc[g] = []
