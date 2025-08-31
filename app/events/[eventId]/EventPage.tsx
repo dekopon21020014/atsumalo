@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Save, X, BarChart3 } from "lucide-react"
+import { Plus, Trash2, Save, X, BarChart3, Share2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
@@ -198,6 +198,44 @@ export default function EventPage() {
     const newOptions = [...editDateTimeOptions]
     newOptions[index] = value
     setEditDateTimeOptions(newOptions)
+  }
+
+  const shareEvent = () => {
+    const url = window.location.href
+
+    navigator.clipboard.writeText(url).then(
+      () => {
+        toast({
+          title: "URLをコピーしました",
+          description: "イベントのURLがクリップボードにコピーされました。",
+        })
+      },
+      (err) => {
+        console.error("URLのコピーに失敗しました:", err)
+        toast({
+          title: "コピーに失敗しました",
+          description: "URLのコピーに失敗しました。もう一度お試しください。",
+          variant: "destructive",
+        })
+      },
+    )
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: data.name,
+          text: data.description,
+          url,
+        })
+        .catch((err) => {
+          console.error("URLの共有に失敗しました:", err)
+          toast({
+            title: "共有に失敗しました",
+            description: "URLの共有に失敗しました。もう一度お試しください。",
+            variant: "destructive",
+          })
+        })
+    }
   }
 
   // 予定タイプを追加
@@ -823,6 +861,10 @@ export default function EventPage() {
           <h1 className="text-2xl md:text-3xl font-bold">{data.name}</h1>
           <p className="text-gray-700">{data.description}</p>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={shareEvent}>
+              <Share2 className="h-4 w-4 mr-2" />
+              共有
+            </Button>
             <Button variant="outline" onClick={() => setEditMode(true)}>
               編集
             </Button>

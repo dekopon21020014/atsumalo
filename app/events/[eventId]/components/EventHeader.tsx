@@ -35,9 +35,10 @@ export default function EventHeader({
 }: EventHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
-  // イベントURLをコピー
-  const copyEventUrl = () => {
+  // イベントを共有
+  const shareEvent = () => {
     const url = window.location.href
+
     navigator.clipboard.writeText(url).then(
       () => {
         toast({
@@ -54,6 +55,23 @@ export default function EventHeader({
         })
       },
     )
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: eventName,
+          text: eventDescription,
+          url,
+        })
+        .catch((err) => {
+          console.error("URLの共有に失敗しました:", err)
+          toast({
+            title: "共有に失敗しました",
+            description: "URLの共有に失敗しました。もう一度お試しください。",
+            variant: "destructive",
+          })
+        })
+    }
   }
 
   return (
@@ -79,7 +97,7 @@ export default function EventHeader({
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyEventUrl}>
+            <Button variant="outline" size="sm" onClick={shareEvent}>
               <Share2 className="h-4 w-4 mr-1" />
               共有
             </Button>
