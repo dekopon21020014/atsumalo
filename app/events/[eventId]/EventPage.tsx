@@ -497,9 +497,23 @@ export default function EventPage() {
                             value={item}
                             onChange={(e) => updateXItem(i, e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
+                              const isComposing = (e.nativeEvent as any).isComposing as boolean
+                              if (e.key === "Enter" && !isComposing) {
                                 e.preventDefault()
                                 addXItem()
+                              }
+                              if (
+                                (e.key === "Backspace" || e.key === "Delete") &&
+                                !isComposing &&
+                                e.currentTarget.value === ""
+                              ) {
+                                e.preventDefault()
+                                removeXItem(i)
+                                requestAnimationFrame(() => {
+                                  const prevIndex = Math.max(i - 1, 0)
+                                  xAxisRefs.current[prevIndex]?.focus()
+                                })
+                                return
                               }
                             }}
                             className="flex-1"
@@ -536,9 +550,23 @@ export default function EventPage() {
                             value={item}
                             onChange={(e) => updateYItem(i, e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
+                              const isComposing = (e.nativeEvent as any).isComposing as boolean
+                              if (e.key === "Enter" && !isComposing) {
                                 e.preventDefault()
                                 addYItem()
+                              }
+                              if (
+                                (e.key === "Backspace" || e.key === "Delete") &&
+                                !isComposing &&
+                                e.currentTarget.value === ""
+                              ) {
+                                e.preventDefault()
+                                removeYItem(i)
+                                requestAnimationFrame(() => {
+                                  const prevIndex = Math.max(i - 1, 0)
+                                  yAxisRefs.current[prevIndex]?.focus()
+                                })
+                                return
                               }
                             }}
                             className="flex-1"
@@ -576,9 +604,23 @@ export default function EventPage() {
                           value={item}
                           onChange={(e) => updateDateTimeOption(index, e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
+                            const isComposing = (e.nativeEvent as any).isComposing as boolean
+                            if (e.key === "Enter" && !isComposing) {
                               e.preventDefault()
                               addDateTimeOption()
+                            }
+                            if (
+                              (e.key === "Backspace" || e.key === "Delete") &&
+                              !isComposing &&
+                              e.currentTarget.value === ""
+                            ) {
+                              e.preventDefault()
+                              removeDateTimeOption(index)
+                              requestAnimationFrame(() => {
+                                const prevIndex = Math.max(index - 1, 0)
+                                dateTimeRefs.current[prevIndex]?.focus()
+                              })
+                              return
                             }
                           }}
                           placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
@@ -713,6 +755,26 @@ export default function EventPage() {
                       ref={(el) => (gradeOptionRefs.current[i] = el)}
                       value={opt.name}
                       onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                      onKeyDown={(e) => {
+                        const isComposing = (e.nativeEvent as any).isComposing as boolean
+                        if (e.key === "Enter" && !isComposing) {
+                          e.preventDefault()
+                          addGradeOption()
+                        }
+                        if (
+                          (e.key === "Backspace" || e.key === "Delete") &&
+                          !isComposing &&
+                          e.currentTarget.value === ""
+                        ) {
+                          e.preventDefault()
+                          removeGradeOption(i)
+                          requestAnimationFrame(() => {
+                            const prevIndex = Math.max(i - 1, 0)
+                            gradeOptionRefs.current[prevIndex]?.focus()
+                          })
+                          return
+                        }
+                      }}
                       className="flex-1"
                     />
                     <Input
