@@ -137,7 +137,7 @@ export default function ParticipantList({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">全て</SelectItem>
-              {gradeOrder.map((g) => (
+              {gradeOptions.map((g) => (
                 <SelectItem key={g} value={g}>
                   {g}
                 </SelectItem>
