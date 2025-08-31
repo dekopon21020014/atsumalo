@@ -1,6 +1,6 @@
 // hooks/useParticipantForm.ts
-import { useState, useEffect } from "react"
-import { type ScheduleType, type Response, gradeOrder } from "@/app/events/[eventId]/components/constants"
+import { useState, useEffect, useMemo } from "react"
+import { type ScheduleType, type Response } from "@/app/events/[eventId]/components/constants"
 import { toast } from "@/components/ui/use-toast"
 
 export function useParticipantForm(
@@ -9,6 +9,7 @@ export function useParticipantForm(
   scheduleTypes: ScheduleType[],
   responses: Response[],
   setActiveTab: (tab: string) => void,
+  gradeOptions: string[],
 ) {
   const [name, setName] = useState<string>("")
   const [grade, setGrade] = useState<string>("")
@@ -198,13 +199,17 @@ export function useParticipantForm(
     setIsDeleteDialogOpen(true)
   }
 
+  const gradeOrderMap = useMemo(() => {
+    return gradeOptions.reduce((acc, g, i) => ({ ...acc, [g]: i }), {} as Record<string, number>)
+  }, [gradeOptions])
+
   const getSortedResponses = () => {
     if (!existingResponses.length) return []
 
     // 検索フィルタリング
     let filtered = existingResponses
 
-    // 名前または学年で検索
+    // 名前または所属/役職で検索
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
@@ -224,7 +229,7 @@ export function useParticipantForm(
       filtered = filtered.filter((response) => response.schedule.some((s) => s.dateTime === filterDateTime))
     }
 
-    // 学年でフィルタリング
+    // 所属/役職でフィルタリング
     if (filterGrades.length > 0) {
       filtered = filtered.filter((response) => response.grade && filterGrades.includes(response.grade))
     }
@@ -235,9 +240,9 @@ export function useParticipantForm(
         const comparison = a.name.localeCompare(b.name)
         return sortDirection === "asc" ? comparison : -comparison
       } else if (sortColumn === "grade") {
-        // 学年でソート
-        const gradeA = a.grade ? gradeOrder[a.grade as keyof typeof gradeOrder] || 999 : 999
-        const gradeB = b.grade ? gradeOrder[b.grade as keyof typeof gradeOrder] || 999 : 999
+        // 所属/役職でソート
+        const gradeA = a.grade ? gradeOrderMap[a.grade] ?? 999 : 999
+        const gradeB = b.grade ? gradeOrderMap[b.grade] ?? 999 : 999
         return sortDirection === "asc" ? gradeA - gradeB : gradeB - gradeA
       } else if (sortColumn === "availability") {
         // 参加可能日数でソート

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "名前が必要です" }, { status: 400 })
   }
   if (!grade || typeof grade !== "string") {
-    return NextResponse.json({ error: "学年が必要です" }, { status: 400 })
+    return NextResponse.json({ error: "所属/役職が必要です" }, { status: 400 })
   }
   if (!schedule || typeof schedule !== "object") {
     return NextResponse.json({ error: "スケジュールが必要です" }, { status: 400 })
@@ -47,6 +47,10 @@ export async function POST(req: NextRequest) {
       grade,
       schedule,
       createdAt: FieldValue.serverTimestamp(),
+    })
+
+    await db.collection("events").doc(eventId).update({
+      gradeOptions: FieldValue.arrayUnion(grade),
     })
 
     return NextResponse.json({ message: "保存しました", id: docRef.id })

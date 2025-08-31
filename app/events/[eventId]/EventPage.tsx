@@ -28,6 +28,7 @@ export default function EventPage() {
     dateTimeOptions: [],
     scheduleTypes: [],
     existingResponses: [],
+    gradeOptions: [],
   })
 
   // 編集用の状態
@@ -78,6 +79,7 @@ export default function EventPage() {
                 schedule: p.schedule,
               }))
             : [],
+          gradeOptions: Array.isArray(resData.gradeOptions) ? resData.gradeOptions : [],
         })
         setName(resData.name)
         setDescription(resData.description ?? "")
@@ -657,13 +659,19 @@ export default function EventPage() {
       {!editMode && (
         <div className="mt-6">
           {data.eventType === "recurring" ? (
-            <SchedulePage xAxis={data.xAxis} yAxis={data.yAxis} scheduleTypes={data.scheduleTypes} />
+            <SchedulePage
+              xAxis={data.xAxis}
+              yAxis={data.yAxis}
+              scheduleTypes={data.scheduleTypes}
+              gradeOptions={data.gradeOptions}
+            />
           ) : (
             <OneTimePage
               eventId={eventId ? String(eventId) : ""}
               dateTimeOptions={data.dateTimeOptions}
               scheduleTypes={data.scheduleTypes}
               responses={data.existingResponses}
+              gradeOptions={data.gradeOptions}
             />
           )}
         </div>

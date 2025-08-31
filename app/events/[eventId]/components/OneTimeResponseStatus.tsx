@@ -10,7 +10,6 @@ import {
   Pencil,
 } from "lucide-react"
 import type { ScheduleType, Response } from "./constants"
-import { gradeOptions } from "./constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent  } from "@/components/ui/card"
@@ -27,6 +26,7 @@ type Props = {
   scheduleTypes: ScheduleType[]
   responses?: Response[]
   form: ParticipantFormHook
+  gradeOptions: string[]
 }
 
 export default function OneTimeResponsesTab({
@@ -34,6 +34,7 @@ export default function OneTimeResponsesTab({
   scheduleTypes,
   responses = [],
   form,
+  gradeOptions,
 }: Props) {
   // 
   const getResponseIcon = (response: Response, dateTime: string) => {
@@ -100,7 +101,7 @@ export default function OneTimeResponsesTab({
               <div className="relative w-full md:w-40">
                 <Search className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
                 <Input
-                  placeholder="名前 or 学年で検索..."
+                  placeholder="名前 or 所属/役職で検索..."
                   value={form.searchQuery}
                   onChange={(e) => form.setSearchQuery(e.target.value)}
                   className="pl-7 h-8 text-xs"
@@ -122,7 +123,7 @@ export default function OneTimeResponsesTab({
                   className="h-8 text-xs"
                   onClick={() => form.handleSort("grade")}
                 >
-                  学年{form.sortColumn === "grade" && (form.sortDirection === "asc" ? "↑" : "↓")}
+                  所属/役職{form.sortColumn === "grade" && (form.sortDirection === "asc" ? "↑" : "↓")}
                 </Button>
                 <Button
                   variant={form.sortColumn === "availability" ? "default" : "outline"}
@@ -191,7 +192,7 @@ export default function OneTimeResponsesTab({
                         </SelectContent>
                       </Select>
                     </div>
-                    {/* 学年 */}
+                    {/* 所属/役職 */}
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         {gradeOptions.map((g) => (
