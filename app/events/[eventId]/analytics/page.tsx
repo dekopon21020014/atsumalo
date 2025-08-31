@@ -19,17 +19,21 @@ import {
   XAxis,
 } from "recharts"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import type {
-  ScheduleType,
-  Response,
-} from "@/app/events/[eventId]/components/constants"
+import type { ScheduleType } from "@/app/events/[eventId]/components/constants"
 import { gradeOptions } from "@/app/events/[eventId]/components/constants"
+
+type AnalyticsResponse = {
+  id: string
+  name: string
+  grade?: string
+  schedule: { typeId: string }[]
+}
 
 export default function AnalyticsPage() {
   const { eventId } = useParams()
   const [eventName, setEventName] = useState("読み込み中...")
   const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
-  const [responses, setResponses] = useState<Response[]>([])
+  const [responses, setResponses] = useState<AnalyticsResponse[]>([])
 
   useEffect(() => {
     if (!eventId) return
@@ -48,8 +52,8 @@ export default function AnalyticsPage() {
                 // or as an array. Normalize to an array to simplify later
                 // aggregation and avoid runtime errors when calling forEach.
                 schedule: Array.isArray(p.schedule)
-                  ? p.schedule
-                  : Object.values(p.schedule || {}),
+                  ? p.schedule.map((s: any) => ({ typeId: s.typeId }))
+                  : Object.values(p.schedule || {}).map((typeId: string) => ({ typeId })),
               }))
             : [],
         )
@@ -62,11 +66,11 @@ export default function AnalyticsPage() {
       counts[t.id] = 0
     })
     responses.forEach((r) => {
-      const scheduleEntries = Array.isArray(r.schedule)
-        ? r.schedule
-        : Object.values(r.schedule || {})
-      scheduleEntries.forEach((s) => {
-        counts[s.typeId] = (counts[s.typeId] || 0) + 1
+      r.schedule.forEach((s) => {
+        const typeId = typeof s === "string" ? s : s.typeId
+        if (typeId) {
+          counts[typeId] = (counts[typeId] || 0) + 1
+        }
       })
     })
     return scheduleTypes.map((t) => ({ id: t.id, label: t.label, count: counts[t.id] || 0 }))
