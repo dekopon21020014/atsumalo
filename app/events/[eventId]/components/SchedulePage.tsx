@@ -208,6 +208,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
             setActiveTab={setActiveTab}
             xAxis={xAxis}
             yAxis={yAxis}
+            availableOptions={availableOptions}
           />
         </TabsContent>
 

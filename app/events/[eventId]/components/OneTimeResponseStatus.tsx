@@ -77,6 +77,17 @@ export default function OneTimeResponsesTab({
 
   const sorted = form.getSortedResponses() // ここがうまく動いてない
 
+  const availableTypeIds = scheduleTypes
+    .filter((t) => t.isAvailable)
+    .map((t) => t.id)
+
+  const availableCounts = sorted.reduce((acc, r) => {
+    acc[r.id] = r.schedule.filter((s) =>
+      availableTypeIds.includes(s.typeId)
+    ).length
+    return acc
+  }, {} as Record<string, number>)
+
   return (
     <TabsContent value="responses" className="space-y-4">
       <Card>
@@ -229,9 +240,9 @@ export default function OneTimeResponsesTab({
 
           {/* テーブル, sortedに回答されたデータがある */}
           {sorted.length > 0 ? (
-            <div className="border rounded-md overflow-x-auto">
+            <div className="border rounded-md overflow-auto max-h-96">
               <table className="w-full border-collapse text-xs">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-white">
                   <tr className="bg-gray-50 border-b">
                     <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">
                       日時
@@ -249,6 +260,16 @@ export default function OneTimeResponsesTab({
                           <Pencil className="h-3 w-3 ml-1 text-gray-400" />
                         </div>
                         {r.grade && <div className="text-[10px] text-gray-500">{r.grade}</div>}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">
+                      参加可能数
+                    </th>
+                    {sorted.map((r) => (
+                      <th key={`count-${r.id}`} className="py-1 px-1 text-center font-medium">
+                        {availableCounts[r.id] ?? 0}
                       </th>
                     ))}
                   </tr>
