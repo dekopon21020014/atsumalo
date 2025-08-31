@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
 import { scheduleTypes } from './constants'
 
@@ -55,6 +55,8 @@ export default function ParticipantList({
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith('/en')
 
   // 所属/役職フィルタ／ソート／ビュー切り替え
   const [filterGrade, setFilterGrade] = useState<string>('All')
@@ -118,8 +120,10 @@ export default function ParticipantList({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>参加者一覧</CardTitle>
-          <CardDescription>まだ参加者が登録されていません</CardDescription>
+          <CardTitle>{isEnglish ? 'Participant List' : '参加者一覧'}</CardTitle>
+          <CardDescription>
+            {isEnglish ? 'No participants registered yet' : 'まだ参加者が登録されていません'}
+          </CardDescription>
         </CardHeader>
       </Card>
     )

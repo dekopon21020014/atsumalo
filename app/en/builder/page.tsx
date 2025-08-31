@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,6 +63,8 @@ export default function HomePage() {
 
   const [activeTab, setActiveTab] = useState("builder")
   const router = useRouter()
+  const pathname = usePathname()
+  const prefix = pathname.startsWith("/en") ? "/en" : ""
 
   // Initial schedule types
   const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>(scheduleTypeTemplate)
@@ -347,7 +349,7 @@ export default function HomePage() {
 
       if (!res.ok) throw new Error("Network response was not ok")
       const { id } = await res.json()
-      router.push(`/events/${id}`)
+      router.push(`${prefix}/events/${id}`)
     } catch (err) {
       console.error(err)
       toast({ title: "Creation Error", description: "Failed to create the event", variant: "destructive" })

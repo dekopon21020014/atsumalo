@@ -25,7 +25,7 @@ import ScheduleSummary from './ScheduleSummary'
 import BestTimeSlots from './BestTimeSlots'
 import { createEmptySchedule } from './utils'
 import type { Participant, Schedule } from './types'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 import { ScheduleType } from './constants'
 
 type Props = {
@@ -52,6 +52,18 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   const [gradeOpts, setGradeOpts] = useState<string[]>(gradeOptions)
   const [gradeOrderMap, setGradeOrderMap] = useState<Record<string, number>>(gradeOrder)
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith('/en')
+  const t = {
+    export: isEnglish ? 'Export' : 'エクスポート',
+    import: isEnglish ? 'Import' : 'インポート',
+    importTitle: isEnglish ? 'Import Schedule' : 'スケジュールのインポート',
+    importDesc: isEnglish ? 'Load a JSON file.' : 'JSONファイルを読み込みます。',
+    cancel: isEnglish ? 'Cancel' : 'キャンセル',
+    input: isEnglish ? 'Input' : '入力',
+    participants: isEnglish ? 'Participant List' : '回答状況',
+    summary: isEnglish ? 'Summary' : '集計結果',
+  }
 
   useEffect(() => {
     const availableIds: string[] = scheduleTypes
@@ -107,12 +119,18 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
         if (Array.isArray(data)) {
           setParticipants(data)
           toast({
-            title: 'インポート完了',
-            description: `${data.length}人分のスケジュールを読み込みました。`,
+            title: isEnglish ? 'Import complete' : 'インポート完了',
+            description: isEnglish
+              ? `${data.length} schedules loaded.`
+              : `${data.length}人分のスケジュールを読み込みました。`,
           })
         }
       } catch {
-        toast({ title: 'エラー', description: 'ファイル形式が不正です', variant: 'destructive' })
+        toast({
+          title: isEnglish ? 'Error' : 'エラー',
+          description: isEnglish ? 'Invalid file format' : 'ファイル形式が不正です',
+          variant: 'destructive',
+        })
       }
     }
     reader.readAsText(file)
@@ -153,27 +171,27 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-1" />
-            エクスポート
+            {t.export}
           </Button>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <UserPlus className="w-4 h-4 mr-1" />
-                インポート
+                {t.import}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>スケジュールのインポート</DialogTitle>
-                <DialogDescription>JSONファイルを読み込みます。</DialogDescription>
+                <DialogTitle>{t.importTitle}</DialogTitle>
+                <DialogDescription>{t.importDesc}</DialogDescription>
               </DialogHeader>
               <div className="py-4">
                 <Input type="file" accept=".json" onChange={handleImport} />
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  キャンセル
+                  {t.cancel}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -185,15 +203,15 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="input" className="flex-1">
             <PenSquare className="h-4 w-4 mr-2" />
-            入力
+            {t.input}
           </TabsTrigger>
           <TabsTrigger value="participants" className="flex-1">
             <Users className="h-4 w-4 mr-2" />
-            回答状況
+            {t.participants}
           </TabsTrigger>
           <TabsTrigger value="summary" className="flex-1">
             <BarChart3 className="h-4 w-4 mr-2" />
-            集計結果
+            {t.summary}
           </TabsTrigger>
         </TabsList>
 

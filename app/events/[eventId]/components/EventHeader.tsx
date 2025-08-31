@@ -9,6 +9,7 @@ import { Settings, Calendar, CalendarDays, Share2, BarChart3 } from "lucide-reac
 import { toast } from "@/components/ui/use-toast"
 import EventSettings from "./EventSettings"
 import type { ScheduleType } from "./constants"
+import { usePathname } from "next/navigation"
 
 type EventHeaderProps = {
   eventId: string
@@ -34,6 +35,8 @@ export default function EventHeader({
   onUpdate,
 }: EventHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
 
   // イベントを共有
   const shareEvent = () => {
@@ -42,15 +45,19 @@ export default function EventHeader({
     navigator.clipboard.writeText(url).then(
       () => {
         toast({
-          title: "URLをコピーしました",
-          description: "イベントのURLがクリップボードにコピーされました。",
+          title: isEnglish ? "URL copied" : "URLをコピーしました",
+          description: isEnglish
+            ? "Event URL copied to clipboard."
+            : "イベントのURLがクリップボードにコピーされました。",
         })
       },
       (err) => {
         console.error("URLのコピーに失敗しました:", err)
         toast({
-          title: "コピーに失敗しました",
-          description: "URLのコピーに失敗しました。もう一度お試しください。",
+          title: isEnglish ? "Copy failed" : "コピーに失敗しました",
+          description: isEnglish
+            ? "Failed to copy URL. Please try again."
+            : "URLのコピーに失敗しました。もう一度お試しください。",
           variant: "destructive",
         })
       },
@@ -66,8 +73,10 @@ export default function EventHeader({
         .catch((err) => {
           console.error("URLの共有に失敗しました:", err)
           toast({
-            title: "共有に失敗しました",
-            description: "URLの共有に失敗しました。もう一度お試しください。",
+            title: isEnglish ? "Share failed" : "共有に失敗しました",
+            description: isEnglish
+              ? "Failed to share URL. Please try again."
+              : "URLの共有に失敗しました。もう一度お試しください。",
             variant: "destructive",
           })
         })
@@ -85,12 +94,12 @@ export default function EventHeader({
               {eventType === "recurring" ? (
                 <div className="flex items-center">
                   <CalendarDays className="h-4 w-4 mr-1" />
-                  定期イベント
+                  {isEnglish ? "Recurring Event" : "定期イベント"}
                 </div>
               ) : (
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
-                  単発イベント
+                  {isEnglish ? "One-time Event" : "単発イベント"}
                 </div>
               )}
             </div>
@@ -99,13 +108,13 @@ export default function EventHeader({
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={shareEvent}>
               <Share2 className="h-4 w-4 mr-1" />
-              共有
+              {isEnglish ? "Share" : "共有"}
             </Button>
 
             <Button variant="outline" size="sm" asChild>
               <Link href={`/events/${eventId}/analytics`}>
                 <BarChart3 className="h-4 w-4 mr-1" />
-                統計
+                {isEnglish ? "Analytics" : "統計"}
               </Link>
             </Button>
 
@@ -113,7 +122,7 @@ export default function EventHeader({
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Settings className="h-4 w-4 mr-1" />
-                  設定
+                  {isEnglish ? "Settings" : "設定"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

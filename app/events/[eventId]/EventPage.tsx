@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,8 @@ import Link from "next/link"
 
 export default function EventPage() {
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
 
   const [data, setData] = useState<EventData>({
     name: "読み込み中…",
@@ -232,15 +234,19 @@ export default function EventPage() {
     navigator.clipboard.writeText(url).then(
       () => {
         toast({
-          title: "URLをコピーしました",
-          description: "イベントのURLがクリップボードにコピーされました。",
+          title: isEnglish ? "URL copied" : "URLをコピーしました",
+          description: isEnglish
+            ? "Event URL copied to clipboard."
+            : "イベントのURLがクリップボードにコピーされました。",
         })
       },
       (err) => {
         console.error("URLのコピーに失敗しました:", err)
         toast({
-          title: "コピーに失敗しました",
-          description: "URLのコピーに失敗しました。もう一度お試しください。",
+          title: isEnglish ? "Copy failed" : "コピーに失敗しました",
+          description: isEnglish
+            ? "Failed to copy URL. Please try again."
+            : "URLのコピーに失敗しました。もう一度お試しください。",
           variant: "destructive",
         })
       },
@@ -256,8 +262,10 @@ export default function EventPage() {
         .catch((err) => {
           console.error("URLの共有に失敗しました:", err)
           toast({
-            title: "共有に失敗しました",
-            description: "URLの共有に失敗しました。もう一度お試しください。",
+            title: isEnglish ? "Share failed" : "共有に失敗しました",
+            description: isEnglish
+              ? "Failed to share URL. Please try again."
+              : "URLの共有に失敗しました。もう一度お試しください。",
             variant: "destructive",
           })
         })
@@ -908,15 +916,15 @@ export default function EventPage() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={shareEvent}>
               <Share2 className="h-4 w-4 mr-2" />
-              共有
+              {isEnglish ? "Share" : "共有"}
             </Button>
             <Button variant="outline" onClick={() => setEditMode(true)}>
-              編集
+              {isEnglish ? "Edit" : "編集"}
             </Button>
             <Button variant="outline" asChild>
               <Link href={`/events/${eventId}/analytics`}>
                 <BarChart3 className="h-4 w-4 mr-2" />
-                統計
+                {isEnglish ? "Analytics" : "統計"}
               </Link>
             </Button>
           </div>
