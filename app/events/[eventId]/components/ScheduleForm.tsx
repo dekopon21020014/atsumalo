@@ -15,7 +15,7 @@ import { createEmptySchedule } from "./utils"
 import { useMediaQuery } from "@/hooks/use-mobile"
 import ScheduleTable from "./ScheduleTable"
 import ScheduleCellMobile from "./ScheduleCellMobile"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 
 type Props = {
   xAxis: string[]
@@ -65,6 +65,8 @@ export default function ScheduleForm({
   const [nameError, setNameError] = useState("")
   const [gradeError, setGradeError] = useState("")
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
 
   const tableRef = useRef<HTMLDivElement>(null)
 
@@ -109,16 +111,26 @@ export default function ScheduleForm({
 
   const submit = async () => {
     if (!currentName.trim()) {
-      const message = "名前を入力してください"
+      const message = isEnglish ? "Please enter your name" : "名前を入力してください"
       setNameError(message)
-      toast({ title: "エラー", description: message, variant: "destructive" })
+      toast({
+        title: isEnglish ? "Error" : "エラー",
+        description: message,
+        variant: "destructive",
+      })
       return
     }
     setNameError("")
     if (!currentGrade) {
-      const message = "所属/役職を選択してください"
+      const message = isEnglish
+        ? "Please select affiliation/role"
+        : "所属/役職を選択してください"
       setGradeError(message)
-      toast({ title: "エラー", description: message, variant: "destructive" })
+      toast({
+        title: isEnglish ? "Error" : "エラー",
+        description: message,
+        variant: "destructive",
+      })
       return
     }
     setGradeError("")
@@ -126,9 +138,15 @@ export default function ScheduleForm({
     const total = Object.keys(currentSchedule).length
     const filled = Object.values(currentSchedule).filter(Boolean).length
     if (filled !== total) {
-      const message = "すべてのセルに予定を入力してください"
+      const message = isEnglish
+        ? "Please fill in all cells"
+        : "すべてのセルに予定を入力してください"
       setScheduleError(message)
-      toast({ title: "エラー", description: message, variant: "destructive" })
+      toast({
+        title: isEnglish ? "Error" : "エラー",
+        description: message,
+        variant: "destructive",
+      })
       return
     }
     setScheduleError("")
@@ -164,7 +182,10 @@ export default function ScheduleForm({
         setParticipants([...participants, { id, ...payload }])
       }
 
-      toast({ title: "完了", description: "スケジュールを登録しました" })
+      toast({
+        title: isEnglish ? "Success" : "完了",
+        description: isEnglish ? "Schedule saved" : "スケジュールを登録しました",
+      })
       setCurrentName("")
       setCurrentGrade("")
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
@@ -173,7 +194,11 @@ export default function ScheduleForm({
       setScheduleError("")
       setActiveTab("summary")
     } catch {
-      toast({ title: "エラー", description: "保存に失敗しました", variant: "destructive" })
+      toast({
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish ? "Failed to save" : "保存に失敗しました",
+        variant: "destructive",
+      })
     }
   }
 
@@ -185,17 +210,23 @@ export default function ScheduleForm({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle>スケジュール入力</CardTitle>
+        <CardTitle>{isEnglish ? "Schedule Entry" : "スケジュール入力"}</CardTitle>
 
         <CardDescription>
-          {editingIndex !== null ? "スケジュールを編集してください" : "名前と予定を入力してください"}
+          {editingIndex !== null
+            ? isEnglish
+              ? "Please edit your schedule"
+              : "スケジュールを編集してください"
+            : isEnglish
+            ? "Enter your name and schedule"
+            : "名前と予定を入力してください"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {/* 名前・所属/役職入力 */}
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="name">名前</Label>
+            <Label htmlFor="name">{isEnglish ? "Name" : "名前"}</Label>
             <Input
               id="name"
               value={currentName}
@@ -203,24 +234,28 @@ export default function ScheduleForm({
                 setCurrentName(e.target.value)
                 setNameError("")
               }}
-              placeholder="名前"
+              placeholder={isEnglish ? "Name" : "名前"}
             />
             {nameError && <p className="mt-2 text-sm text-red-500">{nameError}</p>}
           </div>
           <div>
-            <Label htmlFor="grade-select">所属/役職</Label>
+            <Label htmlFor="grade-select">{isEnglish ? "Affiliation/Role" : "所属/役職"}</Label>
             <Select
               value={currentGrade}
               onValueChange={(v) => {
                 if (v === "__add__") {
-                  const newGrade = prompt("所属/役職を入力してください")
+                  const newGrade = prompt(
+                    isEnglish ? "Enter affiliation/role" : "所属/役職を入力してください",
+                  )
                   if (newGrade) {
                     const trimmed = newGrade.trim()
                     const existing = gradeOptions
                       .map((g) => `${g}(${gradeOrder[g] ?? "-"})`)
                       .join("\n")
                     const pr = prompt(
-                      `優先度を入力してください（1〜999の半角数字。小さい数字ほど優先度が高く表示順が前になります）\n現在の設定:\n${existing}`
+                      isEnglish
+                        ? `Enter priority (1-999). Smaller numbers appear first.\nCurrent settings:\n${existing}`
+                        : `優先度を入力してください（1〜999の半角数字。小さい数字ほど優先度が高く表示順が前になります）\n現在の設定:\n${existing}`
                     )
                     let priority: number
                     if (!pr || pr.trim() === "") {
@@ -229,11 +264,19 @@ export default function ScheduleForm({
                     } else if (/^\d+$/.test(pr.trim())) {
                       priority = Number(pr)
                       if (priority < 1 || priority > 999) {
-                        alert("優先度は1〜999の半角数字で入力してください")
+                        alert(
+                          isEnglish
+                            ? "Priority must be a number between 1 and 999"
+                            : "優先度は1〜999の半角数字で入力してください",
+                        )
                         return
                       }
                     } else {
-                      alert("優先度は1〜999の半角数字で入力してください")
+                      alert(
+                        isEnglish
+                          ? "Priority must be a number between 1 and 999"
+                          : "優先度は1〜999の半角数字で入力してください",
+                      )
                       return
                     }
                     addGradeOption(trimmed, priority)
@@ -246,15 +289,19 @@ export default function ScheduleForm({
               }}
             >
               <SelectTrigger id="grade-select" className="w-full">
-                <SelectValue placeholder="所属/役職を選択" />
+                <SelectValue
+                  placeholder={
+                    isEnglish ? "Select affiliation/role" : "所属/役職を選択"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {gradeOptions.map((g) => (
                   <SelectItem key={g} value={g}>
-                    {g} (優先度: {gradeOrder[g]})
+                    {g} ({isEnglish ? "Priority" : "優先度"}: {gradeOrder[g]})
                   </SelectItem>
                 ))}
-                <SelectItem value="__add__">追加</SelectItem>
+                <SelectItem value="__add__">{isEnglish ? "Add" : "追加"}</SelectItem>
               </SelectContent>
             </Select>
             {gradeError && <p className="mt-2 text-sm text-red-500">{gradeError}</p>}
@@ -270,8 +317,18 @@ export default function ScheduleForm({
               onClick={toggleSelectionMode}
               className="text-xs flex items-center gap-1"
             >
-              {selectionMode === "tap" ? <Smartphone className="w-3 h-3" /> : <MousePointer className="w-3 h-3" />}
-              {selectionMode === "tap" ? "タップ" : "ドラッグ"}
+              {selectionMode === "tap" ? (
+                <Smartphone className="w-3 h-3" />
+              ) : (
+                <MousePointer className="w-3 h-3" />
+              )}
+              {isEnglish
+                ? selectionMode === "tap"
+                  ? "Tap"
+                  : "Drag"
+                : selectionMode === "tap"
+                ? "タップ"
+                : "ドラッグ"}
             </Button>
           </div>
           <div className="flex flex-wrap gap-2 mb-2">
@@ -357,7 +414,13 @@ export default function ScheduleForm({
       </CardContent>
       <CardFooter>
         <Button onClick={submit} className="w-full md:w-auto">
-          {editingIndex !== null ? "更新する" : "登録する"}
+          {editingIndex !== null
+            ? isEnglish
+              ? "Update"
+              : "更新する"
+            : isEnglish
+            ? "Submit"
+            : "登録する"}
         </Button>
       </CardFooter>
     </Card>

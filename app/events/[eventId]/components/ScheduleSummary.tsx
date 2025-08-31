@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   Card,
   CardContent,
@@ -48,6 +49,8 @@ export default function ScheduleSummary({
   availableOptions,
 }: Props) {
   const [availability, setAvailability] = useState<AvailabilityMap>({})
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith('/en')
 
   useEffect(() => {
     const newAvail: AvailabilityMap = {}
@@ -94,8 +97,12 @@ export default function ScheduleSummary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>集計結果</CardTitle>
-        <CardDescription>全参加者のスケジュールを集計</CardDescription>
+        <CardTitle>{isEnglish ? 'Summary' : '集計結果'}</CardTitle>
+        <CardDescription>
+          {isEnglish
+            ? 'Aggregate schedules of all participants'
+            : '全参加者のスケジュールを集計'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -149,15 +156,16 @@ export default function ScheduleSummary({
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="text-xs">
-                                参加可能者:{' '}
-                                {data.availableParticipants.join(', ') || 'なし'}
+                                {isEnglish ? 'Available participants:' : '参加可能者:'}{' '}
+                                {data.availableParticipants.join(', ') || (isEnglish ? 'none' : 'なし')}
                               </div>
                               {data.details.map((d) => (
                                 <div
                                   key={d.type}
                                   className="text-xs mt-1"
                                 >
-                                  {d.label}: {d.count}人
+                                  {d.label}: {d.count}
+                                  {isEnglish ? '' : '人'}
                                 </div>
                               ))}
                             </TooltipContent>
