@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     scheduleTypes,
     gradeOptions,
     gradeOrder,
+    password,
   } = json
 
   // --- 基本項目チェック ---
@@ -34,7 +35,14 @@ export async function POST(req: NextRequest) {
       { error: "eventType は \"recurring\" または \"onetime\" で指定してください" },
       { status: 400 }
     )
-  }  
+  }
+
+  if (password != null && typeof password !== "string") {
+    return NextResponse.json(
+      { error: "password は文字列で指定してください" },
+      { status: 400 }
+    )
+  }
 
   // --- イベントタイプ別の検証 ---
   if (eventType === "recurring") {    
@@ -100,6 +108,8 @@ export async function POST(req: NextRequest) {
         }, {})
       : defaultGradeOrder
 
+  const pass = password && typeof password === "string" ? password : ""
+
   // --- Firestore に保存 ---
   try {
     const payload: any = {
@@ -110,6 +120,7 @@ export async function POST(req: NextRequest) {
       gradeOptions: grades,
       gradeOrder: order,
       createdAt: new Date(),
+      ...(pass ? { password: pass } : {}),
     }
     if (eventType === "recurring") {
       payload.xAxis = xAxis
