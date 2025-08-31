@@ -6,7 +6,7 @@ import { Calendar, BarChart2, Settings, Users, CheckCircle, ArrowRight } from "l
 export default function LandingPage() {
   return (
     <main className="flex flex-col">
-      <section className="relative isolate overflow-hidden bg-black text-white py-32">
+      <section className="relative isolate overflow-hidden bg-background text-foreground py-32">
         <div className="container mx-auto text-center">
           <h1 className="text-5xl font-bold tracking-tight mb-6">Lab Scheduling</h1>
           <p className="text-xl max-w-2xl mx-auto mb-8">
@@ -23,7 +23,7 @@ export default function LandingPage() {
         <div className="grid gap-8 md:grid-cols-3">
           <Card className="text-center">
             <CardHeader>
-              <Calendar className="mx-auto h-12 w-12 text-black" />
+              <Calendar className="mx-auto h-12 w-12 text-foreground" />
               <CardTitle className="mt-4">簡単操作</CardTitle>
             </CardHeader>
             <CardContent>
@@ -32,7 +32,7 @@ export default function LandingPage() {
           </Card>
           <Card className="text-center">
             <CardHeader>
-              <BarChart2 className="mx-auto h-12 w-12 text-black" />
+              <BarChart2 className="mx-auto h-12 w-12 text-foreground" />
               <CardTitle className="mt-4">リアルタイム集計</CardTitle>
             </CardHeader>
             <CardContent>
@@ -41,7 +41,7 @@ export default function LandingPage() {
           </Card>
           <Card className="text-center">
             <CardHeader>
-              <Settings className="mx-auto h-12 w-12 text-black" />
+              <Settings className="mx-auto h-12 w-12 text-foreground" />
               <CardTitle className="mt-4">柔軟な設定</CardTitle>
             </CardHeader>
             <CardContent>
@@ -57,7 +57,7 @@ export default function LandingPage() {
           <div className="grid gap-8 md:grid-cols-3">
             <Card className="text-center">
               <CardHeader>
-                <Users className="mx-auto h-12 w-12 text-black" />
+                <Users className="mx-auto h-12 w-12 text-foreground" />
                 <CardTitle className="mt-4">参加者を招待</CardTitle>
               </CardHeader>
               <CardContent>
@@ -66,7 +66,7 @@ export default function LandingPage() {
             </Card>
             <Card className="text-center">
               <CardHeader>
-                <Calendar className="mx-auto h-12 w-12 text-black" />
+                <Calendar className="mx-auto h-12 w-12 text-foreground" />
                 <CardTitle className="mt-4">候補日を投票</CardTitle>
               </CardHeader>
               <CardContent>
@@ -75,7 +75,7 @@ export default function LandingPage() {
             </Card>
             <Card className="text-center">
               <CardHeader>
-                <CheckCircle className="mx-auto h-12 w-12 text-black" />
+                <CheckCircle className="mx-auto h-12 w-12 text-foreground" />
                 <CardTitle className="mt-4">ベストな日程を決定</CardTitle>
               </CardHeader>
               <CardContent>
@@ -88,7 +88,7 @@ export default function LandingPage() {
 
       <section className="py-20 text-center">
         <h2 className="text-3xl font-bold mb-6">今すぐはじめましょう</h2>
-        <p className="text-lg text-muted-foreground mb-8">
+        <p className="text-lg text-foreground mb-8">
           あなたの研究室のスケジュール調整を効率的に。
         </p>
         <Button asChild size="lg">
