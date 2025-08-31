@@ -39,9 +39,9 @@ export async function PUT(
       gradeOptions: FieldValue.arrayUnion(grade),
     }
     if (gradePriority != null) {
-      updateData[`gradeOrder.${grade}`] = gradePriority
+      updateData.gradeOrder = { [grade]: gradePriority }
     }
-    await db.collection('events').doc(eventId).update(updateData)
+    await db.collection('events').doc(eventId).set(updateData, { merge: true })
     return NextResponse.json({ message: '更新しました' })
   } catch (err) {
     console.error('更新エラー:', err)

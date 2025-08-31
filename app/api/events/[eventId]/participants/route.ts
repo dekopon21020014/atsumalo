@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
       gradeOptions: FieldValue.arrayUnion(grade),
     }
     if (gradePriority != null) {
-      updateData[`gradeOrder.${grade}`] = gradePriority
+      updateData.gradeOrder = { [grade]: gradePriority }
     }
-    await db.collection("events").doc(eventId).update(updateData)
+    await db.collection("events").doc(eventId).set(updateData, { merge: true })
 
     return NextResponse.json({ message: "保存しました", id: docRef.id })
   } catch (err) {
