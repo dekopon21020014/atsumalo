@@ -216,8 +216,26 @@ export default function ScheduleForm({
                   const newGrade = prompt("所属/役職を入力してください")
                   if (newGrade) {
                     const trimmed = newGrade.trim()
-                    const pr = prompt("優先度を入力してください（数値）")
-                    const priority = pr ? Number(pr) : gradeOptions.length + 1
+                    const existing = gradeOptions
+                      .map((g) => `${g}(${gradeOrder[g] ?? "-"})`)
+                      .join("\n")
+                    const pr = prompt(
+                      `優先度を入力してください（1〜999の半角数字。小さい数字ほど優先度が高く表示順が前になります）\n現在の設定:\n${existing}`
+                    )
+                    let priority: number
+                    if (!pr || pr.trim() === "") {
+                      const maxPri = Math.max(0, ...Object.values(gradeOrder))
+                      priority = maxPri + 1
+                    } else if (/^\d+$/.test(pr.trim())) {
+                      priority = Number(pr)
+                      if (priority < 1 || priority > 999) {
+                        alert("優先度は1〜999の半角数字で入力してください")
+                        return
+                      }
+                    } else {
+                      alert("優先度は1〜999の半角数字で入力してください")
+                      return
+                    }
                     addGradeOption(trimmed, priority)
                     setCurrentGrade(trimmed)
                   }
@@ -233,7 +251,7 @@ export default function ScheduleForm({
               <SelectContent>
                 {gradeOptions.map((g) => (
                   <SelectItem key={g} value={g}>
-                    {g}
+                    {g} (優先度: {gradeOrder[g]})
                   </SelectItem>
                 ))}
                 <SelectItem value="__add__">追加</SelectItem>
