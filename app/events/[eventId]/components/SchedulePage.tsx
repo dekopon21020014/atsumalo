@@ -26,15 +26,16 @@ import BestTimeSlots from './BestTimeSlots'
 import { createEmptySchedule } from './utils'
 import type { Participant, Schedule } from './types'
 import { useParams } from 'next/navigation'
-import { gradeOptions, ScheduleType } from './constants'
+import { ScheduleType } from './constants'
 
 type Props = {
   xAxis: string[]
   yAxis: string[]
   scheduleTypes: ScheduleType[]
+  gradeOptions: string[]
 }
 
-export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
+export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions }: Props) {
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
   const [participants, setParticipants] = useState<Participant[]>([])
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
@@ -122,7 +123,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
     link.remove()
   }
 
-  // 学年フィルタリング
+  // 所属/役職フィルタリング
   const filteredParticipants =
     filterGrades.length === 0
       ? participants
@@ -194,6 +195,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
             editingIndex={editingIndex}
             setEditingIndex={setEditingIndex}
             setActiveTab={setActiveTab}
+            gradeOptions={gradeOptions}
           />
         </TabsContent>
 
@@ -209,13 +211,14 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
             xAxis={xAxis}
             yAxis={yAxis}
             availableOptions={availableOptions}
+            gradeOptions={gradeOptions}
           />
         </TabsContent>
 
         <TabsContent value="summary">
            <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center justify-between mb-3">
-          <Label className="text-sm font-medium">学年で絞り込み</Label>
+          <Label className="text-sm font-medium">所属/役職で絞り込み</Label>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setFilterGrades(gradeOptions)} className="text-xs">
               全選択
@@ -263,7 +266,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
 
         {filterGrades.length > 0 && (
           <div className="mt-3 text-sm text-gray-600">
-            {filterGrades.length}個の学年を選択中 ({filteredParticipants.length}名が対象)
+            {filterGrades.length}個の所属/役職を選択中 ({filteredParticipants.length}名が対象)
           </div>
         )}
       </div>
@@ -284,7 +287,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes }: Props) {
           </div>
 
           <div className="mt-12">
-            <h3 className="text-xl font-semibold mb-4">学年別集計（全体表示）</h3>
+            <h3 className="text-xl font-semibold mb-4">所属/役職別集計（全体表示）</h3>
             <div className="space-y-8">
               {gradeOptions.map((g) => {
                 const group = participants.filter((p) => p.grade === g)

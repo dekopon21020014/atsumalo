@@ -1,6 +1,7 @@
 // app/api/events/[eventId]/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
+import { defaultGradeOptions } from "@/app/events/[eventId]/components/constants"
 
 interface ScheduleType {
   id: string
@@ -64,6 +65,7 @@ export async function GET(
     description: data.description,
     eventType,
     scheduleTypes,
+    gradeOptions: Array.isArray(data.gradeOptions) ? data.gradeOptions : defaultGradeOptions,
     ...(eventType === "recurring"
       ? { xAxis, yAxis }
       : { dateTimeOptions }),
@@ -85,6 +87,7 @@ export async function PUT(
     xAxis,
     yAxis,
     dateTimeOptions,
+    gradeOptions,
   } = json
 
   // 基本バリデーション
@@ -122,6 +125,13 @@ export async function PUT(
       { error: "scheduleTypes は正しい形式で指定してください" },
       { status: 400 }
     )
+  }
+
+  if (
+    !Array.isArray(gradeOptions) ||
+    !gradeOptions.every((v: any) => typeof v === "string")
+  ) {
+    gradeOptions = defaultGradeOptions
   }
 
   // イベントタイプ別の検証
@@ -163,6 +173,7 @@ export async function PUT(
     description: description || "",
     eventType,
     scheduleTypes,
+    gradeOptions,
     updatedAt: new Date(),
   }
 

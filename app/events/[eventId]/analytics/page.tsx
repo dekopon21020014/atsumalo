@@ -20,7 +20,6 @@ import {
 } from "recharts"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import type { ScheduleType } from "@/app/events/[eventId]/components/constants"
-import { gradeOptions } from "@/app/events/[eventId]/components/constants"
 
 type AnalyticsResponse = {
   id: string
@@ -34,6 +33,7 @@ export default function AnalyticsPage() {
   const [eventName, setEventName] = useState("読み込み中...")
   const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
   const [responses, setResponses] = useState<AnalyticsResponse[]>([])
+  const [gradeOptions, setGradeOptions] = useState<string[]>([])
 
   useEffect(() => {
     if (!eventId) return
@@ -42,6 +42,7 @@ export default function AnalyticsPage() {
       .then((data) => {
         setEventName(data.name || "")
         setScheduleTypes(Array.isArray(data.scheduleTypes) ? data.scheduleTypes : [])
+        setGradeOptions(Array.isArray(data.gradeOptions) ? data.gradeOptions : [])
         setResponses(
           Array.isArray(data.participants)
             ? data.participants.map((p: any) => ({
@@ -116,7 +117,7 @@ export default function AnalyticsPage() {
         grade: g,
         count: gradeCounts[g] || 0,
       })),
-    [gradeCounts],
+    [gradeCounts, gradeOptions],
   )
 
   const barConfig = { count: { label: "人数", color: "hsl(var(--chart-1))" } }
@@ -155,7 +156,7 @@ export default function AnalyticsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>学年別参加人数</CardTitle>
+          <CardTitle>所属/役職別参加人数</CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={barConfig} className="h-[300px] w-full">
