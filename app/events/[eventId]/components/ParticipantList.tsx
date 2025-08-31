@@ -1,7 +1,7 @@
 // app/events/[eventId]/components/ParticipantList.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -34,6 +34,7 @@ type Props = {
   setActiveTab: (t: string) => void
   xAxis: string[]
   yAxis: string[]
+  availableOptions: string[]
 }
 
 export default function ParticipantList({
@@ -46,6 +47,7 @@ export default function ParticipantList({
   setActiveTab,
   xAxis,
   yAxis,
+  availableOptions,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
@@ -67,6 +69,19 @@ export default function ParticipantList({
     const bi = gradeOrder.indexOf(b.grade)
     return sortAscending ? ai - bi : bi - ai
   })
+
+  const availableCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const day of xAxis) {
+      for (const period of yAxis) {
+        const key = `${day}-${period}`
+        counts[key] = displayed.filter((p) =>
+          availableOptions.includes(p.schedule[key])
+        ).length
+      }
+    }
+    return counts
+  }, [displayed, xAxis, yAxis, availableOptions])
 
   const handleEdit = (idx: number) => {
     const part = displayed[idx]
@@ -151,7 +166,7 @@ export default function ParticipantList({
       {viewMode === 'grid' ? (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th className="border p-1 sticky left-0 bg-white z-20">名前</th>
                 {xAxis.map((day) =>
@@ -161,6 +176,21 @@ export default function ParticipantList({
                       className="border p-1 text-center whitespace-nowrap"
                     >
                       {day}{period}限
+                    </th>
+                  ))
+                )}
+              </tr>
+              <tr className="bg-gray-50">
+                <th className="border p-1 text-center sticky left-0 bg-gray-50 z-20">
+                  参加可能者数
+                </th>
+                {xAxis.map((day) =>
+                  yAxis.map((period) => (
+                    <th
+                      key={`count-${day}-${period}`}
+                      className="border p-1 text-center"
+                    >
+                      {availableCounts[`${day}-${period}`] ?? 0}
                     </th>
                   ))
                 )}
