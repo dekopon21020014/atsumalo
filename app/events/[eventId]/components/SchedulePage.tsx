@@ -33,9 +33,10 @@ type Props = {
   yAxis: string[]
   scheduleTypes: ScheduleType[]
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
-export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions }: Props) {
+export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions, gradeOrder }: Props) {
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
   const [participants, setParticipants] = useState<Participant[]>([])
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
@@ -43,12 +44,13 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   const [activeTab, setActiveTab] = useState('input')
   const [currentName, setCurrentName] = useState('')
   const [currentGrade, setCurrentGrade] = useState('')
-
   const [currentSchedule, setCurrentSchedule] = useState<Schedule>(
     () => createEmptySchedule(xAxis, yAxis, defaultTypeId)
   )
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [filterGrades, setFilterGrades] = useState<string[]>([])
+  const [gradeOpts, setGradeOpts] = useState<string[]>(gradeOptions)
+  const [gradeOrderMap, setGradeOrderMap] = useState<Record<string, number>>(gradeOrder)
   const { eventId } = useParams()
 
   useEffect(() => {
@@ -72,6 +74,11 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
         console.error('Failed to load participants', e)
       })
   }, [eventId])
+
+  useEffect(() => {
+    setGradeOpts(gradeOptions)
+    setGradeOrderMap(gradeOrder)
+  }, [gradeOptions, gradeOrder])
 
   // 編集モード切り替え時または軸変更時に currentSchedule をリセット
   useEffect(() => {
@@ -129,6 +136,17 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
       ? participants
       : participants.filter((p) => filterGrades.includes(p.grade || ''))
 
+  const addGrade = (name: string, priority: number) => {
+    setGradeOrderMap(prev => {
+      const updated = { ...prev, [name]: priority }
+      setGradeOpts(prevOpts => {
+        const next = prevOpts.includes(name) ? prevOpts : [...prevOpts, name]
+        return [...next].sort((a, b) => (updated[a] ?? 999) - (updated[b] ?? 999))
+      })
+      return updated
+    })
+  }
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex flex-wrap justify-between gap-2 mb-4">
@@ -184,6 +202,9 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             xAxis={xAxis}
             yAxis={yAxis}
             scheduleTypes={scheduleTypes}
+            gradeOptions={gradeOpts}
+            gradeOrder={gradeOrderMap}
+            addGradeOption={addGrade}
             currentName={currentName}
             setCurrentName={setCurrentName}
             currentGrade={currentGrade}
@@ -195,7 +216,6 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             editingIndex={editingIndex}
             setEditingIndex={setEditingIndex}
             setActiveTab={setActiveTab}
-            gradeOptions={gradeOptions}
           />
         </TabsContent>
 
@@ -211,7 +231,8 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             xAxis={xAxis}
             yAxis={yAxis}
             availableOptions={availableOptions}
-            gradeOptions={gradeOptions}
+            gradeOptions={gradeOpts}
+            gradeOrder={gradeOrderMap}
           />
         </TabsContent>
 
@@ -220,7 +241,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
         <div className="flex items-center justify-between mb-3">
           <Label className="text-sm font-medium">所属/役職で絞り込み</Label>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setFilterGrades(gradeOptions)} className="text-xs">
+            <Button variant="outline" size="sm" onClick={() => setFilterGrades(gradeOpts)} className="text-xs">
               全選択
             </Button>
             <Button variant="outline" size="sm" onClick={() => setFilterGrades([])} className="text-xs">
@@ -230,7 +251,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {gradeOptions.map((g) => {
+          {gradeOpts.map((g) => {
             const isSelected = filterGrades.includes(g)
             const count = participants.filter((p) => p.grade === g).length
 

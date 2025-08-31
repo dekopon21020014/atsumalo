@@ -12,6 +12,7 @@ type Props = {
   scheduleTypes: ScheduleType[]
   existingResponses: Response[]
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 export default function OneTimeSummaryTab({
@@ -19,12 +20,9 @@ export default function OneTimeSummaryTab({
   scheduleTypes,
   existingResponses,
   gradeOptions,
+  gradeOrder,
 }: Props) {
   const [summaryView, setSummaryView] = useState<"dates" | "grades">("dates")
-
-  const gradeOrder = useMemo(() => {
-    return gradeOptions.reduce((acc, g, i) => ({ ...acc, [g]: i }), {} as Record<string, number>)
-  }, [gradeOptions])
 
   // 指定日時の「参加可能」人数
   const getAvailableCount = (dateTime: string) =>

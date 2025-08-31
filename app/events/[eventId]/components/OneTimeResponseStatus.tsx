@@ -27,6 +27,7 @@ type Props = {
   responses?: Response[]
   form: ParticipantFormHook
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 export default function OneTimeResponsesTab({
@@ -35,6 +36,7 @@ export default function OneTimeResponsesTab({
   responses = [],
   form,
   gradeOptions,
+  gradeOrder,
 }: Props) {
   // 
   const getResponseIcon = (response: Response, dateTime: string) => {

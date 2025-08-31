@@ -1,7 +1,7 @@
 // app/api/events/[eventId]/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
-import { defaultGradeOptions } from "@/app/events/[eventId]/components/constants"
+import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 
 interface ScheduleType {
   id: string
@@ -66,6 +66,7 @@ export async function GET(
     eventType,
     scheduleTypes,
     gradeOptions: Array.isArray(data.gradeOptions) ? data.gradeOptions : defaultGradeOptions,
+    gradeOrder: typeof data.gradeOrder === 'object' ? data.gradeOrder : defaultGradeOrder,
     ...(eventType === "recurring"
       ? { xAxis, yAxis }
       : { dateTimeOptions }),
@@ -88,6 +89,7 @@ export async function PUT(
     yAxis,
     dateTimeOptions,
     gradeOptions,
+    gradeOrder,
   } = json
 
   // 基本バリデーション
@@ -134,6 +136,14 @@ export async function PUT(
     gradeOptions = defaultGradeOptions
   }
 
+  const order =
+    gradeOrder && typeof gradeOrder === "object"
+      ? Object.entries(gradeOrder).reduce((acc: any, [k, v]) => {
+          if (typeof k === "string" && typeof v === "number") acc[k] = v
+          return acc
+        }, {})
+      : defaultGradeOrder
+
   // イベントタイプ別の検証
   if (eventType === "recurring") {
     if (
@@ -174,6 +184,7 @@ export async function PUT(
     eventType,
     scheduleTypes,
     gradeOptions,
+    gradeOrder: order,
     updatedAt: new Date(),
   }
 

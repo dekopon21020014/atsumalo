@@ -22,6 +22,8 @@ type Props = {
   yAxis: string[]
   scheduleTypes: ScheduleType[]
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
+  addGradeOption: (name: string, priority: number) => void
   currentName: string
   setCurrentName: Dispatch<SetStateAction<string>>
   currentGrade: string
@@ -40,6 +42,8 @@ export default function ScheduleForm({
   yAxis,
   scheduleTypes,
   gradeOptions,
+  gradeOrder,
+  addGradeOption,
   currentName,
   setCurrentName,
   currentGrade,
@@ -60,7 +64,6 @@ export default function ScheduleForm({
   const [scheduleError, setScheduleError] = useState("")
   const [nameError, setNameError] = useState("")
   const [gradeError, setGradeError] = useState("")
-  const [gradeOpts, setGradeOpts] = useState<string[]>(gradeOptions)
   const { eventId } = useParams()
 
   const tableRef = useRef<HTMLDivElement>(null)
@@ -69,10 +72,6 @@ export default function ScheduleForm({
     setSelectionMode(isMobile ? "tap" : "drag")
   }, [isMobile])
 
-  // イベント情報が読み込まれた際に選択肢を更新
-  useEffect(() => {
-    setGradeOpts(gradeOptions)
-  }, [gradeOptions])
 
   useEffect(() => {
     if (editingIndex !== null) {
@@ -138,6 +137,7 @@ export default function ScheduleForm({
       eventId,
       name: currentName,
       grade: currentGrade,
+      gradePriority: gradeOrder[currentGrade],
       schedule: currentSchedule,
     }
 
@@ -216,9 +216,9 @@ export default function ScheduleForm({
                   const newGrade = prompt("所属/役職を入力してください")
                   if (newGrade) {
                     const trimmed = newGrade.trim()
-                    if (trimmed && !gradeOpts.includes(trimmed)) {
-                      setGradeOpts([...gradeOpts, trimmed])
-                    }
+                    const pr = prompt("優先度を入力してください（数値）")
+                    const priority = pr ? Number(pr) : gradeOptions.length + 1
+                    addGradeOption(trimmed, priority)
                     setCurrentGrade(trimmed)
                   }
                   return
@@ -231,7 +231,7 @@ export default function ScheduleForm({
                 <SelectValue placeholder="所属/役職を選択" />
               </SelectTrigger>
               <SelectContent>
-                {gradeOpts.map((g) => (
+                {gradeOptions.map((g) => (
                   <SelectItem key={g} value={g}>
                     {g}
                   </SelectItem>

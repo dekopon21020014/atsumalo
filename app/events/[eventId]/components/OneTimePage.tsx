@@ -35,16 +35,29 @@ type Props = {
   scheduleTypes: ScheduleType[]
   responses?: Response[]
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
-export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [], gradeOptions }: Props) {
+export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [], gradeOptions, gradeOrder }: Props) {
   const [activeTab, setActiveTab] = useState("input")
   const [gradeOptionsState, setGradeOptionsState] = useState<string[]>(gradeOptions)
+  const [gradeOrderState, setGradeOrderState] = useState<Record<string, number>>(gradeOrder)
   // イベント読み込み後に所属/役職の選択肢を同期
   useEffect(() => {
     setGradeOptionsState(gradeOptions)
-  }, [gradeOptions])
-  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState)
+    setGradeOrderState(gradeOrder)
+  }, [gradeOptions, gradeOrder])
+  const addGrade = (name: string, priority: number) => {
+    setGradeOrderState(prev => {
+      const updated = { ...prev, [name]: priority }
+      setGradeOptionsState(prevOpts => {
+        const next = prevOpts.includes(name) ? prevOpts : [...prevOpts, name]
+        return [...next].sort((a, b) => (updated[a] ?? 999) - (updated[b] ?? 999))
+      })
+      return updated
+    })
+  }
+  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState, gradeOrderState)
   const isMobile = useMediaQuery("(max-width: 768px)")      
 
   // 最適な日時を取得
@@ -77,7 +90,8 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             setExistingResponses={form.setExistingResponses}
             setActiveTab={setActiveTab}
             gradeOptions={gradeOptionsState}
-            setGradeOptions={setGradeOptionsState}
+            gradeOrder={gradeOrderState}
+            addGradeOption={addGrade}
         />
 
         {/* 回答状況タブ */}
@@ -87,6 +101,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             responses={form.existingResponses}
             form={form}
             gradeOptions={gradeOptionsState}
+            gradeOrder={gradeOrderState}
         />
 
         {/* 集計結果タブ */}
@@ -95,6 +110,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             scheduleTypes={scheduleTypes}
             existingResponses={form.existingResponses}
             gradeOptions={gradeOptionsState}
+            gradeOrder={gradeOrderState}
         />
       </Tabs>
 
@@ -150,9 +166,9 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
                         const newGrade = prompt("所属/役職を入力してください")
                         if (newGrade) {
                           const trimmed = newGrade.trim()
-                          if (trimmed && !gradeOptionsState.includes(trimmed)) {
-                            setGradeOptionsState([...gradeOptionsState, trimmed])
-                          }
+                          const pr = prompt("優先度を入力してください（数値）")
+                          const priority = pr ? Number(pr) : gradeOptionsState.length + 1
+                          addGrade(trimmed, priority)
                           form.setEditGrade(trimmed)
                         }
                         return

@@ -10,6 +10,7 @@ export function useParticipantForm(
   responses: Response[],
   setActiveTab: (tab: string) => void,
   gradeOptions: string[],
+  gradeOrder: Record<string, number>,
 ) {
   const [name, setName] = useState<string>("")
   const [grade, setGrade] = useState<string>("")
@@ -106,7 +107,7 @@ export function useParticipantForm(
     }
     setIsSubmitting(true)
     try {
-      const responseData = { eventId, name, grade,
+      const responseData = { eventId, name, grade, gradePriority: gradeOrderMap[grade],
         schedule: Object.entries(selections).map(([dateTime, typeId]) => ({ dateTime, typeId, comment: comments[dateTime] || "" }))
       }
       const response = await fetch(`/api/events/${eventId}/participants`, {
@@ -134,7 +135,7 @@ export function useParticipantForm(
     setIsEditing(true)
     try {
       const responseData = {
-        name: editName, grade: editGrade,
+        name: editName, grade: editGrade, gradePriority: gradeOrderMap[editGrade],
         schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId, comment: editComments[dateTime] || "" }))
       }
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
@@ -200,8 +201,8 @@ export function useParticipantForm(
   }
 
   const gradeOrderMap = useMemo(() => {
-    return gradeOptions.reduce((acc, g, i) => ({ ...acc, [g]: i }), {} as Record<string, number>)
-  }, [gradeOptions])
+    return gradeOrder
+  }, [gradeOrder])
 
   const getSortedResponses = () => {
     if (!existingResponses.length) return []

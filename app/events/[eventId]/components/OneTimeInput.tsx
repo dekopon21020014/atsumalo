@@ -34,7 +34,8 @@ type Props = {
   setExistingResponses: React.Dispatch<React.SetStateAction<Response[]>>
   setActiveTab: (tab: string) => void
   gradeOptions: string[]
-  setGradeOptions: React.Dispatch<React.SetStateAction<string[]>>
+  gradeOrder: { [key: string]: number }
+  addGradeOption: (name: string, priority: number) => void
 }
 
 export default function OneTimeInputTab({
@@ -45,7 +46,8 @@ export default function OneTimeInputTab({
   setExistingResponses,
   setActiveTab,
   gradeOptions,
-  setGradeOptions,
+  gradeOrder,
+  addGradeOption,
 }: Props) {
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
@@ -101,6 +103,7 @@ export default function OneTimeInputTab({
         eventId,
         name,
         grade,
+        gradePriority: gradeOrder[grade],
         schedule: Object.entries(selections).map(([dateTime, typeId]) => ({
           dateTime,
           typeId,
@@ -193,9 +196,9 @@ export default function OneTimeInputTab({
                     const newGrade = prompt("所属/役職を入力してください")
                     if (newGrade) {
                       const trimmed = newGrade.trim()
-                      if (trimmed && !gradeOptions.includes(trimmed)) {
-                        setGradeOptions([...gradeOptions, trimmed])
-                      }
+                      const pr = prompt("優先度を入力してください（数値）")
+                      const priority = pr ? Number(pr) : gradeOptions.length + 1
+                      addGradeOption(trimmed, priority)
                       setGrade(trimmed)
                     }
                     return

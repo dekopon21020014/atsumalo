@@ -36,7 +36,8 @@ import {
   scheduleTypeTemplate,
   xAxisTemplate,
   yAxisTemplate,
-  defaultGradeOptions
+  defaultGradeOptions,
+  defaultGradeOrder,
 } from "../events/[eventId]/components/constants"
 import type { ScheduleType } from "../events/[eventId]/components/constants"
 
@@ -53,7 +54,9 @@ export default function HomePage() {
   const [dateTimeOptions, setDateTimeOptions] = useState(["5/1 19:00", "5/2 19:00", "5/3 20:00"])
 
   // 所属/役職の選択肢
-  const [gradeOptions, setGradeOptions] = useState<string[]>(defaultGradeOptions)
+  const [gradeOptions, setGradeOptions] = useState(
+    defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 }))
+  )
 
   const [activeTab, setActiveTab] = useState("builder")
   const router = useRouter()
@@ -130,7 +133,10 @@ export default function HomePage() {
   // 所属/役職の項目を追加
   const addGradeOption = () => {
     setGradeOptions((prev) => {
-      const newOptions = [...prev, `選択肢${prev.length + 1}`]
+      const newOptions = [
+        ...prev,
+        { name: `選択肢${prev.length + 1}`, priority: prev.length + 1 },
+      ]
       requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
         gradeOptionRefs.current[newIndex]?.focus()
@@ -147,10 +153,17 @@ export default function HomePage() {
     setGradeOptions(newOpts)
   }
 
-  // 所属/役職の項目を更新
-  const updateGradeOption = (index: number, value: string) => {
+  // 所属/役職の名称を更新
+  const updateGradeOptionName = (index: number, value: string) => {
     const newOpts = [...gradeOptions]
-    newOpts[index] = value
+    newOpts[index].name = value
+    setGradeOptions(newOpts)
+  }
+
+  // 所属/役職の優先度を更新
+  const updateGradeOptionPriority = (index: number, value: number) => {
+    const newOpts = [...gradeOptions]
+    newOpts[index].priority = value
     setGradeOptions(newOpts)
   }
 
@@ -291,22 +304,23 @@ export default function HomePage() {
 
 
     // から文字列が選択肢にあれば除外するためのヘルパー
-    function removeEmptyStrings(arr: string[]): string[] {
-      return arr.filter((v) => v.trim() !== "")
-    }
-    
-    function removeEmptyScheduleTypes(
-      arr: ScheduleType[]
-    ): ScheduleType[] {
+    function removeEmptyScheduleTypes(arr: ScheduleType[]): ScheduleType[] {
       return arr.filter((t) => t.id.trim() !== "")
     }
 
     try {
       const cleanedScheduleTypes = removeEmptyScheduleTypes(scheduleTypes)
-      const cleanedXAxis         = removeEmptyStrings(xAxis)
-      const cleanedYAxis         = removeEmptyStrings(yAxis)
-      const cleanedDateTimes     = removeEmptyStrings(dateTimeOptions)
-      const cleanedGrades        = removeEmptyStrings(gradeOptions)
+      const cleanedXAxis = xAxis.filter((v) => v.trim() !== "")
+      const cleanedYAxis = yAxis.filter((v) => v.trim() !== "")
+      const cleanedDateTimes = dateTimeOptions.filter((v) => v.trim() !== "")
+      const cleanedGrades = gradeOptions
+        .filter((g) => g.name.trim() !== "")
+        .map((g) => g.name.trim())
+      const gradeOrder = gradeOptions.reduce((acc, g) => {
+        const name = g.name.trim()
+        if (name) acc[name] = g.priority
+        return acc
+      }, {} as Record<string, number>)
 
       // イベントタイプに応じたデータを準備
       const eventData = {
@@ -315,6 +329,7 @@ export default function HomePage() {
         eventType,
         scheduleTypes: cleanedScheduleTypes,
         gradeOptions: cleanedGrades,
+        gradeOrder,
         xAxis: eventType === "recurring" ? cleanedXAxis : undefined,
         yAxis: eventType === "recurring" ? cleanedYAxis : undefined,
         dateTimeOptions: eventType === "onetime" ? cleanedDateTimes : undefined,
@@ -454,9 +469,15 @@ export default function HomePage() {
                 <div key={i} className="flex items-center gap-2">
                   <Input
                     ref={(el) => (gradeOptionRefs.current[i] = el)}
-                    value={opt}
-                    onChange={(e) => updateGradeOption(i, e.target.value)}
+                    value={opt.name}
+                    onChange={(e) => updateGradeOptionName(i, e.target.value)}
                     className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={opt.priority}
+                    onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                    className="w-24"
                   />
                   <Button
                     type="button"

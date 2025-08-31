@@ -34,7 +34,7 @@ export default function AnalyticsPage() {
   const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
   const [responses, setResponses] = useState<AnalyticsResponse[]>([])
   const [gradeOptions, setGradeOptions] = useState<string[]>([])
-
+  
   useEffect(() => {
     if (!eventId) return
     fetch(`/api/events/${eventId}`)
@@ -42,7 +42,13 @@ export default function AnalyticsPage() {
       .then((data) => {
         setEventName(data.name || "")
         setScheduleTypes(Array.isArray(data.scheduleTypes) ? data.scheduleTypes : [])
-        setGradeOptions(Array.isArray(data.gradeOptions) ? data.gradeOptions : [])
+        if (Array.isArray(data.gradeOptions)) {
+          const order = data.gradeOrder || {}
+          const sorted = [...data.gradeOptions].sort(
+            (a: string, b: string) => (order[a] ?? 999) - (order[b] ?? 999)
+          )
+          setGradeOptions(sorted)
+        }
         setResponses(
           Array.isArray(data.participants)
             ? data.participants.map((p: any) => ({

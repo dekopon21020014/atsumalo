@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
 import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
+import { defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 import { colorPalettes } from "@/app/events/[eventId]/components/constants"
 import Link from "next/link"
 
@@ -29,6 +30,7 @@ export default function EventPage() {
     scheduleTypes: [],
     existingResponses: [],
     gradeOptions: [],
+    gradeOrder: defaultGradeOrder,
   })
 
   // 編集用の状態
@@ -79,7 +81,8 @@ export default function EventPage() {
                 schedule: p.schedule,
               }))
             : [],
-          gradeOptions: Array.isArray(resData.gradeOptions) ? resData.gradeOptions : [],
+          gradeOptions: Array.isArray(resData.gradeOptions) ? resData.gradeOptions.sort((a: string,b: string)=>(resData.gradeOrder?.[a]??999)-(resData.gradeOrder?.[b]??999)) : [],
+          gradeOrder: typeof resData.gradeOrder === 'object' ? resData.gradeOrder : defaultGradeOrder,
         })
         setName(resData.name)
         setDescription(resData.description ?? "")
@@ -664,6 +667,7 @@ export default function EventPage() {
               yAxis={data.yAxis}
               scheduleTypes={data.scheduleTypes}
               gradeOptions={data.gradeOptions}
+              gradeOrder={data.gradeOrder}
             />
           ) : (
             <OneTimePage
@@ -672,6 +676,7 @@ export default function EventPage() {
               scheduleTypes={data.scheduleTypes}
               responses={data.existingResponses}
               gradeOptions={data.gradeOptions}
+              gradeOrder={data.gradeOrder}
             />
           )}
         </div>

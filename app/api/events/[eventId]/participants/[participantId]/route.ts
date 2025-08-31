@@ -7,13 +7,16 @@ export async function PUT(
   { params }: { params: { eventId: string; participantId: string } }
 ) {
   const { eventId, participantId } = await params
-  const { name, grade, schedule } = await req.json()
+  const { name, grade, gradePriority, schedule } = await req.json()
 
   if (!name || typeof name !== 'string') {
     return NextResponse.json({ error: '名前が必要です' }, { status: 400 })
   }  
   if (!grade || typeof grade !== 'string') {
     return NextResponse.json({ error: '所属/役職が必要です' }, { status: 400 })
+  }
+  if (gradePriority != null && typeof gradePriority !== 'number') {
+    return NextResponse.json({ error: 'gradePriority は数値で指定してください' }, { status: 400 })
   }
   if (!schedule || typeof schedule !== 'object') {
     return NextResponse.json({ error: 'スケジュールが必要です' }, { status: 400 })
@@ -32,9 +35,13 @@ export async function PUT(
         updatedAt: FieldValue.serverTimestamp(),
       })
 
-    await db.collection('events').doc(eventId).update({
+    const updateData: Record<string, any> = {
       gradeOptions: FieldValue.arrayUnion(grade),
-    })
+    }
+    if (gradePriority != null) {
+      updateData[`gradeOrder.${grade}`] = gradePriority
+    }
+    await db.collection('events').doc(eventId).update(updateData)
     return NextResponse.json({ message: '更新しました' })
   } catch (err) {
     console.error('更新エラー:', err)

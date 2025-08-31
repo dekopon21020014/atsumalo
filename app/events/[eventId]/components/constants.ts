@@ -26,6 +26,7 @@ export type EventData = {
   scheduleTypes: ScheduleType[]
   existingResponses: Response[]
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 // スケジュールの種類と対応する表示色など

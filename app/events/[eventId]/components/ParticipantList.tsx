@@ -36,6 +36,7 @@ type Props = {
   yAxis: string[]
   availableOptions: string[]
   gradeOptions: string[]
+  gradeOrder: { [key: string]: number }
 }
 
 export default function ParticipantList({
@@ -50,12 +51,12 @@ export default function ParticipantList({
   yAxis,
   availableOptions,
   gradeOptions,
+  gradeOrder,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
 
   // 所属/役職フィルタ／ソート／ビュー切り替え
-  const gradeOrder = gradeOptions
   const [filterGrade, setFilterGrade] = useState<string>('All')
   const [sortAscending, setSortAscending] = useState<boolean>(true)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
@@ -67,8 +68,8 @@ export default function ParticipantList({
       : participants.filter((p) => p.grade === filterGrade)
 
   displayed.sort((a, b) => {
-    const ai = gradeOrder.indexOf(a.grade)
-    const bi = gradeOrder.indexOf(b.grade)
+    const ai = gradeOrder[a.grade] ?? 999
+    const bi = gradeOrder[b.grade] ?? 999
     return sortAscending ? ai - bi : bi - ai
   })
 

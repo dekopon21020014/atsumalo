@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { eventId: str
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { eventId, name, grade, schedule } = body
+  const { eventId, name, grade, gradePriority, schedule } = body
 
   if (!eventId || typeof eventId !== "string") {
     return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
   }
   if (!grade || typeof grade !== "string") {
     return NextResponse.json({ error: "所属/役職が必要です" }, { status: 400 })
+  }
+  if (gradePriority != null && typeof gradePriority !== "number") {
+    return NextResponse.json({ error: "gradePriority は数値で指定してください" }, { status: 400 })
   }
   if (!schedule || typeof schedule !== "object") {
     return NextResponse.json({ error: "スケジュールが必要です" }, { status: 400 })
@@ -49,9 +52,13 @@ export async function POST(req: NextRequest) {
       createdAt: FieldValue.serverTimestamp(),
     })
 
-    await db.collection("events").doc(eventId).update({
+    const updateData: Record<string, any> = {
       gradeOptions: FieldValue.arrayUnion(grade),
-    })
+    }
+    if (gradePriority != null) {
+      updateData[`gradeOrder.${grade}`] = gradePriority
+    }
+    await db.collection("events").doc(eventId).update(updateData)
 
     return NextResponse.json({ message: "保存しました", id: docRef.id })
   } catch (err) {
