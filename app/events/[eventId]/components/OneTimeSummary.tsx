@@ -83,6 +83,13 @@ export default function OneTimeSummaryTab({
 
   const bestDateTime = getBestDateTime()
 
+  const totalAvailableParticipants = existingResponses.filter((response) =>
+    response.schedule.some((s) => {
+      const type = scheduleTypes.find((t) => t.id === s.typeId)
+      return type?.isAvailable
+    })
+  ).length
+
   return (
     <TabsContent value="summary" className="space-y-4">
       {existingResponses.length > 0 ? (
@@ -149,9 +156,9 @@ export default function OneTimeSummaryTab({
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
+                <div className="max-h-96 overflow-auto">
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky top-0 z-10 bg-white">
                       <tr className="bg-gray-50 border-b">
                         <th className="text-left py-2 px-3 font-medium">日時</th>
                         {scheduleTypes.map((type) => (
@@ -164,6 +171,17 @@ export default function OneTimeSummaryTab({
                         ))}
                         <th className="py-2 px-3 text-center font-medium">
                           参加可能
+                        </th>
+                      </tr>
+                      <tr className="bg-gray-50">
+                        <th className="text-left py-2 px-3 font-medium">
+                          参加可能者数
+                        </th>
+                        {scheduleTypes.map((type) => (
+                          <th key={type.id} className="py-2 px-2"></th>
+                        ))}
+                        <th className="py-2 px-3 text-center font-medium">
+                          {totalAvailableParticipants}
                         </th>
                       </tr>
                     </thead>
@@ -255,9 +273,9 @@ export default function OneTimeSummaryTab({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
+                  <div className="max-h-96 overflow-auto">
                     <table className="w-full text-sm">
-                      <thead>
+                      <thead className="sticky top-0 z-10 bg-white">
                         <tr className="bg-gray-50 border-b">
                           <th className="text-left py-2 px-3 font-medium">
                             学年
@@ -276,6 +294,19 @@ export default function OneTimeSummaryTab({
                               >
                                 {dt}
                               </div>
+                            </th>
+                          ))}
+                        </tr>
+                        <tr className="bg-gray-50">
+                          <th className="text-left py-2 px-3 font-medium">
+                            参加可能者数
+                          </th>
+                          <th className="py-2 px-2 text-center font-medium">
+                            {totalAvailableParticipants}
+                          </th>
+                          {dateTimeOptions.map((dt, i) => (
+                            <th key={i} className="py-2 px-2 text-center font-medium">
+                              {getAvailableCount(dt)}
                             </th>
                           ))}
                         </tr>

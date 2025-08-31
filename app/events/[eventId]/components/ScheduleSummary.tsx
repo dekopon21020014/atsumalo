@@ -1,7 +1,7 @@
 // app/events/[eventId]/components/ScheduleSummary.tsx
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   Card,
   CardContent,
@@ -91,6 +91,23 @@ export default function ScheduleSummary({
     setAvailability(newAvail)
   }, [participants, xAxis, yAxis, availableOptions])
 
+  const availableCountsByDay = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const day of xAxis) {
+      counts[day] = participants.filter((p) =>
+        yAxis.some((period) => {
+          const key = `${day}-${period}`
+          return (
+            p.schedule[key] != null &&
+            availableOptions &&
+            availableOptions.includes(p.schedule[key])
+          )
+        })
+      ).length
+    }
+    return counts
+  }, [participants, xAxis, yAxis, availableOptions])
+
   return (
     <Card>
       <CardHeader>
@@ -98,9 +115,9 @@ export default function ScheduleSummary({
         <CardDescription>全参加者のスケジュールを集計</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="max-h-96 overflow-auto">
           <table className="w-full border-collapse">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th className="border p-2"></th>
                 {xAxis.map((day) => (
@@ -109,6 +126,14 @@ export default function ScheduleSummary({
                     className="border p-2 text-center"
                   >
                     {day}
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-gray-50">
+                <th className="border p-2 text-center">参加可能者数</th>
+                {xAxis.map((day) => (
+                  <th key={day} className="border p-2 text-center">
+                    {availableCountsByDay[day] ?? 0}
                   </th>
                 ))}
               </tr>
