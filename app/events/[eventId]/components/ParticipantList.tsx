@@ -153,7 +153,7 @@ export default function ParticipantList({
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="border p-1">名前</th>
+                <th className="border p-1 sticky left-0 bg-white z-20">名前</th>
                 {xAxis.map((day) =>
                   yAxis.map((period) => (
                     <th
@@ -169,7 +169,7 @@ export default function ParticipantList({
             <tbody>
               {displayed.map((part) => (
                 <tr key={part.id}>
-                  <td className="border p-1 font-medium">
+                  <td className="border p-1 font-medium sticky left-0 bg-white z-10">
                     {part.grade}：{part.name}
                   </td>
                   {xAxis.map((day) =>
@@ -263,7 +263,7 @@ export default function ParticipantList({
                     <table className="w-full border-collapse text-sm">
                       <thead>
                         <tr>
-                          <th className="border p-1"></th>
+                          <th className="border p-1 sticky left-0 bg-white z-20"></th>
                           {xAxis.map((day) => (
                             <th key={day} className="border p-1 text-center">
                               {day}
@@ -274,7 +274,7 @@ export default function ParticipantList({
                       <tbody>
                         {yAxis.map((period) => (
                           <tr key={period}>
-                            <td className="border p-1 text-center font-medium">
+                            <td className="border p-1 text-center font-medium sticky left-0 bg-white z-10">
                               {period}限
                             </td>
                             {xAxis.map((day) => {
