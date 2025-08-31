@@ -471,6 +471,22 @@ export default function HomePage() {
                     ref={(el) => (gradeOptionRefs.current[i] = el)}
                     value={opt.name}
                     onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                    onKeyDown={(e) => {
+                      const isComposing = (e.nativeEvent as any).isComposing as boolean
+                      if (e.key === "Enter" && !isComposing) {
+                        e.preventDefault()
+                        addGradeOption()
+                      }
+                      if (
+                        (e.key === "Backspace" || e.key === "Delete") &&
+                        !isComposing &&
+                        e.currentTarget.value === ""
+                      ) {
+                        e.preventDefault()
+                        removeGradeOption(i)
+                        return
+                      }
+                    }}
                     className="flex-1"
                   />
                   <Input
