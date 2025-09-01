@@ -10,6 +10,7 @@ export default function Header() {
   const navItems = [
     { href: prefix || "/", label: "Home" },
     { href: `${prefix}/builder`, label: "Builder" },
+    { href: `${prefix}/about`, label: "About" },
   ]
   const langHref = isEnglish
     ? pathname.replace(/^\/en/, "") || "/"
