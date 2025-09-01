@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Plus,
   Trash2,
@@ -493,71 +493,77 @@ export default function HomePage() {
           </Card>
           {/* Group/Role settings */}
           <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Group/Role Options
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {gradeOptions.map((opt, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      ref={(el) => (gradeOptionRefs.current[i] = el)}
-                      value={opt.name}
-                      onChange={(e) => updateGradeOptionName(i, e.target.value)}
-                      onKeyDown={(e) => {
-                        const isComposing = (e.nativeEvent as any).isComposing as boolean
-                        if (e.key === "Enter" && !isComposing) {
-                          e.preventDefault()
-                          addGradeOption()
-                        }
-                        if (
-                          (e.key === "Backspace" || e.key === "Delete") &&
-                          !isComposing &&
-                          e.currentTarget.value === ""
-                        ) {
-                          e.preventDefault()
-                          removeGradeOption(i)
-                          requestAnimationFrame(() => {
-                            const prevIndex = Math.max(i - 1, 0)
-                            gradeOptionRefs.current[prevIndex]?.focus()
-                          })
-                          return
-                        }
-                      }}
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      value={opt.priority}
-                      onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
-                      className="w-20"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeGradeOption(i)}
-                      disabled={gradeOptions.length <= 1}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addGradeOption}
-                  className="mt-2 bg-transparent"
-                >
-                  <Plus className="h-4 w-4 mr-1" />Add
-                </Button>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Group/Role Options
+            </CardTitle>
+            <CardDescription>Smaller numbers indicate higher priority.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              <div className="flex items-center gap-2 font-semibold sticky top-0 bg-white dark:bg-gray-800">
+                <span className="flex-1">Group/Role</span>
+                <span className="w-20">Priority</span>
+                <span className="w-10" />
               </div>
-            </CardContent>
-          </Card>
+              {gradeOptions.map((opt, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    ref={(el) => (gradeOptionRefs.current[i] = el)}
+                    value={opt.name}
+                    onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                    onKeyDown={(e) => {
+                      const isComposing = (e.nativeEvent as any).isComposing as boolean
+                      if (e.key === "Enter" && !isComposing) {
+                        e.preventDefault()
+                        addGradeOption()
+                      }
+                      if (
+                        (e.key === "Backspace" || e.key === "Delete") &&
+                        !isComposing &&
+                        e.currentTarget.value === ""
+                      ) {
+                        e.preventDefault()
+                        removeGradeOption(i)
+                        requestAnimationFrame(() => {
+                          const prevIndex = Math.max(i - 1, 0)
+                          gradeOptionRefs.current[prevIndex]?.focus()
+                        })
+                        return
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={opt.priority}
+                    onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                    className="w-20"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeGradeOption(i)}
+                    disabled={gradeOptions.length <= 1}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addGradeOption}
+                className="mt-2 bg-transparent"
+              >
+                <Plus className="h-4 w-4 mr-1" />Add
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         </div>
 
         <Card className="bg-white dark:bg-gray-800 shadow-sm border">
