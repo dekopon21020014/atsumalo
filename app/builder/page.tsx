@@ -382,112 +382,114 @@ export default function HomePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="space-y-6 max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="bg-white dark:bg-gray-800 border shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  イベント名
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Input
+                  id="eventName"
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                  placeholder="例：ゼミ日程調整"
+                  required
+                />
+              </CardContent>
+            </Card>
+            <Card className="bg-white dark:bg-gray-800 border shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  イベント説明
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  id="eventDesc"
+                  value={eventDesc}
+                  onChange={(e) => setEventDesc(e.target.value)}
+                  placeholder="このイベントの概要を入力"
+                  className="h-24"
+                />
+              </CardContent>
+            </Card>
+          </div>
           <Card className="bg-white dark:bg-gray-800 border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                イベント名
+                <Lock className="h-5 w-5" />
+                合言葉
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Input
-                id="eventName"
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                placeholder="例：ゼミ日程調整"
-                required
-              />
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="usePassword"
+                  checked={usePassword}
+                  onCheckedChange={setUsePassword}
+                />
+                <Label htmlFor="usePassword" className="text-sm">
+                  合言葉を設定する
+                </Label>
+              </div>
+              {usePassword && (
+                <Input
+                  id="eventPassword"
+                  type="text"
+                  value={eventPassword}
+                  onChange={(e) => setEventPassword(e.target.value)}
+                  placeholder="合言葉を入力"
+                />
+              )}
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
+
+          {/* イベントタイプ選択 */}
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+            <CardHeader className="pb-4">
               <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                イベント説明
+                <Settings className="h-5 w-5" />
+                イベントタイプ
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Textarea
-                id="eventDesc"
-                value={eventDesc}
-                onChange={(e) => setEventDesc(e.target.value)}
-                placeholder="このイベントの概要を入力"
-                className="h-24"
-              />
+              <ToggleGroup
+                type="single"
+                value={eventType}
+                onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
+                className="grid w-full grid-cols-2 gap-2 md:w-1/2"
+              >
+                <ToggleGroupItem
+                  value="recurring"
+                  aria-label="定期イベント"
+                  className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+                >
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  定期イベント
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="onetime"
+                  aria-label="単発イベント"
+                  className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  単発イベント
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                {eventType === "recurring"
+                  ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
+                  : "単発のイベントや会議など、特定の日時のリストから選択して調整します。"}
+              </div>
             </CardContent>
           </Card>
         </div>
-        <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              合言葉
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="usePassword"
-                checked={usePassword}
-                onCheckedChange={setUsePassword}
-              />
-              <Label htmlFor="usePassword" className="text-sm">
-                合言葉を設定する
-              </Label>
-            </div>
-            {usePassword && (
-              <Input
-                id="eventPassword"
-                type="text"
-                value={eventPassword}
-                onChange={(e) => setEventPassword(e.target.value)}
-                placeholder="合言葉を入力"
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* イベントタイプ選択 */}
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              イベントタイプ
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ToggleGroup
-              type="single"
-              value={eventType}
-              onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
-              className="grid w-full grid-cols-2 gap-2 md:w-1/2"
-            >
-              <ToggleGroupItem
-                value="recurring"
-                aria-label="定期イベント"
-                className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
-              >
-                <CalendarDays className="mr-2 h-4 w-4" />
-                定期イベント
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="onetime"
-                aria-label="単発イベント"
-                className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                単発イベント
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {eventType === "recurring"
-                ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
-                : "単発のイベントや会議など、特定の日時のリストから選択して調整します。"}
-            </div>
-          </CardContent>
-        </Card>
         <div className="grid gap-4 md:grid-cols-2">
           {/* 所属/役職設定 */}
           <Card className="bg-white dark:bg-gray-800 shadow-sm border">
