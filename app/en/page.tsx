@@ -13,7 +13,7 @@ export default function LandingPage() {
             Simplify and streamline the scheduling of lab events and meetings.
           </p>
           <Button asChild size="lg" className="font-semibold">
-            <Link href="/builder">Start scheduling</Link>
+            <Link href="/en/builder">Start scheduling</Link>
           </Button>
         </div>
       </section>
@@ -92,7 +92,7 @@ export default function LandingPage() {
           Make scheduling in your lab efficient.
         </p>
         <Button asChild size="lg">
-          <Link href="/builder">
+          <Link href="/en/builder">
             Try it for free <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
         </Button>
