@@ -460,6 +460,9 @@ export default function HomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                Please select the event type.
+              </p>
               <ToggleGroup
                 type="single"
                 value={eventType}
@@ -469,7 +472,7 @@ export default function HomePage() {
                 <ToggleGroupItem
                   value="recurring"
                   aria-label="Recurring Event"
-                  className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+                  className="w-full cursor-pointer rounded-md border py-2 data-[state=on]:bg-black data-[state=on]:text-white"
                 >
                   <CalendarDays className="mr-2 h-4 w-4" />
                   Recurring Event
@@ -477,7 +480,7 @@ export default function HomePage() {
                 <ToggleGroupItem
                   value="onetime"
                   aria-label="One-time Event"
-                  className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+                  className="w-full cursor-pointer rounded-md border py-2 data-[state=on]:bg-black data-[state=on]:text-white"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   One-time Event
