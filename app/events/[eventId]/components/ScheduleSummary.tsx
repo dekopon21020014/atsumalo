@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { Participant } from './types'
-import { scheduleTypes } from './constants'
+import type { ScheduleType } from './constants'
 
 type AvailabilityDetail = {
   type: string
@@ -40,6 +40,7 @@ type Props = {
   availableOptions: string[]
   xAxis: string[]
   yAxis: string[]
+  scheduleTypes: ScheduleType[]
 }
 
 export default function ScheduleSummary({
@@ -47,6 +48,7 @@ export default function ScheduleSummary({
   xAxis,
   yAxis,
   availableOptions,
+  scheduleTypes,
 }: Props) {
   const [availability, setAvailability] = useState<AvailabilityMap>({})
   const pathname = usePathname()
@@ -92,7 +94,7 @@ export default function ScheduleSummary({
     }
 
     setAvailability(newAvail)
-  }, [participants, xAxis, yAxis, availableOptions])
+  }, [participants, xAxis, yAxis, availableOptions, scheduleTypes])
 
   return (
     <Card>

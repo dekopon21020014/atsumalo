@@ -22,7 +22,7 @@ import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
 import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
-import { scheduleTypes } from './constants'
+import type { ScheduleType } from './constants'
 
 type Props = {
   participants: Participant[]
@@ -37,6 +37,7 @@ type Props = {
   availableOptions: string[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  scheduleTypes: ScheduleType[]
 }
 
 export default function ParticipantList({
@@ -52,6 +53,7 @@ export default function ParticipantList({
   availableOptions,
   gradeOptions,
   gradeOrder,
+  scheduleTypes,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()

@@ -251,19 +251,32 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             availableOptions={availableOptions}
             gradeOptions={gradeOpts}
             gradeOrder={gradeOrderMap}
+            scheduleTypes={scheduleTypes}
           />
         </TabsContent>
 
         <TabsContent value="summary">
-           <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center justify-between mb-3">
-          <Label className="text-sm font-medium">所属/役職で絞り込み</Label>
+          <Label className="text-sm font-medium">
+            {isEnglish ? 'Filter by Affiliation/Role' : '所属/役職で絞り込み'}
+          </Label>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setFilterGrades(gradeOpts)} className="text-xs">
-              全選択
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilterGrades(gradeOpts)}
+              className="text-xs"
+            >
+              {isEnglish ? 'Select All' : '全選択'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setFilterGrades([])} className="text-xs">
-              全解除
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilterGrades([])}
+              className="text-xs"
+            >
+              {isEnglish ? 'Clear All' : '全解除'}
             </Button>
           </div>
         </div>
@@ -305,17 +318,20 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
 
         {filterGrades.length > 0 && (
           <div className="mt-3 text-sm text-gray-600">
-            {filterGrades.length}個の所属/役職を選択中 ({filteredParticipants.length}名が対象)
+            {isEnglish
+              ? `${filterGrades.length} roles selected (${filteredParticipants.length} participants)`
+              : `${filterGrades.length}個の所属/役職を選択中 (${filteredParticipants.length}名が対象)`}
           </div>
         )}
       </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <ScheduleSummary 
-              participants={filteredParticipants} 
+            <ScheduleSummary
+              participants={filteredParticipants}
               xAxis={xAxis}
               yAxis={yAxis}
               availableOptions={availableOptions}
+              scheduleTypes={scheduleTypes}
             />
             <BestTimeSlots
               participants={filteredParticipants}
@@ -326,21 +342,30 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
           </div>
 
           <div className="mt-12">
-            <h3 className="text-xl font-semibold mb-4">所属/役職別集計（全体表示）</h3>
+            <h3 className="text-xl font-semibold mb-4">
+              {isEnglish
+                ? 'Summary by Affiliation/Role (Overall)'
+                : '所属/役職別集計（全体表示）'}
+            </h3>
             <div className="space-y-8">
               {gradeOptions.map((g) => {
                 const group = participants.filter((p) => p.grade === g)
-                if (group.length === 0) return null                
+                if (group.length === 0) return null
                 return (
                   <div key={g}>
                     <h4 className="text-lg font-medium mb-2">
-                      {g} ({group.length}名)
+                      {g} (
+                      {isEnglish
+                        ? `${group.length} participant${group.length === 1 ? '' : 's'}`
+                        : `${group.length}名`}
+                      )
                     </h4>
-                    <ScheduleSummary 
-                      participants={group} 
+                    <ScheduleSummary
+                      participants={group}
                       availableOptions={availableOptions}
                       xAxis={xAxis}
                       yAxis={yAxis}
+                      scheduleTypes={scheduleTypes}
                     />
                   </div>
                 )
