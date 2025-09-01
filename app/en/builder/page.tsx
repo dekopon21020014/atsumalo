@@ -471,9 +471,10 @@ export default function HomePage() {
               <ToggleGroup
                 type="single"
                 value={eventType}
-                onValueChange={(value) =>
-                  setEventType(value ? (value as "recurring" | "onetime") : undefined)
-                }
+                onValueChange={(value) => {
+                  if (!value) return
+                  setEventType(value as "recurring" | "onetime")
+                }}
                 className="grid w-full grid-cols-2 gap-2"
               >
                 <ToggleGroupItem
@@ -1034,12 +1035,14 @@ export default function HomePage() {
           </Card>
         )}
 
-        <div className="flex justify-center pt-4">
-          <Button type="submit" size="lg" className="px-8">
-            <Save className="h-4 w-4 mr-2" />
-            Create Event
-          </Button>
-        </div>
+        {eventType && (
+          <div className="flex justify-center pt-4">
+            <Button type="submit" size="lg" className="px-8">
+              <Save className="h-4 w-4 mr-2" />
+              Create Event
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   )
