@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,16 +13,19 @@ import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
 import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
-import { defaultGradeOrder, defaultGradeOptions } from "@/app/events/[eventId]/components/constants"
-import { colorPalettes } from "@/app/events/[eventId]/components/constants"
+import * as ja from "@/app/events/[eventId]/components/constants"
+import * as en from "@/app/en/events/[eventId]/components/constants"
 import Link from "next/link"
 
 export default function EventPage() {
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
+  const { defaultGradeOrder, defaultGradeOptions, colorPalettes } = isEnglish ? en : ja
 
   const [data, setData] = useState<EventData>({
-    name: "読み込み中…",
-    description: "読み込み中…",
+    name: isEnglish ? "Loading..." : "読み込み中…",
+    description: isEnglish ? "Loading..." : "読み込み中…",
     eventType: "recurring",
     xAxis: [],
     yAxis: [],
@@ -67,7 +70,7 @@ export default function EventPage() {
       const resData = await res.json()
       if (resData.error) {
         toast({
-          title: "読み込みエラー",
+          title: isEnglish ? "Load error" : "読み込みエラー",
           description: resData.error,
           variant: "destructive",
         })
@@ -129,8 +132,8 @@ export default function EventPage() {
     } catch (err) {
       console.error(err)
       toast({
-        title: "読み込みエラー",
-        description: "通信に失敗しました",
+        title: isEnglish ? "Load error" : "読み込みエラー",
+        description: isEnglish ? "Failed to communicate" : "通信に失敗しました",
         variant: "destructive",
       })
     }
@@ -232,15 +235,19 @@ export default function EventPage() {
     navigator.clipboard.writeText(url).then(
       () => {
         toast({
-          title: "URLをコピーしました",
-          description: "イベントのURLがクリップボードにコピーされました。",
+          title: isEnglish ? "URL copied" : "URLをコピーしました",
+          description: isEnglish
+            ? "Event URL copied to clipboard."
+            : "イベントのURLがクリップボードにコピーされました。",
         })
       },
       (err) => {
         console.error("URLのコピーに失敗しました:", err)
         toast({
-          title: "コピーに失敗しました",
-          description: "URLのコピーに失敗しました。もう一度お試しください。",
+          title: isEnglish ? "Copy failed" : "コピーに失敗しました",
+          description: isEnglish
+            ? "Failed to copy URL. Please try again."
+            : "URLのコピーに失敗しました。もう一度お試しください。",
           variant: "destructive",
         })
       },
@@ -256,8 +263,10 @@ export default function EventPage() {
         .catch((err) => {
           console.error("URLの共有に失敗しました:", err)
           toast({
-            title: "共有に失敗しました",
-            description: "URLの共有に失敗しました。もう一度お試しください。",
+            title: isEnglish ? "Share failed" : "共有に失敗しました",
+            description: isEnglish
+              ? "Failed to share URL. Please try again."
+              : "URLの共有に失敗しました。もう一度お試しください。",
             variant: "destructive",
           })
         })
@@ -385,8 +394,10 @@ export default function EventPage() {
   const saveEdit = async () => {
     if (!name.trim()) {
       toast({
-        title: "エラー",
-        description: "イベント名を入力してください",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish
+          ? "Please enter an event name"
+          : "イベント名を入力してください",
         variant: "destructive",
       })
       return
@@ -398,8 +409,10 @@ export default function EventPage() {
     if (data.eventType === "recurring") {
       if (editXAxis.length === 0 || editYAxis.length === 0) {
         toast({
-          title: "エラー",
-          description: "横軸と縦軸の項目を設定してください",
+          title: isEnglish ? "Error" : "エラー",
+          description: isEnglish
+            ? "Please set both X and Y axis items"
+            : "横軸と縦軸の項目を設定してください",
           variant: "destructive",
         })
         return
@@ -407,8 +420,10 @@ export default function EventPage() {
     } else {
       if (editDateTimeOptions.length === 0) {
         toast({
-          title: "エラー",
-          description: "日時の項目を設定してください",
+          title: isEnglish ? "Error" : "エラー",
+          description: isEnglish
+            ? "Please set at least one date/time option"
+            : "日時の項目を設定してください",
           variant: "destructive",
         })
         return
@@ -419,8 +434,10 @@ export default function EventPage() {
     const hasAvailableType = editScheduleTypes.some((type) => type.isAvailable)
     if (!hasAvailableType) {
       toast({
-        title: "エラー",
-        description: "「参加可能」として設定された予定タイプが必要です",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish
+          ? 'At least one schedule type must be marked as "Available"'
+          : '「参加可能」として設定された予定タイプが必要です',
         variant: "destructive",
       })
       return
@@ -468,9 +485,13 @@ export default function EventPage() {
       })
 
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || "更新に失敗しました")
+      if (!res.ok)
+        throw new Error(json.error || (isEnglish ? "Update failed" : "更新に失敗しました"))
 
-      toast({ title: "完了", description: "イベント情報を更新しました" })
+      toast({
+        title: isEnglish ? "Success" : "完了",
+        description: isEnglish ? "Event information updated" : "イベント情報を更新しました",
+      })
 
       // データを更新
       setData((prev) => ({
@@ -493,7 +514,7 @@ export default function EventPage() {
     } catch (err: any) {
       console.error(err)
       toast({
-        title: "更新エラー",
+        title: isEnglish ? "Update error" : "更新エラー",
         description: err.message,
         variant: "destructive",
       })
@@ -507,7 +528,7 @@ export default function EventPage() {
       <div className="container mx-auto py-10 px-4">
         <form onSubmit={handlePasswordSubmit} className="max-w-sm mx-auto space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="password">合言葉</Label>
+            <Label htmlFor="password">{isEnglish ? "Password" : "合言葉"}</Label>
             <Input
               id="password"
               type="password"
@@ -515,7 +536,7 @@ export default function EventPage() {
               onChange={(e) => setPasswordInput(e.target.value)}
             />
           </div>
-          <Button type="submit">送信</Button>
+          <Button type="submit">{isEnglish ? "Submit" : "送信"}</Button>
         </form>
       </div>
     )
@@ -528,30 +549,52 @@ export default function EventPage() {
         <div className="space-y-4 border p-4 rounded">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4">
-              <TabsTrigger value="basic">基本情報</TabsTrigger>
-              <TabsTrigger value="options">{data.eventType === "recurring" ? "グリッド設定" : "日時設定"}</TabsTrigger>
-              <TabsTrigger value="types">回答タイプ</TabsTrigger>
-              <TabsTrigger value="grades">所属/役職</TabsTrigger>
+              <TabsTrigger value="basic">
+                {isEnglish ? "Basic Info" : "基本情報"}
+              </TabsTrigger>
+              <TabsTrigger value="options">
+                {isEnglish
+                  ? data.eventType === "recurring"
+                    ? "Grid Settings"
+                    : "Date Options"
+                  : data.eventType === "recurring"
+                    ? "グリッド設定"
+                    : "日時設定"}
+              </TabsTrigger>
+              <TabsTrigger value="types">
+                {isEnglish ? "Response Types" : "回答タイプ"}
+              </TabsTrigger>
+              <TabsTrigger value="grades">
+                {isEnglish ? "Affiliation/Role" : "所属/役職"}
+              </TabsTrigger>
             </TabsList>
 
             {/* 基本情報タブ */}
             <TabsContent value="basic" className="space-y-4">
               <div>
-                <Label htmlFor="evt-name">イベント名</Label>
+                <Label htmlFor="evt-name">
+                  {isEnglish ? "Event Name" : "イベント名"}
+                </Label>
                 <Input
                   id="evt-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="イベント名を入力"
+                  placeholder={
+                    isEnglish ? "Enter event name" : "イベント名を入力"
+                  }
                 />
               </div>
               <div>
-                <Label htmlFor="evt-desc">イベント説明</Label>
+                <Label htmlFor="evt-desc">
+                  {isEnglish ? "Event Description" : "イベント説明"}
+                </Label>
                 <textarea
                   id="evt-desc"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="イベントの概要を入力"
+                  placeholder={
+                    isEnglish ? "Enter event overview" : "イベントの概要を入力"
+                  }
                   className="w-full p-2 border rounded resize-none h-24"
                 />
               </div>
@@ -565,10 +608,19 @@ export default function EventPage() {
                   {/* X軸設定 */}
                   <div className="flex-1 space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label className="text-base font-medium">横軸の項目（曜日など）</Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addXItem}>
+                      <Label className="text-base font-medium">
+                        {isEnglish
+                          ? "X-axis items (e.g., days)"
+                          : "横軸の項目（曜日など）"}
+                      </Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addXItem}
+                      >
                         <Plus className="h-4 w-4 mr-1" />
-                        追加
+                        {isEnglish ? "Add" : "追加"}
                       </Button>
                     </div>
                     <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
@@ -618,10 +670,19 @@ export default function EventPage() {
                   {/* Y軸設定 */}
                   <div className="flex-1 space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label className="text-base font-medium">縦軸の項目（時限など）</Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addYItem}>
+                      <Label className="text-base font-medium">
+                        {isEnglish
+                          ? "Y-axis items (e.g., periods)"
+                          : "縦軸の項目（時限など）"}
+                      </Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addYItem}
+                      >
                         <Plus className="h-4 w-4 mr-1" />
-                        追加
+                        {isEnglish ? "Add" : "追加"}
                       </Button>
                     </div>
                     <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
@@ -671,13 +732,20 @@ export default function EventPage() {
               ) : (
                 // 単発イベント用の日時リスト
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-base font-medium">日時オプション</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addDateTimeOption}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      追加
-                    </Button>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-medium">
+                    {isEnglish ? "Date/Time Options" : "日時オプション"}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addDateTimeOption}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    {isEnglish ? "Add" : "追加"}
+                  </Button>
+                </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
                     {editDateTimeOptions.map((item, index) => (
                       <div key={`datetime-${index}`} className="flex items-center gap-2">
@@ -706,7 +774,11 @@ export default function EventPage() {
                               return
                             }
                           }}
-                          placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
+                          placeholder={
+                            isEnglish
+                              ? `Slot ${index + 1} (e.g., 5/1 7:00 PM)`
+                              : `日時 ${index + 1} (例: 5/1 19:00)`
+                          }
                           className="flex-1"
                         />
                         <Button
@@ -723,7 +795,9 @@ export default function EventPage() {
                   </div>
                   <div className="bg-gray-50 p-3 rounded-md">
                     <p className="text-sm text-gray-600">
-                      日時は「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。
+                      {isEnglish
+                        ? 'Enter date/time like "5/1 19:00". Participants will select from this list.'
+                        : '日時は「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。'}
                     </p>
                   </div>
                 </div>
@@ -732,78 +806,108 @@ export default function EventPage() {
 
             {/* 回答タイプタブ */}
             <TabsContent value="types" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-base font-medium">予定タイプの設定</h3>
-                <Button type="button" variant="outline" size="sm" onClick={addScheduleType}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  追加
-                </Button>
-              </div>
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-medium">
+                {isEnglish ? "Schedule Type Settings" : "予定タイプの設定"}
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addScheduleType}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {isEnglish ? "Add" : "追加"}
+              </Button>
+            </div>
 
-              <div className="bg-gray-50 p-3 rounded-md mb-4">
-                <p className="text-sm text-gray-600">
-                  参加者が選択できる予定タイプを設定します。「参加可能」として設定された予定タイプは、集計時に「参加可能」としてカウントされます。
-                </p>
-              </div>
+            <div className="bg-gray-50 p-3 rounded-md mb-4">
+              <p className="text-sm text-gray-600">
+                {isEnglish
+                  ? 'Configure the schedule types participants can choose. Types marked as "Available" count as available in summaries.'
+                  : '参加者が選択できる予定タイプを設定します。「参加可能」として設定された予定タイプは、集計時に「参加可能」としてカウントされます。'}
+              </p>
+            </div>
 
               <div className="space-y-3 overflow-y-auto p-1">
                 {editScheduleTypes.map((type, index) => (
                   <div key={`type-${index}`} className="border rounded-md p-3 bg-white">
                     <div className="flex flex-col md:flex-row gap-3">
-                      {/* ラベル入力 */}
-                      <div className="flex-1">
-                        <Label htmlFor={`type-label-${index}`} className="text-xs mb-1 block">
-                          ラベル
-                        </Label>
-                        <Input
-                          ref={(el) => (typeLabelRefs.current[index] = el)}
-                          id={`type-label-${index}`}
-                          value={type.label}
-                          onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault()
-                              addScheduleType()
-                            }
-                          }}
-                          placeholder="予定タイプの名前"
-                        />
-                      </div>
+                    {/* ラベル入力 */}
+                    <div className="flex-1">
+                      <Label
+                        htmlFor={`type-label-${index}`}
+                        className="text-xs mb-1 block"
+                      >
+                        {isEnglish ? "Label" : "ラベル"}
+                      </Label>
+                      <Input
+                        ref={(el) => (typeLabelRefs.current[index] = el)}
+                        id={`type-label-${index}`}
+                        value={type.label}
+                        onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            addScheduleType()
+                          }
+                        }}
+                        placeholder={
+                          isEnglish ? "Schedule type name" : "予定タイプの名前"
+                        }
+                      />
+                    </div>
 
-                      {/* 色選択 */}
-                      <div className="w-full md:w-40">
-                        <Label htmlFor={`type-color-${index}`} className="text-xs mb-1 block">
-                          色
-                        </Label>
-                        <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
-                          <SelectTrigger id={`type-color-${index}`} className={`w-full ${type.color}`}>
-                            <SelectValue placeholder="色を選択" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {colorPalettes.map((color, colorIndex) => (
-                              <SelectItem
-                                key={`color-${colorIndex}`}
-                                value={`${color.bg} ${color.text}`}
-                                className={`${color.bg} ${color.text}`}
-                              >
-                                {color.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {/* 色選択 */}
+                    <div className="w-full md:w-40">
+                      <Label
+                        htmlFor={`type-color-${index}`}
+                        className="text-xs mb-1 block"
+                      >
+                        {isEnglish ? "Color" : "色"}
+                      </Label>
+                      <Select
+                        value={type.color}
+                        onValueChange={(value) => updateScheduleTypeColor(index, value)}
+                      >
+                        <SelectTrigger
+                          id={`type-color-${index}`}
+                          className={`w-full ${type.color}`}
+                        >
+                          <SelectValue
+                            placeholder={isEnglish ? "Select color" : "色を選択"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {colorPalettes.map((color, colorIndex) => (
+                            <SelectItem
+                              key={`color-${colorIndex}`}
+                              value={`${color.bg} ${color.text}`}
+                              className={`${color.bg} ${color.text}`}
+                            >
+                              {color.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                      {/* 参加可能フラグ */}
-                      <div className="flex items-center space-x-2 mt-6 md:mt-0">
-                        <Switch
-                          id={`type-available-${index}`}
-                          checked={type.isAvailable}
-                          onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
-                        />
-                        <Label htmlFor={`type-available-${index}`} className="text-sm">
-                          参加可能
-                        </Label>
-                      </div>
+                    {/* 参加可能フラグ */}
+                    <div className="flex items-center space-x-2 mt-6 md:mt-0">
+                      <Switch
+                        id={`type-available-${index}`}
+                        checked={type.isAvailable}
+                        onCheckedChange={(checked) =>
+                          updateScheduleTypeAvailability(index, checked)
+                        }
+                      />
+                      <Label
+                        htmlFor={`type-available-${index}`}
+                        className="text-sm"
+                      >
+                        {isEnglish ? "Available" : "参加可能"}
+                      </Label>
+                    </div>
 
                       {/* 削除ボタン */}
                       <div className="flex items-center mt-6 md:mt-0">
@@ -821,8 +925,12 @@ export default function EventPage() {
 
                     {/* プレビュー */}
                     <div className="mt-2 pt-2 border-t">
-                      <div className="text-xs text-gray-500 mb-1">プレビュー:</div>
-                      <div className={`inline-block px-3 py-1 rounded-md ${type.color}`}>{type.label}</div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        {isEnglish ? "Preview:" : "プレビュー:"}
+                      </div>
+                      <div className={`inline-block px-3 py-1 rounded-md ${type.color}`}>
+                        {type.label}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -884,7 +992,8 @@ export default function EventPage() {
                   onClick={addGradeOption}
                   className="mt-2"
                 >
-                  <Plus className="h-4 w-4 mr-1" />追加
+                  <Plus className="h-4 w-4 mr-1" />
+                  {isEnglish ? "Add" : "追加"}
                 </Button>
               </div>
             </TabsContent>
@@ -893,11 +1002,17 @@ export default function EventPage() {
           <div className="flex gap-2 pt-4 border-t">
             <Button onClick={saveEdit} disabled={isSubmitting}>
               <Save className="h-4 w-4 mr-2" />
-              {isSubmitting ? "保存中..." : "変更を保存"}
+              {isSubmitting
+                ? isEnglish
+                  ? "Saving..."
+                  : "保存中..."
+                : isEnglish
+                  ? "Save Changes"
+                  : "変更を保存"}
             </Button>
             <Button variant="outline" onClick={cancelEdit}>
               <X className="h-4 w-4 mr-2" />
-              キャンセル
+              {isEnglish ? "Cancel" : "キャンセル"}
             </Button>
           </div>
         </div>
@@ -908,15 +1023,15 @@ export default function EventPage() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={shareEvent}>
               <Share2 className="h-4 w-4 mr-2" />
-              共有
+              {isEnglish ? "Share" : "共有"}
             </Button>
             <Button variant="outline" onClick={() => setEditMode(true)}>
-              編集
+              {isEnglish ? "Edit" : "編集"}
             </Button>
             <Button variant="outline" asChild>
               <Link href={`/events/${eventId}/analytics`}>
                 <BarChart3 className="h-4 w-4 mr-2" />
-                統計
+                {isEnglish ? "Analytics" : "統計"}
               </Link>
             </Button>
           </div>

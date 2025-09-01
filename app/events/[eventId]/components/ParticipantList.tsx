@@ -20,9 +20,9 @@ import {
 } from '@/components/ui/select'
 import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
-import { scheduleTypes } from './constants'
+import type { ScheduleType } from './constants'
 
 type Props = {
   participants: Participant[]
@@ -37,6 +37,7 @@ type Props = {
   availableOptions: string[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  scheduleTypes: ScheduleType[]
 }
 
 export default function ParticipantList({
@@ -52,9 +53,12 @@ export default function ParticipantList({
   availableOptions,
   gradeOptions,
   gradeOrder,
+  scheduleTypes,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith('/en')
 
   // 所属/役職フィルタ／ソート／ビュー切り替え
   const [filterGrade, setFilterGrade] = useState<string>('All')
@@ -98,19 +102,33 @@ export default function ParticipantList({
 
   const handleDelete = async (idx: number) => {
     const part = displayed[idx]
-    if (!confirm(`${part.name}さんのスケジュールを削除しますか？`)) return
+    if (
+      !confirm(
+        isEnglish
+          ? `Delete schedule for ${part.name}?`
+          : `${part.name}さんのスケジュールを削除しますか？`,
+      )
+    )
+      return
 
     try {
       const res = await fetch(
         `/api/events/${eventId}/participants/${part.id}`,
         { method: 'DELETE' }
       )
-      if (!res.ok) throw new Error('削除に失敗しました')
+      if (!res.ok) throw new Error(isEnglish ? 'Failed to delete' : '削除に失敗しました')
       setParticipants(participants.filter((p) => p.id !== part.id))
-      toast({ title: '削除完了', description: 'スケジュールが削除されました' })
+      toast({
+        title: isEnglish ? 'Deleted' : '削除完了',
+        description: isEnglish ? 'Schedule deleted' : 'スケジュールが削除されました',
+      })
     } catch (err) {
       console.error(err)
-      toast({ title: '削除エラー', description: String(err), variant: 'destructive' })
+      toast({
+        title: isEnglish ? 'Delete error' : '削除エラー',
+        description: String(err),
+        variant: 'destructive',
+      })
     }
   }
 
@@ -118,8 +136,10 @@ export default function ParticipantList({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>参加者一覧</CardTitle>
-          <CardDescription>まだ参加者が登録されていません</CardDescription>
+          <CardTitle>{isEnglish ? 'Participant List' : '参加者一覧'}</CardTitle>
+          <CardDescription>
+            {isEnglish ? 'No participants registered yet' : 'まだ参加者が登録されていません'}
+          </CardDescription>
         </CardHeader>
       </Card>
     )
@@ -130,13 +150,15 @@ export default function ParticipantList({
       {/* ── フィルタ／ソート／ビュー切替 ── */}
       <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
         <div className="flex items-center gap-2">
-          <Label htmlFor="filter-grade">所属/役職フィルタ</Label>
+          <Label htmlFor="filter-grade">
+            {isEnglish ? 'Affiliation/Role Filter' : '所属/役職フィルタ'}
+          </Label>
           <Select value={filterGrade} onValueChange={setFilterGrade}>
             <SelectTrigger id="filter-grade" className="w-36">
-              <SelectValue placeholder="全て" />
+              <SelectValue placeholder={isEnglish ? 'All' : '全て'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All">全て</SelectItem>
+              <SelectItem value="All">{isEnglish ? 'All' : '全て'}</SelectItem>
               {gradeOptions.map((g) => (
                 <SelectItem key={g} value={g}>
                   {g}
@@ -152,7 +174,13 @@ export default function ParticipantList({
             size="sm"
             onClick={() => setSortAscending((p) => !p)}
           >
-            {sortAscending ? '所属/役職↑' : '所属/役職↓'}
+            {sortAscending
+              ? isEnglish
+                ? 'Role↑'
+                : '所属/役職↑'
+              : isEnglish
+              ? 'Role↓'
+              : '所属/役職↓'}
           </Button>
 
           <Button
@@ -160,7 +188,13 @@ export default function ParticipantList({
             size="sm"
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
           >
-            {viewMode === 'grid' ? 'リスト表示' : 'グリッド表示'}
+            {viewMode === 'grid'
+              ? isEnglish
+                ? 'List View'
+                : 'リスト表示'
+              : isEnglish
+              ? 'Grid View'
+              : 'グリッド表示'}
           </Button>
         </div>
       </div>
@@ -171,21 +205,23 @@ export default function ParticipantList({
           <table className="w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-white">
               <tr>
-                <th className="border p-1 sticky left-0 bg-white z-20">名前</th>
+                <th className="border p-1 sticky left-0 bg-white z-20">
+                  {isEnglish ? 'Name' : '名前'}
+                </th>
                 {xAxis.map((day) =>
                   yAxis.map((period) => (
                     <th
                       key={`${day}-${period}`}
                       className="border p-1 text-center whitespace-nowrap"
                     >
-                      {day}{period}限
+                      {`${day}${period}`}
                     </th>
                   ))
                 )}
               </tr>
               <tr className="bg-gray-50">
                 <th className="border p-1 text-center sticky left-0 bg-gray-50 z-20">
-                  参加可能者数
+                  {isEnglish ? 'Available Participants' : '参加可能者数'}
                 </th>
                 {xAxis.map((day) =>
                   yAxis.map((period) => (
@@ -203,7 +239,7 @@ export default function ParticipantList({
               {displayed.map((part) => (
                 <tr key={part.id}>
                   <td className="border p-1 font-medium sticky left-0 bg-white z-10">
-                    {part.grade}：{part.name}
+                  {part.grade}: {part.name}
                   </td>
                   {xAxis.map((day) =>
                     yAxis.map((period) => {
@@ -240,14 +276,14 @@ export default function ParticipantList({
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg">
-                    {part.grade}：{part.name}
+                    {part.grade}: {part.name}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(idx)}>
-                      編集
+                      {isEnglish ? 'Edit' : '編集'}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleDelete(idx)}>
-                      削除
+                      {isEnglish ? 'Delete' : '削除'}
                     </Button>
                   </div>
                 </div>
@@ -268,7 +304,7 @@ export default function ParticipantList({
                     {yAxis.map((period) => (
                       <div key={period} className="mb-2">
                         <div className="font-medium text-xs mb-1">
-                          {period}限
+                          {isEnglish ? `P${period}` : `${period}限`}
                         </div>
                         <div className={`grid grid-cols-${xAxis.length} gap-1`}>
                           {xAxis.map((day) => {
@@ -308,7 +344,7 @@ export default function ParticipantList({
                         {yAxis.map((period) => (
                           <tr key={period}>
                             <td className="border p-1 text-center font-medium sticky left-0 bg-white z-10">
-                              {period}限
+                              {isEnglish ? `P${period}` : `${period}限`}
                             </td>
                             {xAxis.map((day) => {
                               const key = `${day}-${period}`

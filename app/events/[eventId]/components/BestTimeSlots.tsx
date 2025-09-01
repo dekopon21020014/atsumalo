@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { usePathname } from 'next/navigation'
 import type { Participant } from './types'
 import { use } from 'react'
 
@@ -27,6 +28,8 @@ export default function BestTimeSlots({
   availableOptions,
 }: Props) {
   const [bestSlots, setBestSlots] = useState<Slot[]>([])
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith('/en')
   // 参加可能者が多い上位3スロットを返す
   useEffect(() => {
     console.log('BestTimeSlots: useEffect')
@@ -68,13 +71,17 @@ export default function BestTimeSlots({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>おすすめ時間帯</CardTitle>
-        <CardDescription>参加可能者が多い時間を表示</CardDescription>
+        <CardTitle>{isEnglish ? 'Recommended Slots' : 'おすすめ時間帯'}</CardTitle>
+        <CardDescription>
+          {isEnglish
+            ? 'Shows times with the most available participants'
+            : '参加可能者が多い時間を表示'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {bestSlots.length === 0 ? (
           <div className="text-sm text-muted-foreground text-center">
-            参加者がいません
+            {isEnglish ? 'No participants' : '参加者がいません'}
           </div>
         ) : (
           <div className="space-y-4">
@@ -87,7 +94,8 @@ export default function BestTimeSlots({
                   {i + 1}. {slot.day} {slot.period}
                 </div>
                 <div className="text-sm mt-1">
-                  参加可能: {slot.count}人
+                  {isEnglish ? 'Available' : '参加可能'}: {slot.count}
+                  {isEnglish ? '' : '人'}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {slot.names.join(', ')}

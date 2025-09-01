@@ -12,7 +12,9 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "@/components/ui/use-toast"
 import { Plus, Trash2, Save, Settings, Check } from "lucide-react"
 import type { ScheduleType } from "./constants"
-import { colorPalettes } from "./constants"
+import { usePathname } from "next/navigation"
+import * as ja from "./constants"
+import * as en from "@/app/en/events/[eventId]/components/constants"
 
 type EventSettingsProps = {
   eventId: string
@@ -37,6 +39,10 @@ export default function EventSettings({
   scheduleTypes,
   onUpdate,
 }: EventSettingsProps) {
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
+  const { colorPalettes } = isEnglish ? en : ja
+
   const [name, setName] = useState(eventName)
   const [description, setDescription] = useState(eventDescription)
   const [editScheduleTypes, setEditScheduleTypes] = useState<ScheduleType[]>(scheduleTypes)
@@ -54,7 +60,10 @@ export default function EventSettings({
   // 日時オプションを追加
   const addDateTimeOption = () => {
     setEditDateTimeOptions((prev) => {
-      const newOptions = [...prev, `日時${prev.length + 1}`]
+      const newOptions = [
+        ...prev,
+        isEnglish ? `Slot ${prev.length + 1}` : `日時${prev.length + 1}`,
+      ]
       requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
         dateTimeRefs.current[newIndex]?.focus()
@@ -81,7 +90,10 @@ export default function EventSettings({
   // X軸の項目を追加
   const addXItem = () => {
     setEditXAxis((prev) => {
-      const newItems = [...prev, `項目${prev.length + 1}`]
+      const newItems = [
+        ...prev,
+        isEnglish ? `Item ${prev.length + 1}` : `項目${prev.length + 1}`,
+      ]
       requestAnimationFrame(() => {
         const newIndex = newItems.length - 1
         xAxisRefs.current[newIndex]?.focus()
@@ -108,7 +120,10 @@ export default function EventSettings({
   // Y軸の項目を追加
   const addYItem = () => {
     setEditYAxis((prev) => {
-      const newItems = [...prev, `項目${prev.length + 1}`]
+      const newItems = [
+        ...prev,
+        isEnglish ? `Item ${prev.length + 1}` : `項目${prev.length + 1}`,
+      ]
       requestAnimationFrame(() => {
         const newIndex = newItems.length - 1
         yAxisRefs.current[newIndex]?.focus()
@@ -143,7 +158,7 @@ export default function EventSettings({
         ...prev,
         {
           id: newId,
-          label: `予定${prev.length + 1}`,
+          label: isEnglish ? `Type ${prev.length + 1}` : `予定${prev.length + 1}`,
           color: randomColor,
           isAvailable: false,
         },
@@ -198,8 +213,10 @@ export default function EventSettings({
   const saveEventSettings = async () => {
     if (!name.trim()) {
       toast({
-        title: "エラー",
-        description: "イベント名を入力してください",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish
+          ? "Please enter an event name"
+          : "イベント名を入力してください",
         variant: "destructive",
       })
       return
@@ -209,8 +226,10 @@ export default function EventSettings({
     if (eventType === "recurring") {
       if (editXAxis.length === 0 || editYAxis.length === 0) {
         toast({
-          title: "エラー",
-          description: "横軸と縦軸の項目を設定してください",
+          title: isEnglish ? "Error" : "エラー",
+          description: isEnglish
+            ? "Please set both X and Y axis items"
+            : "横軸と縦軸の項目を設定してください",
           variant: "destructive",
         })
         return
@@ -218,8 +237,10 @@ export default function EventSettings({
     } else {
       if (editDateTimeOptions.length === 0) {
         toast({
-          title: "エラー",
-          description: "日時の項目を設定してください",
+          title: isEnglish ? "Error" : "エラー",
+          description: isEnglish
+            ? "Please set at least one date/time option"
+            : "日時の項目を設定してください",
           variant: "destructive",
         })
         return
@@ -230,8 +251,10 @@ export default function EventSettings({
     const hasAvailableType = editScheduleTypes.some((type) => type.isAvailable)
     if (!hasAvailableType) {
       toast({
-        title: "エラー",
-        description: "「参加可能」として設定された予定タイプが必要です",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish
+          ? 'At least one schedule type must be marked as "Available"'
+          : '「参加可能」として設定された予定タイプが必要です',
         variant: "destructive",
       })
       return
@@ -260,12 +283,16 @@ export default function EventSettings({
       })
 
       if (!response.ok) {
-        throw new Error("イベント設定の更新に失敗しました")
+        throw new Error(
+          isEnglish ? "Failed to update settings" : "イベント設定の更新に失敗しました",
+        )
       }
 
       toast({
-        title: "設定を保存しました",
-        description: "イベント設定が正常に更新されました。",
+        title: isEnglish ? "Settings saved" : "設定を保存しました",
+        description: isEnglish
+          ? "Event settings updated successfully."
+          : "イベント設定が正常に更新されました。",
       })
 
       // 親コンポーネントに更新を通知
@@ -273,8 +300,10 @@ export default function EventSettings({
     } catch (error) {
       console.error("更新エラー:", error)
       toast({
-        title: "更新エラー",
-        description: "イベント設定の更新中にエラーが発生しました。もう一度お試しください。",
+        title: isEnglish ? "Update error" : "更新エラー",
+        description: isEnglish
+          ? "An error occurred while updating event settings. Please try again."
+          : "イベント設定の更新中にエラーが発生しました。もう一度お試しください。",
         variant: "destructive",
       })
     } finally {
@@ -287,35 +316,57 @@ export default function EventSettings({
       <CardHeader>
         <CardTitle className="flex items-center">
           <Settings className="h-5 w-5 mr-2" />
-          イベント設定
+          {isEnglish ? "Event Settings" : "イベント設定"}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="basic">基本情報</TabsTrigger>
-            <TabsTrigger value="options">{eventType === "recurring" ? "グリッド設定" : "日時設定"}</TabsTrigger>
-            <TabsTrigger value="types">回答タイプ</TabsTrigger>
+            <TabsTrigger value="basic">
+              {isEnglish ? "Basic Info" : "基本情報"}
+            </TabsTrigger>
+            <TabsTrigger value="options">
+              {isEnglish
+                ? eventType === "recurring"
+                  ? "Grid Settings"
+                  : "Date Options"
+                : eventType === "recurring"
+                  ? "グリッド設定"
+                  : "日時設定"}
+            </TabsTrigger>
+            <TabsTrigger value="types">
+              {isEnglish ? "Response Types" : "回答タイプ"}
+            </TabsTrigger>
           </TabsList>
 
           {/* 基本情報タブ */}
           <TabsContent value="basic" className="space-y-4">
             <div>
-              <Label htmlFor="evt-name">イベント名</Label>
+              <Label htmlFor="evt-name">
+                {isEnglish ? "Event Name" : "イベント名"}
+              </Label>
               <Input
                 id="evt-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="イベント名を入力"
+                placeholder={
+                  isEnglish ? "Enter event name" : "イベント名を入力"
+                }
               />
             </div>
             <div>
-              <Label htmlFor="evt-desc">イベント説明</Label>
+              <Label htmlFor="evt-desc">
+                {isEnglish ? "Event Description" : "イベント説明"}
+              </Label>
               <Textarea
                 id="evt-desc"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="イベントの概要を入力"
+                placeholder={
+                  isEnglish
+                    ? "Enter event overview"
+                    : "イベントの概要を入力"
+                }
                 className="min-h-[100px]"
               />
             </div>
@@ -328,13 +379,22 @@ export default function EventSettings({
               <div className="flex flex-col md:flex-row gap-6">
                 {/* X軸設定 */}
                 <div className="flex-1 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-base font-medium">横軸の項目（曜日など）</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addXItem}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      追加
-                    </Button>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-medium">
+                    {isEnglish
+                      ? "X-axis items (e.g., days)"
+                      : "横軸の項目（曜日など）"}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addXItem}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    {isEnglish ? "Add" : "追加"}
+                  </Button>
+                </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
                     {editXAxis.map((item, i) => (
                       <div key={`x-${i}`} className="flex items-center gap-2">
@@ -367,13 +427,22 @@ export default function EventSettings({
 
                 {/* Y軸設定 */}
                 <div className="flex-1 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-base font-medium">縦軸の項目（時限など）</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addYItem}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      追加
-                    </Button>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-medium">
+                    {isEnglish
+                      ? "Y-axis items (e.g., periods)"
+                      : "縦軸の項目（時限など）"}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addYItem}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    {isEnglish ? "Add" : "追加"}
+                  </Button>
+                </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
                     {editYAxis.map((item, i) => (
                       <div key={`y-${i}`} className="flex items-center gap-2">
@@ -408,10 +477,17 @@ export default function EventSettings({
               // 単発イベント用の日時リスト
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <Label className="text-base font-medium">日時オプション</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={addDateTimeOption}>
+                  <Label className="text-base font-medium">
+                    {isEnglish ? "Date/Time Options" : "日時オプション"}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addDateTimeOption}
+                  >
                     <Plus className="h-4 w-4 mr-1" />
-                    追加
+                    {isEnglish ? "Add" : "追加"}
                   </Button>
                 </div>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
@@ -428,7 +504,11 @@ export default function EventSettings({
                             addDateTimeOption()
                           }
                         }}
-                        placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
+                        placeholder={
+                          isEnglish
+                            ? `Slot ${index + 1} (e.g., 5/1 7:00 PM)`
+                            : `日時 ${index + 1} (例: 5/1 19:00)`
+                        }
                         className="flex-1"
                       />
                       <Button
@@ -445,7 +525,9 @@ export default function EventSettings({
                 </div>
                 <div className="bg-gray-50 p-3 rounded-md">
                   <p className="text-sm text-gray-600">
-                    日時は「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。
+                    {isEnglish
+                      ? 'Enter date/time like "5/1 19:00". Participants will select from this list.'
+                      : '日時は「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。'}
                   </p>
                 </div>
               </div>
@@ -455,16 +537,25 @@ export default function EventSettings({
           {/* 回答タイプタブ */}
           <TabsContent value="types" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-base font-medium">予定タイプの設定</h3>
-              <Button type="button" variant="outline" size="sm" onClick={addScheduleType}>
+              <h3 className="text-base font-medium">
+                {isEnglish ? "Schedule Type Settings" : "予定タイプの設定"}
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addScheduleType}
+              >
                 <Plus className="h-4 w-4 mr-1" />
-                追加
+                {isEnglish ? "Add" : "追加"}
               </Button>
             </div>
 
             <div className="bg-gray-50 p-3 rounded-md mb-4">
               <p className="text-sm text-gray-600">
-                参加者が選択できる予定タイプを設定します。「参加可能」として設定された予定タイプは、集計時に「参加可能」としてカウントされます。
+                {isEnglish
+                  ? 'Configure the schedule types participants can choose. Types marked as "Available" count as available in summaries.'
+                  : '参加者が選択できる予定タイプを設定します。「参加可能」として設定された予定タイプは、集計時に「参加可能」としてカウントされます。'}
               </p>
             </div>
 
@@ -474,8 +565,11 @@ export default function EventSettings({
                   <div className="flex flex-col md:flex-row gap-3">
                     {/* ラベル入力 */}
                     <div className="flex-1">
-                      <Label htmlFor={`type-label-${index}`} className="text-xs mb-1 block">
-                        ラベル
+                      <Label
+                        htmlFor={`type-label-${index}`}
+                        className="text-xs mb-1 block"
+                      >
+                        {isEnglish ? "Label" : "ラベル"}
                       </Label>
                       <Input
                         ref={(el) => (typeLabelRefs.current[index] = el)}
@@ -488,18 +582,31 @@ export default function EventSettings({
                             addScheduleType()
                           }
                         }}
-                        placeholder="予定タイプの名前"
+                        placeholder={
+                          isEnglish ? "Schedule type name" : "予定タイプの名前"
+                        }
                       />
                     </div>
 
                     {/* 色選択 */}
                     <div className="w-full md:w-40">
-                      <Label htmlFor={`type-color-${index}`} className="text-xs mb-1 block">
-                        色
+                      <Label
+                        htmlFor={`type-color-${index}`}
+                        className="text-xs mb-1 block"
+                      >
+                        {isEnglish ? "Color" : "色"}
                       </Label>
-                      <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
-                        <SelectTrigger id={`type-color-${index}`} className={`w-full ${type.color}`}>
-                          <SelectValue placeholder="色を選択" />
+                      <Select
+                        value={type.color}
+                        onValueChange={(value) => updateScheduleTypeColor(index, value)}
+                      >
+                        <SelectTrigger
+                          id={`type-color-${index}`}
+                          className={`w-full ${type.color}`}
+                        >
+                          <SelectValue
+                            placeholder={isEnglish ? "Select color" : "色を選択"}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {colorPalettes.map((color, colorIndex) => (
@@ -520,10 +627,15 @@ export default function EventSettings({
                       <Switch
                         id={`type-available-${index}`}
                         checked={type.isAvailable}
-                        onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
+                        onCheckedChange={(checked) =>
+                          updateScheduleTypeAvailability(index, checked)
+                        }
                       />
-                      <Label htmlFor={`type-available-${index}`} className="text-sm">
-                        参加可能
+                      <Label
+                        htmlFor={`type-available-${index}`}
+                        className="text-sm"
+                      >
+                        {isEnglish ? "Available" : "参加可能"}
                       </Label>
                     </div>
 
@@ -543,7 +655,9 @@ export default function EventSettings({
 
                   {/* プレビュー */}
                   <div className="mt-2 pt-2 border-t">
-                    <div className="text-xs text-gray-500 mb-1">プレビュー:</div>
+                    <div className="text-xs text-gray-500 mb-1">
+                      {isEnglish ? "Preview:" : "プレビュー:"}
+                    </div>
                     <div className={`inline-block px-3 py-1 rounded-md ${type.color}`}>
                       {type.label}
                       {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
@@ -558,7 +672,13 @@ export default function EventSettings({
         <div className="flex justify-end mt-6">
           <Button onClick={saveEventSettings} disabled={isSubmitting}>
             <Save className="h-4 w-4 mr-2" />
-            {isSubmitting ? "保存中..." : "設定を保存"}
+            {isSubmitting
+              ? isEnglish
+                ? "Saving..."
+                : "保存中..."
+              : isEnglish
+                ? "Save Settings"
+                : "設定を保存"}
           </Button>
         </div>
       </CardContent>
