@@ -12,7 +12,7 @@ import { toast } from "@/components/ui/use-toast"
 import { type ScheduleType } from "@/app/events/[eventId]/components/constants"
 import type { Schedule, Participant } from "./types"
 import { createEmptySchedule } from "./utils"
-import { useMediaQuery } from "@/hooks/use-mobile"
+import { useIsMobile } from "@/components/ui/use-mobile"
 import ScheduleTable from "./ScheduleTable"
 import ScheduleCellMobile from "./ScheduleCellMobile"
 import { useParams, usePathname } from "next/navigation"
@@ -56,7 +56,7 @@ export default function ScheduleForm({
   setEditingIndex,
   setActiveTab,
 }: Props) {
-  const isMobile = useMediaQuery("(max-width: 768px)")
+  const isMobile = useIsMobile()
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ""
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
   const [bulkScheduleType, setBulkScheduleType] = useState<string>(defaultTypeId)

@@ -18,7 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
-import { useMediaQuery } from '@/hooks/use-mobile'
+import { useIsMobile } from '@/components/ui/use-mobile'
 import { toast } from '@/components/ui/use-toast'
 import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
@@ -55,7 +55,7 @@ export default function ParticipantList({
   gradeOrder,
   scheduleTypes,
 }: Props) {
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useIsMobile()
   const { eventId } = useParams()
   const pathname = usePathname()
   const isEnglish = pathname.startsWith('/en')
