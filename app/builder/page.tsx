@@ -488,8 +488,9 @@ export default function HomePage() {
             </div>
           </CardContent>
         </Card>
-        {/* 所属/役職設定 */}
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* 所属/役職設定 */}
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-medium flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
@@ -548,9 +549,9 @@ export default function HomePage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-medium flex items-center gap-2">
               {eventType === "recurring" ? (
@@ -1002,7 +1003,8 @@ export default function HomePage() {
             </TabsContent>
           </Tabs>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
 
         <Button type="submit" className="w-full">
           <Save className="h-4 w-4 mr-2" />
