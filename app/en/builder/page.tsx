@@ -383,8 +383,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
-        <div className="grid md:grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto space-y-6">
+        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
           <Card className="bg-white dark:bg-gray-800 border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium flex items-center gap-2">
@@ -419,138 +419,146 @@ export default function HomePage() {
               />
             </CardContent>
           </Card>
+          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="usePassword"
+                  checked={usePassword}
+                  onCheckedChange={setUsePassword}
+                />
+                <Label htmlFor="usePassword" className="text-sm">
+                  Set a password
+                </Label>
+              </div>
+              {usePassword && (
+                <Input
+                  id="eventPassword"
+                  type="text"
+                  value={eventPassword}
+                  onChange={(e) => setEventPassword(e.target.value)}
+                  placeholder="Enter password"
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
-        <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="usePassword"
-                checked={usePassword}
-                onCheckedChange={setUsePassword}
-              />
-              <Label htmlFor="usePassword" className="text-sm">
-                Set a password
-              </Label>
-            </div>
-            {usePassword && (
-              <Input
-                id="eventPassword"
-                type="text"
-                value={eventPassword}
-                onChange={(e) => setEventPassword(e.target.value)}
-                placeholder="Enter password"
-              />
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Event TypeSelect */}
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Event Type
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ToggleGroup
-              type="single"
-              value={eventType}
-              onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
-              className="grid w-full grid-cols-2 gap-2 md:w-1/2"
-            >
-              <ToggleGroupItem
-                value="recurring"
-                aria-label="Recurring Event"
-                className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Event TypeSelect */}
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Event Type
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ToggleGroup
+                type="single"
+                value={eventType}
+                onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
+                className="grid w-full grid-cols-2 gap-2"
               >
-                <CalendarDays className="mr-2 h-4 w-4" />
-                Recurring Event
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="onetime"
-                aria-label="One-time Event"
-                className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                One-time Event
-              </ToggleGroupItem>
-            </ToggleGroup>
+                <ToggleGroupItem
+                  value="recurring"
+                  aria-label="Recurring Event"
+                  className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+                >
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  Recurring Event
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="onetime"
+                  aria-label="One-time Event"
+                  className="w-full data-[state=on]:bg-black data-[state=on]:text-white"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  One-time Event
+                </ToggleGroupItem>
+              </ToggleGroup>
 
-            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {eventType === "recurring"
-                ? "For recurring meetings or classes, schedule using a day × time grid."
-                : "For one-off events or meetings, choose from a list of specific date-times."}
-            </div>
-          </CardContent>
-        </Card>
-        {/* Group/Role settings */}
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              Group/Role Options
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {gradeOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    ref={(el) => (gradeOptionRefs.current[i] = el)}
-                    value={opt.name}
-                    onChange={(e) => updateGradeOptionName(i, e.target.value)}
-                    onKeyDown={(e) => {
-                      const isComposing = (e.nativeEvent as any).isComposing as boolean
-                      if (e.key === "Enter" && !isComposing) {
-                        e.preventDefault()
-                        addGradeOption()
-                      }
-                      if (
-                        (e.key === "Backspace" || e.key === "Delete") &&
-                        !isComposing &&
-                        e.currentTarget.value === ""
-                      ) {
-                        e.preventDefault()
-                        removeGradeOption(i)
-                        requestAnimationFrame(() => {
-                          const prevIndex = Math.max(i - 1, 0)
-                          gradeOptionRefs.current[prevIndex]?.focus()
-                        })
-                        return
-                      }
-                    }}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    value={opt.priority}
-                    onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
-                    className="w-24"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeGradeOption(i)}
-                    disabled={gradeOptions.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addGradeOption} className="mt-2">
-                <Plus className="h-4 w-4 mr-1" />Add
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                {eventType === "recurring"
+                  ? "For recurring meetings or classes, schedule using a day × time grid."
+                  : "For one-off events or meetings, choose from a list of specific date-times."}
+              </div>
+            </CardContent>
+          </Card>
+          {/* Group/Role settings */}
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Group/Role Options
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {gradeOptions.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      ref={(el) => (gradeOptionRefs.current[i] = el)}
+                      value={opt.name}
+                      onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                      onKeyDown={(e) => {
+                        const isComposing = (e.nativeEvent as any).isComposing as boolean
+                        if (e.key === "Enter" && !isComposing) {
+                          e.preventDefault()
+                          addGradeOption()
+                        }
+                        if (
+                          (e.key === "Backspace" || e.key === "Delete") &&
+                          !isComposing &&
+                          e.currentTarget.value === ""
+                        ) {
+                          e.preventDefault()
+                          removeGradeOption(i)
+                          requestAnimationFrame(() => {
+                            const prevIndex = Math.max(i - 1, 0)
+                            gradeOptionRefs.current[prevIndex]?.focus()
+                          })
+                          return
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={opt.priority}
+                      onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                      className="w-20"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeGradeOption(i)}
+                      disabled={gradeOptions.length <= 1}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addGradeOption}
+                  className="mt-2 bg-transparent"
+                >
+                  <Plus className="h-4 w-4 mr-1" />Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="bg-white dark:bg-gray-800 shadow-sm border">
           <CardHeader className="pb-4">
@@ -575,7 +583,7 @@ export default function HomePage() {
             <TabsContent value="builder" className="space-y-6">
               {eventType === "recurring" ? (
                 // Grid builder for recurring events
-                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex flex-col lg:flex-row gap-6">
                   {/* X-axis settings */}
                   <div className="flex-1 space-y-2">
                     <div className="flex justify-between items-center">
@@ -771,10 +779,10 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <div className="space-y-3 overflow-y-auto p-1">
+              <div className="grid gap-4 lg:grid-cols-2">
                 {scheduleTypes.map((type, index) => (
-                  <div key={`type-${index}`} className="border rounded-md p-3 bg-white">
-                    <div className="flex flex-col md:flex-row gap-3">
+                  <div key={`type-${index}`} className="border rounded-md p-4 bg-white">
+                    <div className="flex flex-col gap-3">
                       {/* Label input */}
                       <div className="flex-1">
                         <Label htmlFor={`type-label-${index}`} className="text-xs mb-1 block">
@@ -792,52 +800,52 @@ export default function HomePage() {
                               addScheduleType()
                             }
                             if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
-                              e.preventDefault();  // Prevent default behavior if needed
-                              removeScheduleType(index);
-                              return;
+                              e.preventDefault()
+                              removeScheduleType(index)
+                              return
                             }
                           }}
                           placeholder="Schedule type name"
                         />
                       </div>
 
-                      {/* ColorSelect */}
-                      <div className="w-full md:w-40">
-                        <Label htmlFor={`type-color-${index}`} className="text-xs mb-1 block">
-                          Color
-                        </Label>
-                        <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
-                          <SelectTrigger id={`type-color-${index}`} className={`w-full ${type.color}`}>
-                            <SelectValue placeholder="Select color" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {colorPalettes.map((color, colorIndex) => (
-                              <SelectItem
-                                key={`color-${colorIndex}`}
-                                value={`${color.bg} ${color.text}`}
-                                className={`${color.bg} ${color.text}`}
-                              >
-                                {color.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <div className="flex items-end gap-3">
+                        {/* ColorSelect */}
+                        <div className="flex-1">
+                          <Label htmlFor={`type-color-${index}`} className="text-xs mb-1 block">
+                            Color
+                          </Label>
+                          <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
+                            <SelectTrigger id={`type-color-${index}`} className={`w-full ${type.color}`}>
+                              <SelectValue placeholder="Select color" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {colorPalettes.map((color, colorIndex) => (
+                                <SelectItem
+                                  key={`color-${colorIndex}`}
+                                  value={`${color.bg} ${color.text}`}
+                                  className={`${color.bg} ${color.text}`}
+                                >
+                                  {color.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      {/* Available flag */}
-                      <div className="flex items-center space-x-2 mt-6 md:mt-0">
-                        <Switch
-                          id={`type-available-${index}`}
-                          checked={type.isAvailable}
-                          onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
-                        />
-                        <Label htmlFor={`type-available-${index}`} className="text-sm">
-                          Available
-                        </Label>
-                      </div>
+                        {/* Available flag */}
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`type-available-${index}`}
+                            checked={type.isAvailable}
+                            onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
+                          />
+                          <Label htmlFor={`type-available-${index}`} className="text-sm">
+                            Available
+                          </Label>
+                        </div>
 
-                      {/* Delete button */}
-                      <div className="flex items-center mt-6 md:mt-0">
+                        {/* Delete button */}
                         <Button
                           type="button"
                           variant="ghost"
@@ -851,7 +859,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Preview */}
-                    <div className="mt-2 pt-2 border-t">
+                    <div className="mt-3 pt-3 border-t">
                       <div className="text-xs text-gray-500 mb-1">Preview:</div>
                       <div className={`inline-block px-3 py-1 rounded-md ${type.color}`}>
                         {type.label}
@@ -947,7 +955,7 @@ export default function HomePage() {
             <TabsContent value="templates">
               {eventType === "recurring" ? (
                 // Templates for recurring events
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recurringTemplates.map((template, index) => (
                     <Card key={`template-${index}`} className="overflow-hidden">
                       <CardContent className="p-4">
@@ -964,7 +972,7 @@ export default function HomePage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="w-full"
+                          className="w-full bg-transparent"
                           onClick={() => applyRecurringTemplate(index)}
                         >
                           <Copy className="h-4 w-4 mr-1" />
@@ -976,7 +984,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 // Templates for one-time events
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {onetimeTemplates.map((template, index) => (
                     <Card key={`template-${index}`} className="overflow-hidden">
                       <CardContent className="p-4">
@@ -990,7 +998,7 @@ export default function HomePage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="w-full"
+                          className="w-full bg-transparent"
                           onClick={() => applyOnetimeTemplate(index)}
                         >
                           <Copy className="h-4 w-4 mr-1" />
@@ -1006,10 +1014,12 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full">
-          <Save className="h-4 w-4 mr-2" />
-          Create Event
-        </Button>
+        <div className="flex justify-center pt-4">
+          <Button type="submit" size="lg" className="px-8">
+            <Save className="h-4 w-4 mr-2" />
+            Create Event
+          </Button>
+        </div>
       </form>
     </div>
   )
