@@ -47,7 +47,7 @@ export default function HomePage() {
   const [eventDesc, setEventDesc] = useState("")
   const [usePassword, setUsePassword] = useState(false)
   const [eventPassword, setEventPassword] = useState("")
-  const [eventType, setEventType] = useState<"recurring" | "onetime">("recurring")
+  const [eventType, setEventType] = useState<"recurring" | "onetime" | undefined>(undefined)
 
   // Axes for recurring events
   const [xAxis, setXAxis] = useState(xAxisTemplate)
@@ -283,6 +283,11 @@ export default function HomePage() {
       return
     }
 
+    if (!eventType) {
+      toast({ title: "Error", description: "Please select the event type", variant: "destructive" })
+      return
+    }
+
     // Validation based on event type
     if (eventType === "recurring") {
       if (xAxis.length === 0 || yAxis.length === 0) {
@@ -466,7 +471,10 @@ export default function HomePage() {
               <ToggleGroup
                 type="single"
                 value={eventType}
-                onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
+                onValueChange={(value) => {
+                  if (!value) return
+                  setEventType(value as "recurring" | "onetime")
+                }}
                 className="grid w-full grid-cols-2 gap-2"
               >
                 <ToggleGroupItem
@@ -490,7 +498,9 @@ export default function HomePage() {
               <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 {eventType === "recurring"
                   ? "For recurring meetings or classes, schedule using a day × time grid."
-                  : "For one-off events or meetings, choose from a list of specific date-times."}
+                  : eventType === "onetime"
+                    ? "For one-off events or meetings, choose from a list of specific date-times."
+                    : null}
               </div>
             </CardContent>
           </Card>
@@ -569,19 +579,20 @@ export default function HomePage() {
         </Card>
         </div>
 
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              {eventType === "recurring" ? (
-                <CalendarDays className="h-5 w-5" />
-              ) : (
-                <Clock className="h-5 w-5" />
-              )}
-              {eventType === "recurring" ? "Grid Settings" : "Date-Time Settings"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {eventType && (
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                {eventType === "recurring" ? (
+                  <CalendarDays className="h-5 w-5" />
+                ) : (
+                  <Clock className="h-5 w-5" />
+                )}
+                {eventType === "recurring" ? "Grid Settings" : "Date-Time Settings"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center bg-white/60 dark:bg-gray-700/50 p-1 rounded-lg">
             <TabsTrigger value="builder">{eventType === "recurring" ? "Grid Builder" : "Date-Time List"}</TabsTrigger>
             <TabsTrigger value="scheduleTypes">Schedule Types</TabsTrigger>
@@ -1019,16 +1030,19 @@ export default function HomePage() {
                 </div>
               )}
             </TabsContent>
-          </Tabs>
-          </CardContent>
-        </Card>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
 
-        <div className="flex justify-center pt-4">
-          <Button type="submit" size="lg" className="px-8">
-            <Save className="h-4 w-4 mr-2" />
-            Create Event
-          </Button>
-        </div>
+        {eventType && (
+          <div className="flex justify-center pt-4">
+            <Button type="submit" size="lg" className="px-8">
+              <Save className="h-4 w-4 mr-2" />
+              Create Event
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   )

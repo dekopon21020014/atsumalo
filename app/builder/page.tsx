@@ -47,7 +47,7 @@ export default function HomePage() {
   const [eventDesc, setEventDesc] = useState("")
   const [usePassword, setUsePassword] = useState(false)
   const [eventPassword, setEventPassword] = useState("")
-  const [eventType, setEventType] = useState<"recurring" | "onetime">("recurring")
+  const [eventType, setEventType] = useState<"recurring" | "onetime" | undefined>(undefined)
 
   // 定期イベント用の軸
   const [xAxis, setXAxis] = useState(xAxisTemplate)
@@ -278,6 +278,11 @@ export default function HomePage() {
       return
     }
 
+    if (!eventType) {
+      toast({ title: "エラー", description: "イベントタイプを選択してください", variant: "destructive" })
+      return
+    }
+
     // イベントタイプに応じたバリデーション
     if (eventType === "recurring") {
       if (xAxis.length === 0 || yAxis.length === 0) {
@@ -455,7 +460,10 @@ export default function HomePage() {
               <ToggleGroup
                 type="single"
                 value={eventType}
-                onValueChange={(value) => setEventType(value as "recurring" | "onetime")}
+                onValueChange={(value) => {
+                  if (!value) return
+                  setEventType(value as "recurring" | "onetime")
+                }}
                 className="grid w-full grid-cols-2 gap-2"
               >
                 <ToggleGroupItem
@@ -479,7 +487,9 @@ export default function HomePage() {
               <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 {eventType === "recurring"
                   ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
-                  : "単発のイベントや会議など、特定の日時のリストから選択して調整します。"}
+                  : eventType === "onetime"
+                    ? "単発のイベントや会議など、特定の日時のリストから選択して調整します。"
+                    : null}
               </div>
             </CardContent>
           </Card>
@@ -560,15 +570,20 @@ export default function HomePage() {
           </Card>
         </div>
 
-        <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              {eventType === "recurring" ? <CalendarDays className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
-              {eventType === "recurring" ? "グリッド設定" : "日時設定"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {eventType && (
+          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                {eventType === "recurring" ? (
+                  <CalendarDays className="h-5 w-5" />
+                ) : (
+                  <Clock className="h-5 w-5" />
+                )}
+                {eventType === "recurring" ? "グリッド設定" : "日時設定"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center bg-white/60 dark:bg-gray-700/50 p-1 rounded-lg">
                 <TabsTrigger value="builder">
                   {eventType === "recurring" ? "グリッドビルダー" : "日時リスト"}
@@ -1008,16 +1023,19 @@ export default function HomePage() {
                   </div>
                 )}
               </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
 
-        <div className="flex justify-center pt-4">
-          <Button type="submit" size="lg" className="px-8">
-            <Save className="h-4 w-4 mr-2" />
-            イベントを作成
-          </Button>
-        </div>
+        {eventType && (
+          <div className="flex justify-center pt-4">
+            <Button type="submit" size="lg" className="px-8">
+              <Save className="h-4 w-4 mr-2" />
+              イベントを作成
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   )
