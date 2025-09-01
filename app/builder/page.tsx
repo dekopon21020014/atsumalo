@@ -381,7 +381,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="bg-white dark:bg-gray-800 border shadow-sm">
             <CardHeader className="pb-2">
