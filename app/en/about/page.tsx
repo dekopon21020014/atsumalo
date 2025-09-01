@@ -1,15 +1,15 @@
 export default function AboutPage() {
   return (
     <main className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">About / このプロジェクトについて</h1>
+      <h1 className="text-2xl font-bold mb-4">About</h1>
 
       <section className="mb-6">
         <p className="mb-2">
-          本プロジェクトは研究室や小規模グループ向けのイベント調整を簡潔にするオープンソースのツールです．
-          単発イベントだけでなく定期イベントの調整にも対応します．
+          This project is an open-source tool designed to simplify event coordination for laboratories and small groups.
+          It supports both one-time events and recurring meetings.
         </p>
         <p className="mb-2">
-          リポジトリはGitHubで公開しており，IssueやPull Requestでの貢献を歓迎します．
+          The repository is available on GitHub, and contributions via issues or pull requests are welcome.
         </p>
         <p>
           <a
@@ -24,83 +24,82 @@ export default function AboutPage() {
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">目的</h2>
+        <h2 className="text-xl font-semibold mb-2">Purpose</h2>
         <ul className="list-disc pl-6 space-y-1">
-          <li>調整の往復を減らし，必要最小限の情報で候補提示と集計を行う．</li>
-          <li>セットアップやアカウント作成なしで使える軽量な運用．</li>
-          <li>コードを公開し，必要に応じて各環境で拡張できること．</li>
+          <li>Reduce back-and-forth coordination by providing simple candidate options and summaries.</li>
+          <li>Enable lightweight usage without setup or account creation.</li>
+          <li>Offer open source code that can be extended for local environments.</li>
         </ul>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">主な機能</h2>
+        <h2 className="text-xl font-semibold mb-2">Key Features</h2>
         <ul className="list-disc pl-6 space-y-1">
-          <li>単発イベント／定期イベントの候補作成．</li>
-          <li>URL共有による参加可否の収集と集計表示．</li>
-          <li>最小限の入力項目での回答フォーム．</li>
-          <li>イベントの自動削除（作成から3ヶ月）．</li>
+          <li>Create candidates for one-time or recurring events.</li>
+          <li>Share URLs to collect availability and view aggregated results.</li>
+          <li>Minimal input fields for participants.</li>
+          <li>Automatic deletion of events after 3 months.</li>
         </ul>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">データ保持と削除</h2>
+        <h2 className="text-xl font-semibold mb-2">Data Retention and Deletion</h2>
         <p className="mb-2">
-          作成されたイベントは保存から3ヶ月経過すると自動的に削除されます．運用上必要なアクセスログは一定期間のみ保持します．
+          Events are automatically deleted 3 months after creation. Access logs required for operation are only retained temporarily.
         </p>
         <p className="mb-2">
-          具体的な取り扱いは
-          <a href="/privacy" className="underline">プライバシーポリシー</a>
-          を参照してください．
+          For details, see the{" "}
+          <a href="/privacy" className="underline">Privacy Policy</a>.
         </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">セキュリティと制限</h2>
+        <h2 className="text-xl font-semibold mb-2">Security and Limitations</h2>
         <ul className="list-disc pl-6 space-y-1">
-          <li>通信は暗号化されていないため機密情報は入力しないでください．</li>
-          <li>本サービスの利用により生じた損害について当方は責任を負いません．</li>
-          <li>迷惑行為や不正利用を検知した場合はアクセスを制限します．</li>
+          <li>Communication is not encrypted, so do not enter confidential information.</li>
+          <li>We are not responsible for any damages arising from use of this service.</li>
+          <li>Access may be restricted in cases of abuse or unauthorized use.</li>
         </ul>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">技術スタック</h2>
+        <h2 className="text-xl font-semibold mb-2">Technology Stack</h2>
         <ul className="list-disc pl-6 space-y-1">
-          <li>React／TypeScript．</li>
-          <li>Tailwind CSS．</li>
-          <li>軽量なバックエンドとシンプルな永続化層を前提とした設計．</li>
+          <li>React / TypeScript</li>
+          <li>Tailwind CSS</li>
+          <li>Designed with a lightweight backend and simple persistence layer in mind.</li>
         </ul>
         <p className="text-sm text-gray-600 mt-1">
-          実装はリポジトリのREADMEとソースコードを参照してください．
+          See the README and source code in the repository for implementation details.
         </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">貢献方法</h2>
+        <h2 className="text-xl font-semibold mb-2">How to Contribute</h2>
         <ol className="list-decimal pl-6 space-y-1">
-          <li>Issueで提案やバグ報告を行う．</li>
-          <li>Forkしてブランチを作成し，変更点をコミット．</li>
-          <li>Pull Requestを作成し，背景と動作確認方法を記載．</li>
+          <li>Open an issue for proposals or bug reports.</li>
+          <li>Fork the repository, create a branch, and commit your changes.</li>
+          <li>Create a pull request with background and test instructions.</li>
         </ol>
         <p className="text-sm text-gray-600 mt-1">
-          小さな修正でも歓迎します．テンプレートがあれば従ってください．
+          Even small fixes are welcome. Follow contribution templates if available.
         </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">ライセンス</h2>
+        <h2 className="text-xl font-semibold mb-2">License</h2>
         <p className="mb-2">
-          ライセンスはリポジトリのLICENSEを参照してください．依存ライブラリのライセンスにも従います．
+          Refer to the LICENSE file in the repository. Dependencies follow their respective licenses.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mb-2">連絡先とクレジット</h2>
+        <h2 className="text-xl font-semibold mb-2">Contact and Credits</h2>
         <p className="mb-2">
-          連絡先はリポジトリ内の連絡方法を参照してください．利用者からのフィードバックを歓迎します．
+          Contact information is available in the repository. Feedback from users is always welcome.
         </p>
         <p className="text-sm text-gray-600">
-          本プロジェクトはコミュニティの貢献によって成長します．テスターとコントリビューターに感謝します．
+          This project grows with contributions from the community. Thanks to all testers and contributors.
         </p>
       </section>
     </main>
