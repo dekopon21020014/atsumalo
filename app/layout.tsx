@@ -7,9 +7,9 @@ import Footer from "@/components/footer"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "日程調整アプリ",
+  title: "あつま郎",
   description: "大学の研究室などで日程を調整するためのアプリケーション",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({ children }) {
