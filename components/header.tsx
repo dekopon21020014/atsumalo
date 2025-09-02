@@ -7,6 +7,7 @@ export default function Header() {
   const pathname = usePathname()
   const isEnglish = pathname.startsWith("/en")
   const prefix = isEnglish ? "/en" : ""
+  const appName = isEnglish ? "Atsumalo" : "あつま郎"
   const navItems = [
     { href: prefix || "/", label: "Home" },
     { href: `${prefix}/builder`, label: "Builder" },
@@ -20,7 +21,7 @@ export default function Header() {
     <header className="bg-gray-100 dark:bg-gray-900 p-4">
       <div className="container mx-auto flex items-center justify-between">
         <h1 className="text-xl font-bold">
-          <Link href={prefix || "/"}>Lab Scheduling</Link>
+          <Link href={prefix || "/"}>{appName}</Link>
         </h1>
         <nav className="space-x-4">
           {navItems.map((item) => (

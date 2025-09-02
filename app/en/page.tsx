@@ -8,7 +8,7 @@ export default function LandingPage() {
     <main className="flex flex-col">
       <section className="relative isolate overflow-hidden bg-black text-white py-32">
         <div className="container mx-auto text-center">
-          <h1 className="text-5xl font-bold tracking-tight mb-6">Lab Scheduling</h1>
+          <h1 className="text-5xl font-bold tracking-tight mb-6">Atsumalo</h1>
           <p className="text-xl max-w-2xl mx-auto mb-8">
             Simplify and streamline the scheduling of lab events and meetings.
           </p>

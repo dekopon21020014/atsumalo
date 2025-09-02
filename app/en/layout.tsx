@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 
 export const metadata = {
-  title: "Lab Scheduling",
+  title: "Atsumalo",
   description: "An application to coordinate schedules for research labs.",
 }
 
