@@ -1,4 +1,15 @@
 # Atsumalo
+```
+-----------------------------------------------------------------------
+   ##     ######    #####   ##   ##  ##   ##    ##     ####      #####
+  ####    # ## #   ##   ##  ##   ##  ### ###   ####     ##      ##   ##
+ ##  ##     ##     #        ##   ##  #######  ##  ##    ##      ##   ##
+ ##  ##     ##      #####   ##   ##  #######  ##  ##    ##      ##   ##
+ ######     ##          ##  ##   ##  ## # ##  ######    ##   #  ##   ##
+ ##  ##     ##     ##   ##  ##   ##  ##   ##  ##  ##    ##  ##  ##   ##
+ ##  ##    ####     #####    #####   ##   ##  ##  ##   #######   #####
+-----------------------------------------------------------------------
+```
 
 An online scheduling tool that centralizes management of laboratory equipment and room usage.
 Members can check availability on a shared calendar and easily reserve time for experiments or meetings.
