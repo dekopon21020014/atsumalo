@@ -381,6 +381,10 @@ export default function HomePage() {
         </div>
       </div>
 
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        作成から3ヶ月後にページは自動的に削除されます。
+      </p>
+
       <form onSubmit={handleSubmit} className="max-w-7xl mx-auto space-y-6">
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
           <Card className="bg-white dark:bg-gray-800 border shadow-sm">
