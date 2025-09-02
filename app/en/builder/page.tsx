@@ -364,7 +364,7 @@ export default function HomePage() {
   return (
     <div className="container mx-auto py-10 px-4 space-y-8">
       <div className="relative overflow-hidden rounded-xl bg-black p-8 text-white">
-        <h1 className="text-4xl font-extrabold tracking-tight">Event Management App</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">Atsumalo</h1>
         <p className="mt-2 text-lg">
           A tool to smartly coordinate schedules for lab seminars, study groups, and more.
         </p>

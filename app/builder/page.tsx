@@ -359,7 +359,7 @@ export default function HomePage() {
   return (
     <div className="container mx-auto py-10 px-4 space-y-8">
       <div className="relative overflow-hidden rounded-xl bg-black p-8 text-white">
-        <h1 className="text-4xl font-extrabold tracking-tight">イベント管理アプリ</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">あつま郎</h1>
         <p className="mt-2 text-lg">研究室ゼミや勉強会などの「日程調整」をスマートに行うためのツールです。</p>
         <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 md:grid-cols-4">
           <div className="flex items-center space-x-2">
