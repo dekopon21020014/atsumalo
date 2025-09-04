@@ -236,10 +236,13 @@ export default function ParticipantList({
               </tr>
             </thead>
             <tbody>
-              {displayed.map((part) => (
+              {displayed.map((part, idx) => (
                 <tr key={part.id}>
-                  <td className="border p-1 font-medium sticky left-0 bg-white z-10">
-                  {part.grade}: {part.name}
+                  <td
+                    className="border p-1 font-medium sticky left-0 bg-white z-10 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleEdit(idx)}
+                  >
+                    {part.grade}: {part.name}
                   </td>
                   {xAxis.map((day) =>
                     yAxis.map((period) => {
