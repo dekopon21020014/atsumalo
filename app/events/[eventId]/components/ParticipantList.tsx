@@ -29,6 +29,7 @@ type Props = {
   setParticipants: (ps: Participant[]) => void
   setCurrentName: (s: string) => void
   setCurrentGrade: (s: string) => void
+  setCurrentComment: (s: string) => void
   setCurrentSchedule: (s: Participant['schedule']) => void
   setEditingIndex: (i: number | null) => void
   setActiveTab: (t: string) => void
@@ -45,6 +46,7 @@ export default function ParticipantList({
   setParticipants,
   setCurrentName,
   setCurrentGrade,
+  setCurrentComment,
   setCurrentSchedule,
   setEditingIndex,
   setActiveTab,
@@ -95,6 +97,7 @@ export default function ParticipantList({
     const origIdx = participants.findIndex((p) => p.id === part.id)
     setCurrentName(part.name)
     setCurrentGrade(part.grade)
+    setCurrentComment(part.comment ?? '')
     setCurrentSchedule(part.schedule)
     setEditingIndex(origIdx)
     setActiveTab('input')
@@ -208,6 +211,9 @@ export default function ParticipantList({
                 <th className="border p-1 sticky left-0 bg-white z-20">
                   {isEnglish ? 'Name' : '名前'}
                 </th>
+                <th className="border p-1 text-left align-top min-w-[160px]">
+                  {isEnglish ? 'Comment' : 'コメント'}
+                </th>
                 {xAxis.map((day) =>
                   yAxis.map((period) => (
                     <th
@@ -223,6 +229,7 @@ export default function ParticipantList({
                 <th className="border p-1 text-center sticky left-0 bg-gray-50 z-20">
                   {isEnglish ? 'Available Participants' : '参加可能者数'}
                 </th>
+                <th className="border p-1 text-center">-</th>
                 {xAxis.map((day) =>
                   yAxis.map((period) => (
                     <th
@@ -243,6 +250,13 @@ export default function ParticipantList({
                     onClick={() => handleEdit(idx)}
                   >
                     {part.grade}: {part.name}
+                  </td>
+                  <td className="border p-1 align-top text-sm whitespace-pre-wrap text-left text-muted-foreground">
+                    {part.comment && part.comment.trim() !== '' ? (
+                      part.comment
+                    ) : (
+                      <span className="text-gray-300">-</span>
+                    )}
                   </td>
                   {xAxis.map((day) =>
                     yAxis.map((period) => {
@@ -290,6 +304,11 @@ export default function ParticipantList({
                     </Button>
                   </div>
                 </div>
+                {part.comment && part.comment.trim() !== '' && (
+                  <CardDescription className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                    {part.comment}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="pt-0">
                 {isMobile ? (

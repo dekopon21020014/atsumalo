@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { MousePointer, Smartphone, Check } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
@@ -28,6 +29,8 @@ type Props = {
   setCurrentName: Dispatch<SetStateAction<string>>
   currentGrade: string
   setCurrentGrade: Dispatch<SetStateAction<string>>
+  currentComment: string
+  setCurrentComment: Dispatch<SetStateAction<string>>
   currentSchedule: Schedule
   setCurrentSchedule: Dispatch<SetStateAction<Schedule>>
   participants: Participant[]
@@ -48,6 +51,8 @@ export default function ScheduleForm({
   setCurrentName,
   currentGrade,
   setCurrentGrade,
+  currentComment,
+  setCurrentComment,
   currentSchedule,
   setCurrentSchedule,
   participants,
@@ -151,12 +156,16 @@ export default function ScheduleForm({
     }
     setScheduleError("")
 
+    const scheduleData = { ...currentSchedule }
+    const trimmedComment = currentComment.trim()
+    const commentValue = trimmedComment === "" ? "" : trimmedComment
     const payload = {
       eventId,
       name: currentName,
       grade: currentGrade,
       gradePriority: gradeOrder[currentGrade],
-      schedule: currentSchedule,
+      schedule: scheduleData,
+      comment: commentValue,
     }
 
     try {
@@ -169,7 +178,13 @@ export default function ScheduleForm({
         })
         if (!res.ok) throw new Error()
         const updated = [...participants]
-        updated[editingIndex] = { id, ...payload }
+        updated[editingIndex] = {
+          id,
+          name: currentName,
+          grade: currentGrade,
+          schedule: scheduleData,
+          comment: commentValue,
+        }
         setParticipants(updated)
         setEditingIndex(null)
       } else {
@@ -179,7 +194,16 @@ export default function ScheduleForm({
           body: JSON.stringify(payload),
         })
         const { id } = await res.json()
-        setParticipants([...participants, { id, ...payload }])
+        setParticipants([
+          ...participants,
+          {
+            id,
+            name: currentName,
+            grade: currentGrade,
+            schedule: scheduleData,
+            comment: commentValue,
+          },
+        ])
       }
 
       toast({
@@ -188,6 +212,7 @@ export default function ScheduleForm({
       })
       setCurrentName("")
       setCurrentGrade("")
+      setCurrentComment("")
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
       setSelectedCells({})
       setBulkScheduleType(defaultTypeId)
@@ -306,6 +331,21 @@ export default function ScheduleForm({
             </Select>
             {gradeError && <p className="mt-2 text-sm text-red-500">{gradeError}</p>}
           </div>
+        </div>
+
+        <div className="mb-4">
+          <Label htmlFor="comment">{isEnglish ? "Comment" : "コメント"}</Label>
+          <Textarea
+            id="comment"
+            value={currentComment}
+            onChange={(e) => setCurrentComment(e.target.value)}
+            placeholder={
+              isEnglish
+                ? "Add an optional comment"
+                : "補足があれば入力してください（任意）"
+            }
+            rows={3}
+          />
         </div>
 
         {/* 一括入力 */}

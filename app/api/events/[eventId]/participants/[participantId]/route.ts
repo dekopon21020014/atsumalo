@@ -7,7 +7,7 @@ export async function PUT(
   { params }: { params: { eventId: string; participantId: string } }
 ) {
   const { eventId, participantId } = await params
-  const { name, grade, gradePriority, schedule } = await req.json()
+  const { name, grade, gradePriority, schedule, comment: rawComment } = await req.json()
 
   if (!name || typeof name !== 'string') {
     return NextResponse.json({ error: '名前が必要です' }, { status: 400 })
@@ -22,6 +22,17 @@ export async function PUT(
     return NextResponse.json({ error: 'スケジュールが必要です' }, { status: 400 })
   }
 
+  let comment = ''
+  if (rawComment != null) {
+    if (typeof rawComment !== 'string') {
+      return NextResponse.json({ error: 'コメントは文字列で指定してください' }, { status: 400 })
+    }
+    const trimmed = rawComment.trim()
+    if (trimmed !== '') {
+      comment = trimmed
+    }
+  }
+
   try {
     await db
       .collection('events')
@@ -32,6 +43,7 @@ export async function PUT(
         name,
         grade,
         schedule,
+        comment,
         updatedAt: FieldValue.serverTimestamp(),
       })
 
