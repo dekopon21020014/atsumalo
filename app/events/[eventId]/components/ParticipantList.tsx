@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
+import { cn } from '@/lib/utils'
 import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
 import type { ScheduleType } from './constants'
@@ -230,17 +231,11 @@ export default function ParticipantList({
                     onClick={() => handleEdit(idx)}
                     title={isEnglish ? 'Click to edit' : 'クリックして編集'}
                   >
-                    <div
-                      className="font-semibold truncate max-w-[5rem] mx-auto"
-                      title={part.name}
-                    >
+                    <div className="font-semibold truncate" title={part.name}>
                       {part.name}
                     </div>
                     {part.grade && (
-                      <div
-                        className="text-[10px] text-gray-500 truncate max-w-[5rem] mx-auto"
-                        title={part.grade}
-                      >
+                      <div className="text-[10px] text-gray-500 truncate" title={part.grade}>
                         {part.grade}
                       </div>
                     )}
@@ -270,20 +265,15 @@ export default function ParticipantList({
                       return (
                         <td
                           key={`${part.id}-${key}`}
-                          className="border px-1 py-0.5 text-center align-top"
+                          className="border p-0 text-center align-middle"
                         >
-                          <div className="max-w-[5rem] mx-auto">
-                            {value ? (
-                              <span
-                                className={`inline-flex flex-wrap items-center justify-center px-1 py-px rounded text-xs leading-tight text-center ${
-                                  type?.color || ''
-                                }`}
-                              >
-                                {type?.label}
-                              </span>
-                            ) : (
-                              <span className="text-gray-300">-</span>
+                          <div
+                            className={cn(
+                              'flex h-10 w-full items-center justify-center text-xs font-medium',
+                              value && type?.color ? type.color : 'bg-white text-gray-300'
                             )}
+                          >
+                            {value && type?.label ? type.label : '-'}
                           </div>
                         </td>
                       )
@@ -299,9 +289,9 @@ export default function ParticipantList({
                 {displayed.map((part) => (
                   <td
                     key={`comment-${part.id}`}
-                    className="border px-1 py-0.5 align-top text-left text-muted-foreground"
+                    className="border p-0 align-top text-left text-muted-foreground"
                   >
-                    <div className="max-w-[5rem] whitespace-pre-wrap break-words text-xs">
+                    <div className="whitespace-pre-wrap break-words px-2 py-1 text-xs">
                       {part.comment && part.comment.trim() !== '' ? (
                         part.comment
                       ) : (

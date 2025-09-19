@@ -12,13 +12,14 @@ import {
 import type { ScheduleType, Response } from "./constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent  } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useParticipantForm } from "./useParticipantForm"
+import { cn } from "@/lib/utils"
 type ParticipantFormHook = ReturnType<typeof useParticipantForm>
 
 type Props = {
@@ -286,9 +287,14 @@ export default function OneTimeResponsesTab({
                       {sorted.map((r) => (
                         <td
                           key={`${dt}-${r.id}`}
-                          className={`py-0.5 px-1 text-center w-[8rem] min-w-[8rem] max-w-[8rem] ${getResponseCellClass(r, dt)}`}
+                          className={cn(
+                            "p-0 text-center align-middle w-[8rem] min-w-[8rem] max-w-[8rem]",
+                            getResponseCellClass(r, dt)
+                          )}
                         >
-                          {getResponseIcon(r, dt) || <Circle className="h-3 w-3 text-gray-200" />}
+                          <div className="flex h-10 w-full items-center justify-center">
+                            {getResponseIcon(r, dt) || <Circle className="h-3 w-3 text-gray-200" />}
+                          </div>
                         </td>
                       ))}
                     </tr>
@@ -300,14 +306,16 @@ export default function OneTimeResponsesTab({
                     {sorted.map((r) => (
                       <td
                         key={`comment-${r.id}`}
-                        className="py-0.5 px-1 text-left align-top w-[8rem] min-w-[8rem] max-w-[8rem]"
+                        className="p-0 text-left align-top w-[8rem] min-w-[8rem] max-w-[8rem]"
                       >
                         {r.comment && r.comment.trim() !== "" ? (
-                          <div className="text-[10px] text-gray-500 whitespace-pre-wrap break-words leading-tight">
+                          <div className="whitespace-pre-wrap break-words px-2 py-1 text-[10px] text-gray-500 leading-tight">
                             {r.comment}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-gray-300">-</span>
+                          <div className="flex h-10 items-center justify-center text-[10px] text-gray-300">
+                            -
+                          </div>
                         )}
                       </td>
                     ))}
