@@ -218,10 +218,10 @@ export default function ParticipantList({
           <table className="w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="bg-gray-50">
-                <th className="border px-1 py-0.5 text-left sticky left-0 top-0 bg-gray-50 z-30">
+                <th className="border px-1 py-0.5 text-left sticky left-0 top-0 bg-gray-50 z-30 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
                   {isEnglish ? 'Time Slot' : '日時'}
                 </th>
-                <th className="border px-1 py-0.5 text-center font-medium top-0 bg-gray-50">
+                <th className="border px-1 py-0.5 text-center font-medium top-0 bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
                   {isEnglish ? 'Available' : '参加可能数'}
                 </th>
                 {displayed.map((part, idx) => (
@@ -252,11 +252,11 @@ export default function ParticipantList({
                   : period
                 return (
                   <tr key={key} className="hover:bg-gray-50">
-                    <td className="border px-1 py-0.5 sticky left-0 bg-white z-20 align-top">
+                    <td className="border px-1 py-0.5 sticky left-0 bg-white z-20 align-top w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
                       <div className="font-medium">{day}</div>
                       <div className="text-[11px] text-gray-500">{periodLabel}</div>
                     </td>
-                    <td className="border px-1 py-0.5 text-center font-medium bg-gray-50">
+                    <td className="border px-1 py-0.5 text-center font-medium bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
                       {availableCounts[key] ?? 0}
                     </td>
                     {displayed.map((part) => {
@@ -282,10 +282,10 @@ export default function ParticipantList({
                 )
               })}
               <tr className="bg-gray-50">
-                <td className="border px-1 py-0.5 text-left font-medium sticky left-0 bg-gray-50 z-20">
+                <td className="border px-1 py-0.5 text-left font-medium sticky left-0 bg-gray-50 z-20 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
                   {isEnglish ? 'Comment' : 'コメント'}
                 </td>
-                <td className="border px-1 py-0.5 text-center bg-gray-50">-</td>
+                <td className="border px-1 py-0.5 text-center bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">-</td>
                 {displayed.map((part) => (
                   <td
                     key={`comment-${part.id}`}
