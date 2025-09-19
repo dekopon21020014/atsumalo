@@ -226,7 +226,7 @@ export default function ParticipantList({
                 {displayed.map((part, idx) => (
                   <th
                     key={part.id}
-                    className="border p-1 text-center align-top w-[10rem] min-w-[10rem] max-w-[10rem] bg-gray-50 cursor-pointer hover:bg-gray-100"
+                    className="border p-1 text-center align-top w-[8rem] min-w-[8rem] max-w-[8rem] bg-gray-50 cursor-pointer hover:bg-gray-100"
                     onClick={() => handleEdit(idx)}
                     title={isEnglish ? 'Click to edit' : 'クリックして編集'}
                   >
@@ -264,11 +264,11 @@ export default function ParticipantList({
                       return (
                         <td
                           key={`${part.id}-${key}`}
-                          className="border p-1 text-center w-[10rem] min-w-[10rem] max-w-[10rem]"
+                          className="border p-1 text-center w-[8rem] min-w-[8rem] max-w-[8rem]"
                         >
                           {value ? (
                             <span
-                              className={`px-2 py-1 rounded text-xs ${
+                              className={`px-1.5 py-0.5 rounded text-xs ${
                                 type?.color || ''
                               }`}
                             >
@@ -291,7 +291,7 @@ export default function ParticipantList({
                 {displayed.map((part) => (
                   <td
                     key={`comment-${part.id}`}
-                    className="border p-1 align-top text-xs whitespace-pre-wrap break-words text-left text-muted-foreground w-[10rem] min-w-[10rem] max-w-[10rem]"
+                    className="border p-1 align-top text-xs whitespace-pre-wrap break-words text-left text-muted-foreground w-[8rem] min-w-[8rem] max-w-[8rem]"
                   >
                     {part.comment && part.comment.trim() !== '' ? (
                       part.comment

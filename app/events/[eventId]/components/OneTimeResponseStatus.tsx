@@ -246,7 +246,7 @@ export default function OneTimeResponsesTab({
                     {sorted.map((r) => (
                       <th
                         key={r.id}
-                        className="py-1 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100 w-[9rem] min-w-[9rem] max-w-[9rem]"
+                        className="py-1 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100 w-[8rem] min-w-[8rem] max-w-[8rem]"
                         onClick={() => form.openEditDialog(r)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -270,7 +270,7 @@ export default function OneTimeResponsesTab({
                     {sorted.map((r) => (
                       <th
                         key={`count-${r.id}`}
-                        className="py-1 px-1 text-center font-medium w-[9rem] min-w-[9rem] max-w-[9rem]"
+                        className="py-1 px-1 text-center font-medium w-[8rem] min-w-[8rem] max-w-[8rem]"
                       >
                         {availableCounts[r.id] ?? 0}
                       </th>
@@ -286,7 +286,7 @@ export default function OneTimeResponsesTab({
                       {sorted.map((r) => (
                         <td
                           key={`${dt}-${r.id}`}
-                          className={`py-1 px-1 text-center w-[9rem] min-w-[9rem] max-w-[9rem] ${getResponseCellClass(r, dt)}`}
+                          className={`py-1 px-1 text-center w-[8rem] min-w-[8rem] max-w-[8rem] ${getResponseCellClass(r, dt)}`}
                         >
                           {getResponseIcon(r, dt) || <Circle className="h-3 w-3 text-gray-200" />}
                         </td>
@@ -300,7 +300,7 @@ export default function OneTimeResponsesTab({
                     {sorted.map((r) => (
                       <td
                         key={`comment-${r.id}`}
-                        className="py-1 px-1 text-left align-top w-[9rem] min-w-[9rem] max-w-[9rem]"
+                        className="py-1 px-1 text-left align-top w-[8rem] min-w-[8rem] max-w-[8rem]"
                       >
                         {r.comment && r.comment.trim() !== "" ? (
                           <div className="text-[10px] text-gray-500 whitespace-pre-wrap break-words">
