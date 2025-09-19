@@ -78,10 +78,13 @@ export default function OneTimeResponsesTab({
     .filter((t) => t.isAvailable)
     .map((t) => t.id)
 
-  const availableCounts = sorted.reduce((acc, r) => {
-    acc[r.id] = r.schedule.filter((s) =>
-      availableTypeIds.includes(s.typeId)
-    ).length
+  const availableCountsByDate = dateTimeOptions.reduce((acc, dateTime) => {
+    const count = sorted.reduce((total, response) => {
+      const selection = response.schedule.find((s) => s.dateTime === dateTime)
+      if (!selection) return total
+      return availableTypeIds.includes(selection.typeId) ? total + 1 : total
+    }, 0)
+    acc[dateTime] = count
     return acc
   }, {} as Record<string, number>)
 
@@ -239,11 +242,15 @@ export default function OneTimeResponsesTab({
           {sorted.length > 0 ? (
             <div className="border rounded-md overflow-auto max-h-96">
               <div className="inline-block min-w-max">
+
                 <table className="border-collapse text-xs">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr className="bg-gray-50 border-b">
                       <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-0.5 px-1.5 font-medium">
                         日時
+                      </th>
+                      <th className="border-r py-0.5 px-1.5 text-center font-medium bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                        参加可能数
                       </th>
                       {sorted.map((r) => (
                         <th
@@ -265,25 +272,15 @@ export default function OneTimeResponsesTab({
                         </th>
                       ))}
                     </tr>
-                    <tr className="bg-gray-50 border-b">
-                      <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-0.5 px-1.5 font-medium">
-                        参加可能数
-                      </th>
-                      {sorted.map((r) => (
-                        <th
-                          key={`count-${r.id}`}
-                          className="py-0.5 px-1 text-center font-medium w-[8rem] min-w-[8rem] max-w-[8rem]"
-                        >
-                          {availableCounts[r.id] ?? 0}
-                        </th>
-                      ))}
-                    </tr>
                   </thead>
                   <tbody className="divide-y">
                     {dateTimeOptions.map((dt, i) => (
                       <tr key={i} className="hover:bg-gray-50">
                         <td className="sticky left-0 bg-white z-10 border-r text-xs py-0.5 px-1.5 font-medium">
                           {dt}
+                        </td>
+                        <td className="border-r bg-gray-50 text-center text-xs font-medium w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                          {availableCountsByDate[dt] ?? 0}
                         </td>
                         {sorted.map((r) => (
                           <td
@@ -304,6 +301,9 @@ export default function OneTimeResponsesTab({
                       <td className="sticky left-0 bg-gray-50 z-10 border-r text-xs py-0.5 px-1.5 font-medium align-top">
                         コメント
                       </td>
+                      <td className="border-r bg-gray-50 text-center text-[10px] text-gray-400 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                        -
+                      </td>
                       {sorted.map((r) => (
                         <td
                           key={`comment-${r.id}`}
@@ -323,6 +323,7 @@ export default function OneTimeResponsesTab({
                     </tr>
                   </tbody>
                 </table>
+
               </div>
             </div>
           ) : (
