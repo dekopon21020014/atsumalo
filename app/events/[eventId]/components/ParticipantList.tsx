@@ -226,15 +226,15 @@ export default function ParticipantList({
                 {displayed.map((part, idx) => (
                   <th
                     key={part.id}
-                    className="border p-1 text-center align-top min-w-[110px] bg-gray-50 cursor-pointer hover:bg-gray-100"
+                    className="border p-1 text-center align-top w-[10rem] min-w-[10rem] max-w-[10rem] bg-gray-50 cursor-pointer hover:bg-gray-100"
                     onClick={() => handleEdit(idx)}
                     title={isEnglish ? 'Click to edit' : 'クリックして編集'}
                   >
-                    <div className="font-semibold truncate" title={part.name}>
+                    <div className="font-semibold truncate w-full" title={part.name}>
                       {part.name}
                     </div>
                     {part.grade && (
-                      <div className="text-[10px] text-gray-500 truncate" title={part.grade}>
+                      <div className="text-[10px] text-gray-500 truncate w-full" title={part.grade}>
                         {part.grade}
                       </div>
                     )}
@@ -262,7 +262,10 @@ export default function ParticipantList({
                       const value = part.schedule[key]
                       const type = scheduleTypes.find((t) => t.id === value)
                       return (
-                        <td key={`${part.id}-${key}`} className="border p-1 text-center">
+                        <td
+                          key={`${part.id}-${key}`}
+                          className="border p-1 text-center w-[10rem] min-w-[10rem] max-w-[10rem]"
+                        >
                           {value ? (
                             <span
                               className={`px-2 py-1 rounded text-xs ${
@@ -288,7 +291,7 @@ export default function ParticipantList({
                 {displayed.map((part) => (
                   <td
                     key={`comment-${part.id}`}
-                    className="border p-1 align-top text-xs whitespace-pre-wrap text-left text-muted-foreground"
+                    className="border p-1 align-top text-xs whitespace-pre-wrap break-words text-left text-muted-foreground w-[10rem] min-w-[10rem] max-w-[10rem]"
                   >
                     {part.comment && part.comment.trim() !== '' ? (
                       part.comment
