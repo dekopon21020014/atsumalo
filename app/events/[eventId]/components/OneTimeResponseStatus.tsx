@@ -256,11 +256,6 @@ export default function OneTimeResponsesTab({
                         <Pencil className="h-3 w-3 ml-1 text-gray-400" />
                       </div>
                       {r.grade && <div className="text-[10px] text-gray-500">{r.grade}</div>}
-                      {r.comment && r.comment.trim() !== "" && (
-                        <div className="mt-1 text-[10px] text-gray-400 whitespace-pre-wrap break-words max-w-[80px] mx-auto">
-                          {r.comment}
-                        </div>
-                      )}
                     </th>
                   ))}
                   </tr>
@@ -291,6 +286,23 @@ export default function OneTimeResponsesTab({
                       ))}
                     </tr>
                   ))}
+                  <tr className="bg-gray-50">
+                    <td className="sticky left-0 bg-gray-50 z-10 border-r text-xs py-1 px-2 font-medium align-top">
+                      コメント
+                    </td>
+                    {sorted.map((r) => (
+                      <td
+                        key={`comment-${r.id}`}
+                        className="py-1 px-1 text-left align-top"
+                      >
+                        {r.comment && r.comment.trim() !== "" && (
+                          <div className="text-[10px] text-gray-500 whitespace-pre-wrap break-words max-w-[80px]">
+                            {r.comment}
+                          </div>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
