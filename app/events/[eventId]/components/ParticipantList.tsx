@@ -226,15 +226,21 @@ export default function ParticipantList({
                 {displayed.map((part, idx) => (
                   <th
                     key={part.id}
-                    className="border px-1 py-0.5 text-center align-top w-[8rem] min-w-[8rem] max-w-[8rem] bg-gray-50 cursor-pointer hover:bg-gray-100"
+                    className="border px-1 py-0.5 text-center align-top bg-gray-50 cursor-pointer hover:bg-gray-100"
                     onClick={() => handleEdit(idx)}
                     title={isEnglish ? 'Click to edit' : 'クリックして編集'}
                   >
-                    <div className="font-semibold truncate w-full" title={part.name}>
+                    <div
+                      className="font-semibold truncate max-w-[5rem] mx-auto"
+                      title={part.name}
+                    >
                       {part.name}
                     </div>
                     {part.grade && (
-                      <div className="text-[10px] text-gray-500 truncate w-full" title={part.grade}>
+                      <div
+                        className="text-[10px] text-gray-500 truncate max-w-[5rem] mx-auto"
+                        title={part.grade}
+                      >
                         {part.grade}
                       </div>
                     )}
@@ -264,19 +270,21 @@ export default function ParticipantList({
                       return (
                         <td
                           key={`${part.id}-${key}`}
-                          className="border px-1 py-0.5 text-center w-[8rem] min-w-[8rem] max-w-[8rem]"
+                          className="border px-1 py-0.5 text-center align-top"
                         >
-                          {value ? (
-                            <span
-                              className={`inline-flex items-center justify-center px-1 py-px rounded text-xs leading-tight ${
-                                type?.color || ''
-                              }`}
-                            >
-                              {type?.label}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300">-</span>
-                          )}
+                          <div className="max-w-[5rem] mx-auto">
+                            {value ? (
+                              <span
+                                className={`inline-flex flex-wrap items-center justify-center px-1 py-px rounded text-xs leading-tight text-center ${
+                                  type?.color || ''
+                                }`}
+                              >
+                                {type?.label}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </div>
                         </td>
                       )
                     })}
@@ -291,13 +299,15 @@ export default function ParticipantList({
                 {displayed.map((part) => (
                   <td
                     key={`comment-${part.id}`}
-                    className="border px-1 py-0.5 align-top text-xs whitespace-pre-wrap break-words text-left text-muted-foreground w-[8rem] min-w-[8rem] max-w-[8rem]"
+                    className="border px-1 py-0.5 align-top text-left text-muted-foreground"
                   >
-                    {part.comment && part.comment.trim() !== '' ? (
-                      part.comment
-                    ) : (
-                      <span className="text-gray-300">-</span>
-                    )}
+                    <div className="max-w-[5rem] whitespace-pre-wrap break-words text-xs">
+                      {part.comment && part.comment.trim() !== '' ? (
+                        part.comment
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </div>
                   </td>
                 ))}
               </tr>
