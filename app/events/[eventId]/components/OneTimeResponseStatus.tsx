@@ -240,13 +240,13 @@ export default function OneTimeResponsesTab({
               <table className="w-full border-collapse text-xs">
                 <thead className="sticky top-0 z-10 bg-white">
                   <tr className="bg-gray-50 border-b">
-                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">
+                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-0.5 px-1.5 font-medium">
                       日時
                     </th>
                     {sorted.map((r) => (
                       <th
                         key={r.id}
-                        className="py-1 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100 w-[8rem] min-w-[8rem] max-w-[8rem]"
+                        className="py-0.5 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100 w-[8rem] min-w-[8rem] max-w-[8rem]"
                         onClick={() => form.openEditDialog(r)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -264,13 +264,13 @@ export default function OneTimeResponsesTab({
                     ))}
                   </tr>
                   <tr className="bg-gray-50 border-b">
-                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">
+                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-0.5 px-1.5 font-medium">
                       参加可能数
                     </th>
                     {sorted.map((r) => (
                       <th
                         key={`count-${r.id}`}
-                        className="py-1 px-1 text-center font-medium w-[8rem] min-w-[8rem] max-w-[8rem]"
+                        className="py-0.5 px-1 text-center font-medium w-[8rem] min-w-[8rem] max-w-[8rem]"
                       >
                         {availableCounts[r.id] ?? 0}
                       </th>
@@ -280,13 +280,13 @@ export default function OneTimeResponsesTab({
                 <tbody className="divide-y">
                   {dateTimeOptions.map((dt, i) => (
                     <tr key={i} className="hover:bg-gray-50">
-                      <td className="sticky left-0 bg-white z-10 border-r text-xs py-1 px-2 font-medium">
+                      <td className="sticky left-0 bg-white z-10 border-r text-xs py-0.5 px-1.5 font-medium">
                         {dt}
                       </td>
                       {sorted.map((r) => (
                         <td
                           key={`${dt}-${r.id}`}
-                          className={`py-1 px-1 text-center w-[8rem] min-w-[8rem] max-w-[8rem] ${getResponseCellClass(r, dt)}`}
+                          className={`py-0.5 px-1 text-center w-[8rem] min-w-[8rem] max-w-[8rem] ${getResponseCellClass(r, dt)}`}
                         >
                           {getResponseIcon(r, dt) || <Circle className="h-3 w-3 text-gray-200" />}
                         </td>
@@ -294,16 +294,16 @@ export default function OneTimeResponsesTab({
                     </tr>
                   ))}
                   <tr className="bg-gray-50">
-                    <td className="sticky left-0 bg-gray-50 z-10 border-r text-xs py-1 px-2 font-medium align-top">
+                    <td className="sticky left-0 bg-gray-50 z-10 border-r text-xs py-0.5 px-1.5 font-medium align-top">
                       コメント
                     </td>
                     {sorted.map((r) => (
                       <td
                         key={`comment-${r.id}`}
-                        className="py-1 px-1 text-left align-top w-[8rem] min-w-[8rem] max-w-[8rem]"
+                        className="py-0.5 px-1 text-left align-top w-[8rem] min-w-[8rem] max-w-[8rem]"
                       >
                         {r.comment && r.comment.trim() !== "" ? (
-                          <div className="text-[10px] text-gray-500 whitespace-pre-wrap break-words">
+                          <div className="text-[10px] text-gray-500 whitespace-pre-wrap break-words leading-tight">
                             {r.comment}
                           </div>
                         ) : (

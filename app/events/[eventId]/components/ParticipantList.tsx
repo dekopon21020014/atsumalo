@@ -217,16 +217,16 @@ export default function ParticipantList({
           <table className="w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="bg-gray-50">
-                <th className="border p-1 text-left sticky left-0 top-0 bg-gray-50 z-30">
+                <th className="border px-1 py-0.5 text-left sticky left-0 top-0 bg-gray-50 z-30">
                   {isEnglish ? 'Time Slot' : '日時'}
                 </th>
-                <th className="border p-1 text-center font-medium top-0 bg-gray-50">
+                <th className="border px-1 py-0.5 text-center font-medium top-0 bg-gray-50">
                   {isEnglish ? 'Available' : '参加可能数'}
                 </th>
                 {displayed.map((part, idx) => (
                   <th
                     key={part.id}
-                    className="border p-1 text-center align-top w-[8rem] min-w-[8rem] max-w-[8rem] bg-gray-50 cursor-pointer hover:bg-gray-100"
+                    className="border px-1 py-0.5 text-center align-top w-[8rem] min-w-[8rem] max-w-[8rem] bg-gray-50 cursor-pointer hover:bg-gray-100"
                     onClick={() => handleEdit(idx)}
                     title={isEnglish ? 'Click to edit' : 'クリックして編集'}
                   >
@@ -251,11 +251,11 @@ export default function ParticipantList({
                   : period
                 return (
                   <tr key={key} className="hover:bg-gray-50">
-                    <td className="border p-1 sticky left-0 bg-white z-20 align-top">
+                    <td className="border px-1 py-0.5 sticky left-0 bg-white z-20 align-top">
                       <div className="font-medium">{day}</div>
                       <div className="text-[11px] text-gray-500">{periodLabel}</div>
                     </td>
-                    <td className="border p-1 text-center font-medium bg-gray-50">
+                    <td className="border px-1 py-0.5 text-center font-medium bg-gray-50">
                       {availableCounts[key] ?? 0}
                     </td>
                     {displayed.map((part) => {
@@ -264,11 +264,11 @@ export default function ParticipantList({
                       return (
                         <td
                           key={`${part.id}-${key}`}
-                          className="border p-1 text-center w-[8rem] min-w-[8rem] max-w-[8rem]"
+                          className="border px-1 py-0.5 text-center w-[8rem] min-w-[8rem] max-w-[8rem]"
                         >
                           {value ? (
                             <span
-                              className={`px-1.5 py-0.5 rounded text-xs ${
+                              className={`inline-flex items-center justify-center px-1 py-px rounded text-xs leading-tight ${
                                 type?.color || ''
                               }`}
                             >
@@ -284,14 +284,14 @@ export default function ParticipantList({
                 )
               })}
               <tr className="bg-gray-50">
-                <td className="border p-1 text-left font-medium sticky left-0 bg-gray-50 z-20">
+                <td className="border px-1 py-0.5 text-left font-medium sticky left-0 bg-gray-50 z-20">
                   {isEnglish ? 'Comment' : 'コメント'}
                 </td>
-                <td className="border p-1 text-center bg-gray-50">-</td>
+                <td className="border px-1 py-0.5 text-center bg-gray-50">-</td>
                 {displayed.map((part) => (
                   <td
                     key={`comment-${part.id}`}
-                    className="border p-1 align-top text-xs whitespace-pre-wrap break-words text-left text-muted-foreground w-[8rem] min-w-[8rem] max-w-[8rem]"
+                    className="border px-1 py-0.5 align-top text-xs whitespace-pre-wrap break-words text-left text-muted-foreground w-[8rem] min-w-[8rem] max-w-[8rem]"
                   >
                     {part.comment && part.comment.trim() !== '' ? (
                       part.comment
