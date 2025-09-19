@@ -89,6 +89,7 @@ export default function EventPage() {
               id: p.id,
               name: p.name,
               grade: p.grade,
+              comment: typeof p?.comment === "string" ? p.comment.trim() : "",
               schedule: p.schedule,
             }))
           : [],

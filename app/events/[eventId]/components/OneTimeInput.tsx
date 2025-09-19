@@ -1,15 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter } from "next/navigation"
-import {
-  Check,
-  Save,
-  User,
-  MessageSquare,
-  X,
-  GraduationCap,
-} from "lucide-react"
+import { Check, Save, User, MessageSquare, X, GraduationCap } from "lucide-react"
 import { type ScheduleType, type Response } from "./constants"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -59,8 +51,7 @@ export default function OneTimeInputTab({
     })
   }
   const [selections, setSelections] = useState<Record<string, string>>(initialSelections)
-  const [comments, setComments] = useState<Record<string, string>>({})
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({})
+  const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSelection = (dateTime: string, typeId: string) => {
@@ -69,14 +60,7 @@ export default function OneTimeInputTab({
     localStorage.setItem(`event_${eventId}_selections`, JSON.stringify(newSelections))
   }
 
-  const toggleComment = (dateTime: string) => {
-    setShowComments((prev) => ({
-      ...prev,
-      [dateTime]: !prev[dateTime],
-    }))
-  }
-
-  const handleSubmit = async () => {    
+  const handleSubmit = async () => {
     if (!name.trim()) {
       toast({
         title: "名前を入力してください",
@@ -99,6 +83,7 @@ export default function OneTimeInputTab({
 
     try {
       // 送信データの準備
+      const trimmedComment = comment.trim()
       const responseData = {
         eventId,
         name,
@@ -107,8 +92,8 @@ export default function OneTimeInputTab({
         schedule: Object.entries(selections).map(([dateTime, typeId]) => ({
           dateTime,
           typeId,
-          comment: comments[dateTime] || "",
         })),
+        comment: trimmedComment === "" ? "" : trimmedComment,
       }
 
       // APIエンドポイントに送信（実際の実装に合わせて調整）      
@@ -126,7 +111,10 @@ export default function OneTimeInputTab({
 
       const { id } = await response.json()
       // ローカル state に「自分の回答」を追加
-      setExistingResponses((prev) => [...prev, { id, name, grade, schedule: responseData.schedule }])
+      setExistingResponses((prev) => [
+        ...prev,
+        { id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
+      ])
 
       toast({
         title: "回答を送信しました",
@@ -135,6 +123,10 @@ export default function OneTimeInputTab({
 
       // 送信成功後、回答状況タブに切り替え
       setActiveTab("responses")
+      setName("")
+      setGrade("")
+      setComment("")
+      setSelections(initialSelections)
     } catch (error) {
       console.error("送信エラー:", error)
       toast({
@@ -148,7 +140,7 @@ export default function OneTimeInputTab({
   }
   const clearResponses = () => {
     setSelections(initialSelections)
-    setComments({})
+    setComment("")
   }
 
   // 参加可能数
@@ -237,6 +229,20 @@ export default function OneTimeInputTab({
                 </SelectContent>
               </Select>
             </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="participant-comment" className="text-sm font-medium mb-1 block">
+                <MessageSquare className="h-4 w-4 inline-block mr-1" />
+                コメント（任意）
+              </Label>
+              <Textarea
+                id="participant-comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="補足があれば入力してください（任意）"
+                className="w-full"
+                rows={3}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -309,30 +315,7 @@ export default function OneTimeInputTab({
                               )}
                             </button>
                           ))}
-                          <button
-                            type="button"
-                            className="text-xs text-gray-500 flex items-center hover:text-gray-700 ml-1"
-                            onClick={() => toggleComment(dt)}
-                          >
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            {showComments[dt] ? "閉じる" : "コメント"}
-                          </button>
                         </div>
-                        {showComments[dt] && (
-                          <div className="mt-2">
-                            <Textarea
-                              placeholder="コメントを入力"
-                              value={comments[dt] || ""}
-                              onChange={(e) =>
-                                setComments((prev) => ({
-                                  ...prev,
-                                  [dt]: e.target.value,
-                                }))
-                              }
-                              className="w-full h-16 text-sm"
-                            />
-                          </div>
-                        )}
                       </td>
                       {existingResponses.length > 0 && (
                         <td className="p-2 text-center">

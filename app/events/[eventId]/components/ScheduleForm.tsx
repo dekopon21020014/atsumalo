@@ -86,8 +86,10 @@ export default function ScheduleForm({
       setCurrentName(p.name)
       setCurrentGrade(p.grade || "")
       setCurrentSchedule({ ...p.schedule })
+      setCurrentComment(p.comment ?? "")
     } else {
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
+      setCurrentComment("")
     }
   }, [editingIndex, participants, xAxis, yAxis, defaultTypeId])
 

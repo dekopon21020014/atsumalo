@@ -48,20 +48,10 @@ export default function OneTimeResponsesTab({
 
     if (type.isAvailable) {
       return (
-        <CheckCircle2
-          className="h-4 w-4 text-green-500"
-          role="img"
-          aria-label={`${type.label}${selection.comment ? `: ${selection.comment}` : ""}`}
-        />
+        <CheckCircle2 className="h-4 w-4 text-green-500" role="img" aria-label={type.label} />
       )
     } else {
-      return (
-        <XCircle
-          className="h-4 w-4 text-red-500"
-          role="img"
-          aria-label={`${type.label}${selection.comment ? `: ${selection.comment}` : ""}`}
-        />
-      )
+      return <XCircle className="h-4 w-4 text-red-500" role="img" aria-label={type.label} />
     }
   }
 
@@ -254,20 +244,25 @@ export default function OneTimeResponsesTab({
                       日時
                     </th>
                     {sorted.map((r) => (
-                      <th
-                        key={r.id}
-                        className="py-1 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100"
-                        onClick={() => form.openEditDialog(r)}
-                      >
-                        <div className="flex items-center justify-center">
-                          <div className="truncate max-w-[60px]" title={`${r.name} - クリックして編集`}>
-                            {r.name}
-                          </div>
-                          <Pencil className="h-3 w-3 ml-1 text-gray-400" />
+                    <th
+                      key={r.id}
+                      className="py-1 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                      onClick={() => form.openEditDialog(r)}
+                    >
+                      <div className="flex items-center justify-center">
+                        <div className="truncate max-w-[60px]" title={`${r.name} - クリックして編集`}>
+                          {r.name}
                         </div>
-                        {r.grade && <div className="text-[10px] text-gray-500">{r.grade}</div>}
-                      </th>
-                    ))}
+                        <Pencil className="h-3 w-3 ml-1 text-gray-400" />
+                      </div>
+                      {r.grade && <div className="text-[10px] text-gray-500">{r.grade}</div>}
+                      {r.comment && r.comment.trim() !== "" && (
+                        <div className="mt-1 text-[10px] text-gray-400 whitespace-pre-wrap break-words max-w-[80px] mx-auto">
+                          {r.comment}
+                        </div>
+                      )}
+                    </th>
+                  ))}
                   </tr>
                   <tr className="bg-gray-50 border-b">
                     <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">

@@ -9,10 +9,10 @@ export type Response = {
   id: string
   name: string
   grade?: string
+  comment?: string
   schedule: {
     dateTime: string
     typeId: string
-    comment?: string
   }[]
 }
 
