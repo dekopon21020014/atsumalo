@@ -246,16 +246,18 @@ export default function OneTimeResponsesTab({
                 <table className="border-collapse text-xs">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr className="bg-gray-50 border-b">
-                      <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-0.5 px-1.5 font-medium">
+                      <th
+                        className="border px-1 py-0.5 text-left sticky left-0 top-0 bg-gray-50 z-30 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]"
+                      >
                         日時
                       </th>
-                      <th className="border-r py-0.5 px-1.5 text-center font-medium bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                      <th className="border px-1 py-0.5 text-center font-medium top-0 bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
                         参加可能数
                       </th>
                       {sorted.map((r) => (
                         <th
                           key={r.id}
-                          className="py-0.5 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100 w-[8rem] min-w-[8rem] max-w-[8rem]"
+                          className="border px-1 py-0.5 text-center align-top bg-gray-50 cursor-pointer hover:bg-gray-100 w-24 min-w-[6rem] max-w-[6rem]"
                           onClick={() => form.openEditDialog(r)}
                         >
                           <div className="flex items-center justify-center gap-1">
@@ -276,17 +278,17 @@ export default function OneTimeResponsesTab({
                   <tbody className="divide-y">
                     {dateTimeOptions.map((dt, i) => (
                       <tr key={i} className="hover:bg-gray-50">
-                        <td className="sticky left-0 bg-white z-10 border-r text-xs py-0.5 px-1.5 font-medium">
+                        <td className="border px-1 py-0.5 sticky left-0 bg-white z-20 align-top w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem] text-xs font-medium">
                           {dt}
                         </td>
-                        <td className="border-r bg-gray-50 text-center text-xs font-medium w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                        <td className="border px-1 py-0.5 bg-gray-50 text-center text-xs font-medium w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
                           {availableCountsByDate[dt] ?? 0}
                         </td>
                         {sorted.map((r) => (
                           <td
                             key={`${dt}-${r.id}`}
                             className={cn(
-                              "p-0 text-center align-middle w-[8rem] min-w-[8rem] max-w-[8rem]",
+                              "border p-0 text-center align-middle w-24 min-w-[6rem] max-w-[6rem]",
                               getResponseCellClass(r, dt)
                             )}
                           >
@@ -298,26 +300,24 @@ export default function OneTimeResponsesTab({
                       </tr>
                     ))}
                     <tr className="bg-gray-50">
-                      <td className="sticky left-0 bg-gray-50 z-10 border-r text-xs py-0.5 px-1.5 font-medium align-top">
+                      <td className="border px-1 py-0.5 text-left font-medium sticky left-0 bg-gray-50 z-20 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
                         コメント
                       </td>
-                      <td className="border-r bg-gray-50 text-center text-[10px] text-gray-400 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                      <td className="border px-1 py-0.5 bg-gray-50 text-center text-[10px] text-gray-400 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
                         -
                       </td>
                       {sorted.map((r) => (
                         <td
                           key={`comment-${r.id}`}
-                          className="p-0 text-left align-top w-[8rem] min-w-[8rem] max-w-[8rem]"
+                          className="border p-0 align-top text-left text-muted-foreground w-24 min-w-[6rem] max-w-[6rem]"
                         >
-                          {r.comment && r.comment.trim() !== "" ? (
-                            <div className="whitespace-pre-wrap break-words px-2 py-1 text-[10px] text-gray-500 leading-tight">
-                              {r.comment}
-                            </div>
-                          ) : (
-                            <div className="flex h-10 items-center justify-center text-[10px] text-gray-300">
-                              -
-                            </div>
-                          )}
+                          <div className="whitespace-pre-wrap break-words px-2 py-1 text-xs">
+                            {r.comment && r.comment.trim() !== "" ? (
+                              r.comment
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </div>
                         </td>
                       ))}
                     </tr>
