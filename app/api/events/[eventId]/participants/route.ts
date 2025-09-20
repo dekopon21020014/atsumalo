@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { eventId: str
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { eventId, name, grade, gradePriority, schedule } = body
+  const { eventId, name, grade, gradePriority, schedule, comment: rawComment } = body
 
   if (!eventId || typeof eventId !== "string") {
     return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
@@ -35,6 +35,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "スケジュールが必要です" }, { status: 400 })
   }
 
+  let comment = ""
+  if (rawComment != null) {
+    if (typeof rawComment !== "string") {
+      return NextResponse.json({ error: "コメントは文字列で指定してください" }, { status: 400 })
+    }
+    const trimmed = rawComment.trim()
+    if (trimmed !== "") {
+      comment = trimmed
+    }
+  }
+
   try {
     // ────────────── ここを修正 ──────────────
     // トップレベルの 'events' コレクション内の eventId ドキュメントを取得して、
@@ -49,6 +60,7 @@ export async function POST(req: NextRequest) {
       name,
       grade,
       schedule,
+      comment,
       createdAt: FieldValue.serverTimestamp(),
     })
 

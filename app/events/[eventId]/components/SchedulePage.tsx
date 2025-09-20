@@ -44,6 +44,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   const [activeTab, setActiveTab] = useState('input')
   const [currentName, setCurrentName] = useState('')
   const [currentGrade, setCurrentGrade] = useState('')
+  const [currentComment, setCurrentComment] = useState('')
   const [currentSchedule, setCurrentSchedule] = useState<Schedule>(
     () => createEmptySchedule(xAxis, yAxis, defaultTypeId)
   )
@@ -79,7 +80,12 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.participants)) {
-          setParticipants(data.participants)
+          setParticipants(
+            data.participants.map((p: any) => ({
+              ...p,
+              comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
+            }))
+          )
         }
       })
       .catch((e) => {
@@ -99,8 +105,10 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
       setCurrentName(p.name)
       setCurrentGrade(p.grade || '')
       setCurrentSchedule({ ...p.schedule })
+      setCurrentComment(p.comment ?? '')
     } else {
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
+      setCurrentComment('')
     }
   }, [editingIndex, participants, xAxis, yAxis, defaultTypeId])
 
@@ -117,7 +125,12 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
       try {
         const data = JSON.parse(e.target?.result as string)
         if (Array.isArray(data)) {
-          setParticipants(data)
+          setParticipants(
+            data.map((item: any) => ({
+              ...item,
+              comment: typeof item?.comment === 'string' ? item.comment.trim() : '',
+            }))
+          )
           toast({
             title: isEnglish ? 'Import complete' : 'インポート完了',
             description: isEnglish
@@ -227,6 +240,8 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             setCurrentName={setCurrentName}
             currentGrade={currentGrade}
             setCurrentGrade={setCurrentGrade}
+            currentComment={currentComment}
+            setCurrentComment={setCurrentComment}
             currentSchedule={currentSchedule}
             setCurrentSchedule={setCurrentSchedule}
             participants={participants}
@@ -243,6 +258,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             setParticipants={setParticipants}
             setCurrentName={setCurrentName}
             setCurrentGrade={setCurrentGrade}
+            setCurrentComment={setCurrentComment}
             setCurrentSchedule={setCurrentSchedule}
             setEditingIndex={setEditingIndex}
             setActiveTab={setActiveTab}

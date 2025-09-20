@@ -15,16 +15,22 @@ export function useParticipantForm(
   const [name, setName] = useState<string>("")
   const [grade, setGrade] = useState<string>("")
   const [selections, setSelections] = useState<Record<string, string>>({})
-  const [comments, setComments] = useState<Record<string, string>>({})
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({})
+  const [comment, setComment] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [editSelections, setEditSelections] = useState<Record<string, string>>({})
-  const [existingResponses, setExistingResponses] = useState<Response[]>(responses)
-  const [editComments, setEditComments] = useState<Record<string, string>>({})
+  const sanitizeResponses = (items: Response[]): Response[] =>
+    items.map((r) => ({
+      ...r,
+      comment: typeof r.comment === "string" ? r.comment.trim() : "",
+    }))
+
+  const [existingResponses, setExistingResponses] = useState<Response[]>(
+    Array.isArray(responses) ? sanitizeResponses(responses) : [],
+  )
+  const [editComment, setEditComment] = useState<string>("")
   const [editingResponse, setEditingResponse] = useState<Response | null>(null)
   const [editName, setEditName] = useState<string>("")
   const [editGrade, setEditGrade] = useState<string>("")
-  const [showEditComments, setShowEditComments] = useState<Record<string, boolean>>({})
   const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false)
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false)
@@ -39,13 +45,13 @@ export function useParticipantForm(
   useEffect(() => {
     const s = localStorage.getItem(`event_${eventId}_selections`)
     if (s) setSelections(JSON.parse(s))
-    const c = localStorage.getItem(`event_${eventId}_comments`)
-    if (c) setComments(JSON.parse(c))
+    const c = localStorage.getItem(`event_${eventId}_comment`)
+    if (c) setComment(c)
   }, [eventId])
 
   // sync external responses when parent data changes
   useEffect(() => {
-    setExistingResponses(Array.isArray(responses) ? responses : [])
+    setExistingResponses(Array.isArray(responses) ? sanitizeResponses(responses) : [])
   }, [responses])
 
   // 回答者の参加可能日数を取得
@@ -66,16 +72,6 @@ export function useParticipantForm(
     setEditSelections(prev => ({ ...prev, [dateTime]: typeId }))
   }
 
-  const handleCommentChange = (dateTime: string, comment: string) => {
-    const newComments = { ...comments, [dateTime]: comment }
-    setComments(newComments)
-    localStorage.setItem(`event_${eventId}_comments`, JSON.stringify(newComments))
-  }
-
-  const toggleComment = (dateTime: string) => {
-    setShowComments(prev => ({ ...prev, [dateTime]: !prev[dateTime] }))
-  }
-
   const handleNameChange = (value: string) => {
     setName(value)
     localStorage.setItem(`event_${eventId}_name`, value)
@@ -88,15 +84,15 @@ export function useParticipantForm(
 
   const clearResponses = () => {
     setSelections({})
-    setComments({})
+    setComment("")
     localStorage.removeItem(`event_${eventId}_selections`)
-    localStorage.removeItem(`event_${eventId}_comments`)
+    localStorage.removeItem(`event_${eventId}_comment`)
     toast({ title: "回答をクリアしました", description: "すべての選択とコメントがクリアされました。" })
   }
 
   const clearEditResponses = () => {
     setEditSelections({})
-    setEditComments({})
+    setEditComment("")
     toast({ title: "回答をクリアしました", description: "すべての選択とコメントがクリアされました。" })
   }
 
@@ -112,8 +108,14 @@ export function useParticipantForm(
     }
     setIsSubmitting(true)
     try {
-      const responseData = { eventId, name, grade, gradePriority: gradeOrderMap[grade],
-        schedule: Object.entries(selections).map(([dateTime, typeId]) => ({ dateTime, typeId, comment: comments[dateTime] || "" }))
+      const trimmedComment = comment.trim()
+      const responseData = {
+        eventId,
+        name,
+        grade,
+        gradePriority: gradeOrderMap[grade],
+        schedule: Object.entries(selections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
+        comment: trimmedComment === "" ? "" : trimmedComment,
       }
       const response = await fetch(`/api/events/${eventId}/participants`, {
         method: "POST",
@@ -122,9 +124,14 @@ export function useParticipantForm(
       })
       if (!response.ok) throw new Error("回答の送信に失敗しました")
       const { id } = await response.json()
-      setExistingResponses(prev => [...prev, { id, name, grade, schedule: responseData.schedule }])
+      setExistingResponses(prev => [
+        ...prev,
+        { id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
+      ])
       toast({ title: "回答を送信しました", description: "あなたの回答が正常に保存されました。" })
       setActiveTab("responses")
+      setComment("")
+      localStorage.removeItem(`event_${eventId}_comment`)
     } catch (error) {
       console.error(error)
       toast({ title: "送信エラー", description: "回答の送信中にエラーが発生しました。再度お試しください。", variant: "destructive" })
@@ -139,9 +146,13 @@ export function useParticipantForm(
     if (Object.keys(editSelections).length === 0) { toast({ title: "少なくとも1つの日時に回答してください", variant: "destructive" }); return }
     setIsEditing(true)
     try {
+      const trimmedComment = editComment.trim()
       const responseData = {
-        name: editName, grade: editGrade, gradePriority: gradeOrderMap[editGrade],
-        schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId, comment: editComments[dateTime] || "" }))
+        name: editName,
+        grade: editGrade,
+        gradePriority: gradeOrderMap[editGrade],
+        schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
+        comment: trimmedComment === "" ? "" : trimmedComment,
       }
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
         method: "PUT",
@@ -149,7 +160,13 @@ export function useParticipantForm(
         body: JSON.stringify(responseData),
       })
       if (!response.ok) throw new Error("回答の更新に失敗しました")
-      setExistingResponses(prev => prev.map(r => r.id === editingResponse.id ? { ...r, name: editName, grade: editGrade, schedule: responseData.schedule } : r))
+      setExistingResponses(prev =>
+        prev.map(r =>
+          r.id === editingResponse.id
+            ? { ...r, name: editName, grade: editGrade, schedule: responseData.schedule, comment: responseData.comment }
+            : r,
+        ),
+      )
       toast({ title: "回答を更新しました", description: `${editName}さんの回答が更新されました。` })
       setIsEditDialogOpen(false)
       setEditingResponse(null)
@@ -159,14 +176,6 @@ export function useParticipantForm(
     } finally {
       setIsEditing(false)
     }
-  }
-
-  const handleEditCommentChange = (dateTime: string, comment: string) => {
-    setEditComments(prev => ({ ...prev, [dateTime]: comment }))
-  }
-
-  const toggleEditComment = (dateTime: string) => {
-    setShowEditComments(prev => ({ ...prev, [dateTime]: !prev[dateTime] }))
   }
 
   const handleDeleteResponse = async () => {
@@ -193,11 +202,11 @@ export function useParticipantForm(
     setEditName(response.name)
     setEditGrade(response.grade || "")
     const sel: Record<string, string> = {}
-    const com: Record<string, string> = {}
-    response.schedule.forEach(item => { sel[item.dateTime] = item.typeId; if (item.comment) com[item.dateTime] = item.comment })
+    response.schedule.forEach(item => {
+      sel[item.dateTime] = item.typeId
+    })
     setEditSelections(sel)
-    setEditComments(com)
-    setShowEditComments({})
+    setEditComment(response.comment ?? "")
     setIsEditDialogOpen(true)
   }
 
@@ -322,16 +331,14 @@ export function useParticipantForm(
     name, setName,
     grade, setGrade,
     selections, setSelections,
-    comments, setComments,
-    showComments, setShowComments,
+    comment, setComment,
     isSubmitting, setIsSubmitting,
     editSelections, setEditSelections,
     existingResponses, setExistingResponses,
-    editComments, setEditComments,
+    editComment, setEditComment,
     editingResponse, setEditingResponse,
     editName, setEditName,
     editGrade, setEditGrade,
-    showEditComments, setShowEditComments,
     isEditDialogOpen, setIsEditDialogOpen,
     isEditing, setIsEditing,
     isDeleteDialogOpen, setIsDeleteDialogOpen,
@@ -344,16 +351,12 @@ export function useParticipantForm(
     searchQuery, setSearchQuery,
     handleSelection,
     handleEditSelection,
-    handleCommentChange,
-    toggleComment,
     handleNameChange,
     handleGradeChange,
     clearResponses,
     clearEditResponses,
     handleSubmit,
     handleUpdateResponse,
-    handleEditCommentChange,
-    toggleEditComment,
     handleDeleteResponse,
     openEditDialog,
     openDeleteConfirmation,

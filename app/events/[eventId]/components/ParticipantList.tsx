@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
+import { cn } from '@/lib/utils'
 import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
 import type { ScheduleType } from './constants'
@@ -29,6 +30,7 @@ type Props = {
   setParticipants: (ps: Participant[]) => void
   setCurrentName: (s: string) => void
   setCurrentGrade: (s: string) => void
+  setCurrentComment: (s: string) => void
   setCurrentSchedule: (s: Participant['schedule']) => void
   setEditingIndex: (i: number | null) => void
   setActiveTab: (t: string) => void
@@ -45,6 +47,7 @@ export default function ParticipantList({
   setParticipants,
   setCurrentName,
   setCurrentGrade,
+  setCurrentComment,
   setCurrentSchedule,
   setEditingIndex,
   setActiveTab,
@@ -77,24 +80,34 @@ export default function ParticipantList({
     return sortAscending ? ai - bi : bi - ai
   })
 
+  const slotDescriptors = useMemo(
+    () =>
+      xAxis.flatMap((day) =>
+        yAxis.map((period) => ({
+          key: `${day}-${period}`,
+          day,
+          period: String(period),
+        }))
+      ),
+    [xAxis, yAxis]
+  )
+
   const availableCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    for (const day of xAxis) {
-      for (const period of yAxis) {
-        const key = `${day}-${period}`
-        counts[key] = displayed.filter((p) =>
-          availableOptions.includes(p.schedule[key])
-        ).length
-      }
+    for (const slot of slotDescriptors) {
+      counts[slot.key] = displayed.filter((p) =>
+        availableOptions.includes(p.schedule[slot.key])
+      ).length
     }
     return counts
-  }, [displayed, xAxis, yAxis, availableOptions])
+  }, [displayed, slotDescriptors, availableOptions])
 
   const handleEdit = (idx: number) => {
     const part = displayed[idx]
     const origIdx = participants.findIndex((p) => p.id === part.id)
     setCurrentName(part.name)
     setCurrentGrade(part.grade)
+    setCurrentComment(part.comment ?? '')
     setCurrentSchedule(part.schedule)
     setEditingIndex(origIdx)
     setActiveTab('input')
@@ -202,74 +215,96 @@ export default function ParticipantList({
       {/* ── グリッドビュー ── */}
       {viewMode === 'grid' ? (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-white">
-              <tr>
-                <th className="border p-1 sticky left-0 bg-white z-20">
-                  {isEnglish ? 'Name' : '名前'}
-                </th>
-                {xAxis.map((day) =>
-                  yAxis.map((period) => (
+          <div className="inline-block min-w-max">
+            <table className="border-collapse text-sm">
+              <thead className="sticky top-0 z-10 bg-white">
+                <tr className="bg-gray-50">
+                  <th className="border px-1 py-0.5 text-left sticky left-0 top-0 bg-gray-50 z-30 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
+                    {isEnglish ? 'Time Slot' : '日時'}
+                  </th>
+                  <th className="border px-1 py-0.5 text-center font-medium top-0 bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                    {isEnglish ? 'Available' : '参加可能数'}
+                  </th>
+                  {displayed.map((part, idx) => (
                     <th
-                      key={`${day}-${period}`}
-                      className="border p-1 text-center whitespace-nowrap"
+                      key={part.id}
+                      className="border px-1 py-0.5 text-center align-top bg-gray-50 cursor-pointer hover:bg-gray-100 w-24 min-w-[6rem] max-w-[6rem]"
+                      onClick={() => handleEdit(idx)}
+                      title={isEnglish ? 'Click to edit' : 'クリックして編集'}
                     >
-                      {`${day}${period}`}
+                      <div className="font-semibold truncate" title={part.name}>
+                        {part.name}
+                      </div>
+                      {part.grade && (
+                        <div className="text-[10px] text-gray-500 truncate" title={part.grade}>
+                          {part.grade}
+                        </div>
+                      )}
                     </th>
-                  ))
-                )}
-              </tr>
-              <tr className="bg-gray-50">
-                <th className="border p-1 text-center sticky left-0 bg-gray-50 z-20">
-                  {isEnglish ? 'Available Participants' : '参加可能者数'}
-                </th>
-                {xAxis.map((day) =>
-                  yAxis.map((period) => (
-                    <th
-                      key={`count-${day}-${period}`}
-                      className="border p-1 text-center"
-                    >
-                      {availableCounts[`${day}-${period}`] ?? 0}
-                    </th>
-                  ))
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {displayed.map((part, idx) => (
-                <tr key={part.id}>
-                  <td
-                    className="border p-1 font-medium sticky left-0 bg-white z-10 cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleEdit(idx)}
-                  >
-                    {part.grade}: {part.name}
-                  </td>
-                  {xAxis.map((day) =>
-                    yAxis.map((period) => {
-                      const key = `${day}-${period}`
-                      const value = part.schedule[key]
-                      const type = scheduleTypes.find((t) => t.id === value)
-                      return (
-                        <td key={key} className="border p-1 text-center">
-                          {value ? (
-                            <span
-                              className={`px-2 py-1 rounded text-xs ${
-                                type?.color
-                              }`}
-                            >
-                              {type?.label}
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                      )
-                    })
-                  )}
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {slotDescriptors.map(({ key, day, period }) => {
+                  const periodLabel = isEnglish
+                    ? period
+                    : /^\d+$/.test(period)
+                    ? `${period}限`
+                    : period
+                  return (
+                    <tr key={key} className="hover:bg-gray-50">
+                      <td className="border px-1 py-0.5 sticky left-0 bg-white z-20 align-top w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
+                        <div className="font-medium">{day}</div>
+                        <div className="text-[11px] text-gray-500">{periodLabel}</div>
+                      </td>
+                      <td className="border px-1 py-0.5 text-center font-medium bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                        {availableCounts[key] ?? 0}
+                      </td>
+                      {displayed.map((part) => {
+                        const value = part.schedule[key]
+                        const type = scheduleTypes.find((t) => t.id === value)
+                        return (
+                          <td
+                            key={`${part.id}-${key}`}
+                            className="border p-0 text-center align-middle w-24 min-w-[6rem] max-w-[6rem]"
+                          >
+                            <div
+                              className={cn(
+                                'flex h-10 w-full items-center justify-center text-xs font-medium',
+                                value && type?.color ? type.color : 'bg-white text-gray-300'
+                              )}
+                            >
+                              {value && type?.label ? type.label : '-'}
+                            </div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+                <tr className="bg-gray-50">
+                  <td className="border px-1 py-0.5 text-left font-medium sticky left-0 bg-gray-50 z-20 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
+                    {isEnglish ? 'Comment' : 'コメント'}
+                  </td>
+                  <td className="border px-1 py-0.5 text-center bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">-</td>
+                  {displayed.map((part) => (
+                    <td
+                      key={`comment-${part.id}`}
+                      className="border p-0 align-top text-left text-muted-foreground w-24 min-w-[6rem] max-w-[6rem]"
+                    >
+                      <div className="whitespace-pre-wrap break-words px-2 py-1 text-xs">
+                        {part.comment && part.comment.trim() !== '' ? (
+                          part.comment
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         /* ── リストビュー（既存カード） ── */
@@ -290,6 +325,11 @@ export default function ParticipantList({
                     </Button>
                   </div>
                 </div>
+                {part.comment && part.comment.trim() !== '' && (
+                  <CardDescription className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                    {part.comment}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="pt-0">
                 {isMobile ? (

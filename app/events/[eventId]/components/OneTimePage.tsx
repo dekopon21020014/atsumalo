@@ -3,8 +3,18 @@
 import { useState, useEffect } from "react"
 import { useParticipantForm } from "./useParticipantForm"
 import {
-  Check, Save, User, MessageSquare, X, GraduationCap, BarChart3,
-  Users, PenSquare, Edit, Trash2, AlertTriangle,
+  Check,
+  Save,
+  User,
+  MessageSquare,
+  X,
+  GraduationCap,
+  BarChart3,
+  Users,
+  PenSquare,
+  Edit,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react"
 import type { ScheduleType, Response } from "./constants"
 import { Button } from "@/components/ui/button"
@@ -189,6 +199,20 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="edit-comment" className="text-sm font-medium mb-1 block">
+                    <MessageSquare className="h-4 w-4 inline-block mr-1" />
+                    コメント（任意）
+                  </Label>
+                  <Textarea
+                    id="edit-comment"
+                    value={form.editComment}
+                    onChange={(e) => form.setEditComment(e.target.value)}
+                    placeholder="補足があれば入力してください（任意）"
+                    className="w-full"
+                    rows={3}
+                  />
+                </div>
               </div>
 
               {/* 日時選択セクション */}
@@ -224,25 +248,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
                                   {selectedTypeId === type.id && <Check className="inline-block ml-1 h-3 w-3" />}
                                 </button>
                               ))}
-                              <button
-                                onClick={() => form.toggleEditComment(dateTime)}
-                                className="text-xs text-gray-500 flex items-center hover:text-gray-700 ml-1"
-                                type="button"
-                              >
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                {form.showEditComments[dateTime] ? "閉じる" : "コメント"}
-                              </button>
                             </div>
-                            {form.showEditComments[dateTime] && (
-                              <div className="mt-2">
-                                <Textarea
-                                  placeholder="コメントを入力"
-                                  value={form.editComments[dateTime] || ""}
-                                  onChange={(e) => form.handleEditCommentChange(dateTime, e.target.value)}
-                                  className="w-full h-16 text-sm"
-                                />
-                              </div>
-                            )}
                           </td>
                         </tr>
                       )

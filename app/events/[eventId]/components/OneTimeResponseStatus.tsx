@@ -12,13 +12,14 @@ import {
 import type { ScheduleType, Response } from "./constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent  } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useParticipantForm } from "./useParticipantForm"
+import { cn } from "@/lib/utils"
 type ParticipantFormHook = ReturnType<typeof useParticipantForm>
 
 type Props = {
@@ -48,20 +49,10 @@ export default function OneTimeResponsesTab({
 
     if (type.isAvailable) {
       return (
-        <CheckCircle2
-          className="h-4 w-4 text-green-500"
-          role="img"
-          aria-label={`${type.label}${selection.comment ? `: ${selection.comment}` : ""}`}
-        />
+        <CheckCircle2 className="h-4 w-4 text-green-500" role="img" aria-label={type.label} />
       )
     } else {
-      return (
-        <XCircle
-          className="h-4 w-4 text-red-500"
-          role="img"
-          aria-label={`${type.label}${selection.comment ? `: ${selection.comment}` : ""}`}
-        />
-      )
+      return <XCircle className="h-4 w-4 text-red-500" role="img" aria-label={type.label} />
     }
   }
 
@@ -87,10 +78,13 @@ export default function OneTimeResponsesTab({
     .filter((t) => t.isAvailable)
     .map((t) => t.id)
 
-  const availableCounts = sorted.reduce((acc, r) => {
-    acc[r.id] = r.schedule.filter((s) =>
-      availableTypeIds.includes(s.typeId)
-    ).length
+  const availableCountsByDate = dateTimeOptions.reduce((acc, dateTime) => {
+    const count = sorted.reduce((total, response) => {
+      const selection = response.schedule.find((s) => s.dateTime === dateTime)
+      if (!selection) return total
+      return availableTypeIds.includes(selection.typeId) ? total + 1 : total
+    }, 0)
+    acc[dateTime] = count
     return acc
   }, {} as Record<string, number>)
 
@@ -247,57 +241,90 @@ export default function OneTimeResponsesTab({
           {/* テーブル, sortedに回答されたデータがある */}
           {sorted.length > 0 ? (
             <div className="border rounded-md overflow-auto max-h-96">
-              <table className="w-full border-collapse text-xs">
-                <thead className="sticky top-0 z-10 bg-white">
-                  <tr className="bg-gray-50 border-b">
-                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">
-                      日時
-                    </th>
-                    {sorted.map((r) => (
+              <div className="inline-block min-w-max">
+
+                <table className="border-collapse text-xs">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="bg-gray-50 border-b">
                       <th
-                        key={r.id}
-                        className="py-1 px-1 text-center font-medium whitespace-nowrap cursor-pointer hover:bg-gray-100"
-                        onClick={() => form.openEditDialog(r)}
+                        className="border px-1 py-0.5 text-left sticky left-0 top-0 bg-gray-50 z-30 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]"
                       >
-                        <div className="flex items-center justify-center">
-                          <div className="truncate max-w-[60px]" title={`${r.name} - クリックして編集`}>
-                            {r.name}
+                        日時
+                      </th>
+                      <th className="border px-1 py-0.5 text-center font-medium top-0 bg-gray-50 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                        参加可能数
+                      </th>
+                      {sorted.map((r) => (
+                        <th
+                          key={r.id}
+                          className="border px-1 py-0.5 text-center align-top bg-gray-50 cursor-pointer hover:bg-gray-100 w-24 min-w-[6rem] max-w-[6rem]"
+                          onClick={() => form.openEditDialog(r)}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            <div className="truncate w-full" title={`${r.name} - クリックして編集`}>
+                              {r.name}
+                            </div>
+                            <Pencil className="h-3 w-3 text-gray-400 flex-shrink-0" />
                           </div>
-                          <Pencil className="h-3 w-3 ml-1 text-gray-400" />
-                        </div>
-                        {r.grade && <div className="text-[10px] text-gray-500">{r.grade}</div>}
-                      </th>
+                          {r.grade && (
+                            <div className="text-[10px] text-gray-500 truncate" title={r.grade}>
+                              {r.grade}
+                            </div>
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {dateTimeOptions.map((dt, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="border px-1 py-0.5 sticky left-0 bg-white z-20 align-top w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem] text-xs font-medium">
+                          {dt}
+                        </td>
+                        <td className="border px-1 py-0.5 bg-gray-50 text-center text-xs font-medium w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                          {availableCountsByDate[dt] ?? 0}
+                        </td>
+                        {sorted.map((r) => (
+                          <td
+                            key={`${dt}-${r.id}`}
+                            className={cn(
+                              "border p-0 text-center align-middle w-24 min-w-[6rem] max-w-[6rem]",
+                              getResponseCellClass(r, dt)
+                            )}
+                          >
+                            <div className="flex h-10 w-full items-center justify-center">
+                              {getResponseIcon(r, dt) || <Circle className="h-3 w-3 text-gray-200" />}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                  <tr className="bg-gray-50 border-b">
-                    <th className="sticky left-0 bg-gray-50 z-10 border-r text-left py-1 px-2 font-medium">
-                      参加可能数
-                    </th>
-                    {sorted.map((r) => (
-                      <th key={`count-${r.id}`} className="py-1 px-1 text-center font-medium">
-                        {availableCounts[r.id] ?? 0}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {dateTimeOptions.map((dt, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="sticky left-0 bg-white z-10 border-r text-xs py-1 px-2 font-medium">
-                        {dt}
+                    <tr className="bg-gray-50">
+                      <td className="border px-1 py-0.5 text-left font-medium sticky left-0 bg-gray-50 z-20 w-[5.5rem] min-w-[5.5rem] max-w-[5.5rem]">
+                        コメント
+                      </td>
+                      <td className="border px-1 py-0.5 bg-gray-50 text-center text-[10px] text-gray-400 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem]">
+                        -
                       </td>
                       {sorted.map((r) => (
                         <td
-                          key={`${dt}-${r.id}`}
-                          className={`py-1 px-1 text-center ${getResponseCellClass(r, dt)}`}
+                          key={`comment-${r.id}`}
+                          className="border p-0 align-top text-left text-muted-foreground w-24 min-w-[6rem] max-w-[6rem]"
                         >
-                          {getResponseIcon(r, dt) || <Circle className="h-3 w-3 text-gray-200" />}
+                          <div className="whitespace-pre-wrap break-words px-2 py-1 text-xs">
+                            {r.comment && r.comment.trim() !== "" ? (
+                              r.comment
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </div>
                         </td>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+
+              </div>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">まだ回答がありません。</div>
