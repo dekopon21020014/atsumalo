@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import SchedulePage from "@/app/events/[eventId]/components/SchedulePage"
 import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
-import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
+import type { EventData, ScheduleType, Response } from "@/app/events/[eventId]/components/constants"
 import * as ja from "@/app/events/[eventId]/components/constants"
 import * as en from "@/app/en/events/[eventId]/components/constants"
 import Link from "next/link"
@@ -43,6 +43,9 @@ export default function EventPage() {
   const [activeTab, setActiveTab] = useState("basic")
   const [needPassword, setNeedPassword] = useState(false)
   const [passwordInput, setPasswordInput] = useState("")
+  const [eventPassword, setEventPassword] = useState("")
+  const [requiresPassword, setRequiresPassword] = useState(false)
+  const [adminToken, setAdminToken] = useState("")
 
   // 編集用の日程候補と選択肢
   const [editXAxis, setEditXAxis] = useState<string[]>([])
@@ -58,15 +61,38 @@ export default function EventPage() {
   const typeLabelRefs = useRef<HTMLInputElement[]>([])
   const gradeOptionRefs = useRef<HTMLInputElement[]>([])
 
-  const loadEvent = async (pass?: string) => {
+  const clearStoredPassword = () => {
     if (!eventId) return
+    setEventPassword("")
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(`event_${eventId}_password`)
+    }
+  }
+
+  const loadEvent = async (pass?: string, options: { remember?: boolean } = {}) => {
+    if (!eventId) return
+    const remember = options.remember !== false
     try {
-      const url = `/api/events/${eventId}${pass ? `?password=${encodeURIComponent(pass)}` : ""}`
-      const res = await fetch(url)
+      const headers: Record<string, string> = {}
+      if (pass) {
+        headers["X-Event-Password"] = pass
+      } else if (eventPassword) {
+        headers["X-Event-Password"] = eventPassword
+      }
+      if (adminToken.trim()) {
+        headers.Authorization = `Bearer ${adminToken.trim()}`
+      }
+
+      const res = await fetch(`/api/events/${eventId}`, { headers })
       if (res.status === 401) {
         setNeedPassword(true)
+        setRequiresPassword(true)
+        if (pass && typeof window !== "undefined") {
+          window.localStorage.removeItem(`event_${eventId}_password`)
+        }
         return
       }
+
       const resData = await res.json()
       if (resData.error) {
         toast({
@@ -76,6 +102,46 @@ export default function EventPage() {
         })
         return
       }
+
+      const requiresPass = Boolean(resData.requiresPassword)
+      setRequiresPassword(requiresPass)
+      if (requiresPass && pass) {
+        setEventPassword(pass)
+        if (typeof window !== "undefined" && remember) {
+          window.localStorage.setItem(`event_${eventId}_password`, pass)
+        }
+      }
+      if (!requiresPass && typeof window !== "undefined") {
+        window.localStorage.removeItem(`event_${eventId}_password`)
+        setEventPassword("")
+      }
+
+      const normalizedResponses: Response[] = Array.isArray(resData.participants)
+        ? resData.participants.map((p: any) => {
+            const scheduleArray = Array.isArray(p.schedule)
+              ? p.schedule
+                  .filter((item: any) => item && typeof item.dateTime === "string")
+                  .map((item: any) => ({
+                    dateTime: item.dateTime,
+                    typeId: String(item.typeId ?? ""),
+                  }))
+              : Object.entries(p.schedule || {}).map(([dateTime, typeId]) => ({
+                  dateTime,
+                  typeId: String(typeId ?? ""),
+                }))
+            return {
+              id: String(p.id),
+              name: typeof p.name === "string" ? p.name : "",
+              grade: typeof p.grade === "string" ? p.grade : undefined,
+              comment:
+                typeof p.comment === "string" && p.comment.trim() !== ""
+                  ? p.comment.trim()
+                  : undefined,
+              schedule: scheduleArray,
+            }
+          })
+        : []
+
       setData({
         name: resData.name,
         description: resData.description ?? "",
@@ -84,15 +150,7 @@ export default function EventPage() {
         yAxis: Array.isArray(resData.yAxis) ? resData.yAxis : [],
         dateTimeOptions: Array.isArray(resData.dateTimeOptions) ? resData.dateTimeOptions : [],
         scheduleTypes: Array.isArray(resData.scheduleTypes) ? resData.scheduleTypes : [],
-        existingResponses: Array.isArray(resData.participants)
-          ? resData.participants.map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              grade: p.grade,
-              comment: typeof p?.comment === "string" ? p.comment.trim() : "",
-              schedule: p.schedule,
-            }))
-          : [],
+        existingResponses: normalizedResponses,
         gradeOptions: Array.isArray(resData.gradeOptions)
           ? resData.gradeOptions.sort(
               (a: string, b: string) =>
@@ -141,12 +199,43 @@ export default function EventPage() {
   }
 
   useEffect(() => {
+    if (typeof window === "undefined") return
+    const storedToken = window.localStorage.getItem("atsumalo_admin_token")
+    if (storedToken) {
+      setAdminToken(storedToken)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (adminToken) {
+      window.localStorage.setItem("atsumalo_admin_token", adminToken)
+    } else {
+      window.localStorage.removeItem("atsumalo_admin_token")
+    }
+  }, [adminToken])
+
+  useEffect(() => {
+    if (!eventId) return
+    if (typeof window !== "undefined") {
+      const storedPassword = window.localStorage.getItem(`event_${eventId}_password`)
+      if (storedPassword) {
+        setPasswordInput(storedPassword)
+        loadEvent(storedPassword)
+        return
+      }
+    }
     loadEvent()
   }, [eventId])
 
+  useEffect(() => {
+    if (!eventId) return
+    loadEvent(undefined, { remember: false })
+  }, [adminToken])
+
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await loadEvent(passwordInput)
+    await loadEvent(passwordInput, { remember: true })
   }
 
   // X軸の項目を追加
@@ -406,6 +495,18 @@ export default function EventPage() {
 
     if (!eventId) return
 
+    const trimmedToken = adminToken.trim()
+    if (!trimmedToken) {
+      toast({
+        title: isEnglish ? "Admin token required" : "管理者トークンが必要です",
+        description: isEnglish
+          ? "Enter the admin token before saving changes."
+          : "変更を保存する前に管理者トークンを入力してください。",
+        variant: "destructive",
+      })
+      return
+    }
+
     // イベントタイプに応じたバリデーション
     if (data.eventType === "recurring") {
       if (editXAxis.length === 0 || editYAxis.length === 0) {
@@ -479,9 +580,17 @@ export default function EventPage() {
           : { dateTimeOptions: cleanedDateTimes }),
       }
 
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${trimmedToken}`,
+      }
+      if (eventPassword) {
+        headers["X-Event-Password"] = eventPassword
+      }
+
       const res = await fetch(`/api/events/${eventId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(updateData),
       })
 
@@ -545,6 +654,43 @@ export default function EventPage() {
 
   return (
     <div className="container mx-auto py-6 px-4 space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="admin-token">
+            {isEnglish ? "Admin token" : "管理者トークン"}
+          </Label>
+          <Input
+            id="admin-token"
+            type="password"
+            value={adminToken}
+            onChange={(e) => setAdminToken(e.target.value)}
+            placeholder={isEnglish ? "Enter admin token" : "管理用トークンを入力"}
+          />
+          <p className="text-xs text-muted-foreground">
+            {isEnglish
+              ? "Saved to your browser for future updates."
+              : "入力したトークンはブラウザに保存され、次回以降の編集に利用されます。"}
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label>{isEnglish ? "Saved event password" : "保存済みの合言葉"}</Label>
+          {eventPassword ? (
+            <div className="flex gap-2">
+              <Input type="password" value={eventPassword} readOnly />
+              <Button variant="outline" onClick={clearStoredPassword}>
+                {isEnglish ? "Clear" : "クリア"}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {isEnglish
+                ? "No event password saved on this device."
+                : "この端末には合言葉は保存されていません。"}
+            </p>
+          )}
+        </div>
+      </div>
+
       {editMode ? (
         // 編集フォーム
         <div className="space-y-4 border p-4 rounded">
@@ -1049,6 +1195,8 @@ export default function EventPage() {
               scheduleTypes={data.scheduleTypes}
               gradeOptions={data.gradeOptions}
               gradeOrder={data.gradeOrder}
+              eventPassword={eventPassword}
+              adminToken={adminToken}
             />
           ) : (
             <OneTimePage
@@ -1058,6 +1206,8 @@ export default function EventPage() {
               responses={data.existingResponses}
               gradeOptions={data.gradeOptions}
               gradeOrder={data.gradeOrder}
+              eventPassword={eventPassword}
+              adminToken={adminToken}
             />
           )}
         </div>

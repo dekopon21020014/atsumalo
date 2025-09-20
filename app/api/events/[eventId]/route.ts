@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/firebase"
+import { FieldValue } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
+import {
+  applyRateLimit,
+  buildUnauthorizedResponse,
+  extractPasswordFromRequest,
+  getEventDocument,
+  hashEventPassword,
+  isAdminRequest,
+  requireAdmin,
+  requiresPassword,
+  sanitizeEventData,
+  verifyEventPassword,
+} from "@/lib/security"
 
 interface ScheduleType {
   id: string
@@ -15,18 +27,23 @@ export async function GET(
     params: Promise<{ eventId: string }>
   },
 ) {
+  const rateLimit = applyRateLimit(req, { limit: 60, windowMs: 60_000 })
+  if (rateLimit) return rateLimit
+
   const { eventId } = await context.params
-  const eventSnap = await db.collection("events").doc(eventId).get()
-  if (!eventSnap.exists) {
+  const { ref, snap } = await getEventDocument(eventId)
+  if (!snap.exists) {
     return NextResponse.json({ error: "not found" }, { status: 404 })
   }
 
-  const data = eventSnap.data() || {}
-
-  const url = new URL(req.url)
-  const provided = url.searchParams.get("password") || ""
-  if (data.password && data.password !== provided) {
-    return NextResponse.json({ error: "password required" }, { status: 401 })
+  const data = snap.data() || {}
+  const admin = isAdminRequest(req)
+  if (!admin) {
+    const provided = extractPasswordFromRequest(req)
+    const allowed = await verifyEventPassword(ref, data, provided)
+    if (!allowed) {
+      return buildUnauthorizedResponse()
+    }
   }
 
   const eventType =
@@ -52,20 +69,13 @@ export async function GET(
       ? data.dateTimeOptions
       : []
 
-  const participantsSnap = await db
-    .collection("events")
-    .doc(eventId)
-    .collection("participants")
-    .orderBy("createdAt")
-    .get()
+  const sanitized = sanitizeEventData(data)
 
-  const participants = participantsSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }))
+  const participantsSnap = await ref.collection("participants").orderBy("createdAt").get()
+  const participants = participantsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
   return NextResponse.json({
-    id: eventSnap.id,
+    id: snap.id,
     name: data.name,
     description: data.description,
     eventType,
@@ -73,6 +83,9 @@ export async function GET(
     gradeOptions: Array.isArray(data.gradeOptions) ? data.gradeOptions : defaultGradeOptions,
     gradeOrder: typeof data.gradeOrder === "object" ? data.gradeOrder : defaultGradeOrder,
     ...(eventType === "recurring" ? { xAxis, yAxis } : { dateTimeOptions }),
+    requiresPassword: requiresPassword(data),
+    createdAt: sanitized.createdAt ?? null,
+    updatedAt: sanitized.updatedAt ?? null,
     participants,
   })
 }
@@ -81,7 +94,19 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { eventId: string } },
 ) {
+  const rateLimit = applyRateLimit(req, { limit: 40, windowMs: 60_000 })
+  if (rateLimit) return rateLimit
+
+  const authError = requireAdmin(req)
+  if (authError) return authError
+
   const { eventId } = params
+  const { ref, snap } = await getEventDocument(eventId)
+  if (!snap.exists) {
+    return NextResponse.json({ error: "not found" }, { status: 404 })
+  }
+  const existingData = snap.data() || {}
+
   const json = await req.json()
   let {
     name,
@@ -94,7 +119,23 @@ export async function PUT(
     gradeOptions,
     gradeOrder,
     password,
+    currentPassword,
+    removePassword,
   } = json
+
+  if (currentPassword != null && typeof currentPassword !== "string") {
+    return NextResponse.json(
+      { error: "currentPassword は文字列で指定してください" },
+      { status: 400 },
+    )
+  }
+
+  if (removePassword != null && typeof removePassword !== "boolean") {
+    return NextResponse.json(
+      { error: "removePassword は真偽値で指定してください" },
+      { status: 400 },
+    )
+  }
 
   // 基本バリデーション
   if (!name || typeof name !== "string") {
@@ -188,7 +229,6 @@ export async function PUT(
     }
   }
 
-  // 更新データ作成
   const updateData: any = {
     name,
     description: description || "",
@@ -196,11 +236,36 @@ export async function PUT(
     scheduleTypes,
     gradeOptions,
     gradeOrder: order,
-    updatedAt: new Date(),
+    updatedAt: FieldValue.serverTimestamp(),
   }
 
-  if (typeof password === "string") {
-    updateData.password = password
+  const hasExistingPassword = requiresPassword(existingData)
+
+  if (removePassword) {
+    if (hasExistingPassword) {
+      if (!currentPassword || !(await verifyEventPassword(ref, existingData, currentPassword))) {
+        return buildUnauthorizedResponse("current password mismatch")
+      }
+      updateData.passwordHash = FieldValue.delete()
+      updateData.password = FieldValue.delete()
+    }
+  } else if (typeof password === "string") {
+    if (password.trim() === "") {
+      return NextResponse.json(
+        { error: "password は空白以外の文字で指定してください" },
+        { status: 400 },
+      )
+    }
+    if (password.length < 4) {
+      return NextResponse.json(
+        { error: "password は4文字以上にしてください" },
+        { status: 400 },
+      )
+    }
+    if (hasExistingPassword && (!currentPassword || !(await verifyEventPassword(ref, existingData, currentPassword)))) {
+      return buildUnauthorizedResponse("current password mismatch")
+    }
+    updateData.passwordHash = await hashEventPassword(password)
   }
 
   if (eventType === "recurring") {
@@ -214,7 +279,7 @@ export async function PUT(
   }
 
   try {
-    await db.collection("events").doc(eventId).update(updateData)
+    await ref.update(updateData)
     return NextResponse.json({ message: "更新しました" })
   } catch (err) {
     console.error("イベント更新エラー:", err)

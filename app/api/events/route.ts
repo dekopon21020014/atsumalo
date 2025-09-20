@@ -1,9 +1,16 @@
 // app/api/events/route.ts
 import { NextResponse, type NextRequest } from "next/server"
-import { db } from "@/lib/firebase"
+import { db, FieldValue } from "@/lib/firebase"
+import { applyRateLimit, hashEventPassword, requireAdmin } from "@/lib/security"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 
 export async function POST(req: NextRequest) {
+  const rateLimit = applyRateLimit(req, { limit: 20, windowMs: 60_000 })
+  if (rateLimit) return rateLimit
+
+  const authError = requireAdmin(req)
+  if (authError) return authError
+
   const json = await req.json()
   const {
     name,
@@ -49,8 +56,7 @@ export async function POST(req: NextRequest) {
     if (
       !Array.isArray(xAxis) ||
       !xAxis.every((v) => typeof v === "string")
-    ) {      
-      console.log(xAxis)
+    ) {
       return NextResponse.json(
         { error: "recurring の場合、xAxis は文字列の配列で指定してください" },
         { status: 400 }
@@ -119,8 +125,10 @@ export async function POST(req: NextRequest) {
       scheduleTypes,
       gradeOptions: grades,
       gradeOrder: order,
-      createdAt: new Date(),
-      ...(pass ? { password: pass } : {}),
+      createdAt: FieldValue.serverTimestamp(),
+    }
+    if (pass) {
+      payload.passwordHash = await hashEventPassword(pass)
     }
     if (eventType === "recurring") {
       payload.xAxis = xAxis

@@ -40,6 +40,8 @@ type Props = {
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
   scheduleTypes: ScheduleType[]
+  eventPassword: string
+  adminToken: string
 }
 
 export default function ParticipantList({
@@ -57,6 +59,8 @@ export default function ParticipantList({
   gradeOptions,
   gradeOrder,
   scheduleTypes,
+  eventPassword,
+  adminToken,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
@@ -125,10 +129,13 @@ export default function ParticipantList({
       return
 
     try {
-      const res = await fetch(
-        `/api/events/${eventId}/participants/${part.id}`,
-        { method: 'DELETE' }
-      )
+      const headers: Record<string, string> = {}
+      if (eventPassword) headers['X-Event-Password'] = eventPassword
+      if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
+      const res = await fetch(`/api/events/${eventId}/participants/${part.id}`, {
+        method: 'DELETE',
+        headers,
+      })
       if (!res.ok) throw new Error(isEnglish ? 'Failed to delete' : '削除に失敗しました')
       setParticipants(participants.filter((p) => p.id !== part.id))
       toast({

@@ -34,9 +34,19 @@ type Props = {
   scheduleTypes: ScheduleType[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  eventPassword: string
+  adminToken: string
 }
 
-export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions, gradeOrder }: Props) {
+export default function SchedulePage({
+  xAxis,
+  yAxis,
+  scheduleTypes,
+  gradeOptions,
+  gradeOrder,
+  eventPassword,
+  adminToken,
+}: Props) {
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
   const [participants, setParticipants] = useState<Participant[]>([])
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
@@ -76,7 +86,10 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   // イベント参加者の読み込み
   useEffect(() => {
     if (!eventId) return
-    fetch(`/api/events/${eventId}/participants`)
+    const headers: Record<string, string> = {}
+    if (eventPassword) headers['X-Event-Password'] = eventPassword
+    if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
+    fetch(`/api/events/${eventId}/participants`, { headers })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.participants)) {
@@ -91,7 +104,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
       .catch((e) => {
         console.error('Failed to load participants', e)
       })
-  }, [eventId])
+  }, [eventId, eventPassword, adminToken])
 
   useEffect(() => {
     setGradeOpts(gradeOptions)
@@ -249,6 +262,8 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             editingIndex={editingIndex}
             setEditingIndex={setEditingIndex}
             setActiveTab={setActiveTab}
+            eventPassword={eventPassword}
+            adminToken={adminToken}
           />
         </TabsContent>
 
@@ -268,6 +283,8 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             gradeOptions={gradeOpts}
             gradeOrder={gradeOrderMap}
             scheduleTypes={scheduleTypes}
+            eventPassword={eventPassword}
+            adminToken={adminToken}
           />
         </TabsContent>
 

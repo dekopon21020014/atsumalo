@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import {
   ChartContainer,
   ChartTooltip,
@@ -30,16 +30,53 @@ type AnalyticsResponse = {
 
 export default function AnalyticsPage() {
   const { eventId } = useParams()
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
   const [eventName, setEventName] = useState("読み込み中...")
   const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
   const [responses, setResponses] = useState<AnalyticsResponse[]>([])
   const [gradeOptions, setGradeOptions] = useState<string[]>([])
-  
+
   useEffect(() => {
     if (!eventId) return
-    fetch(`/api/events/${eventId}`)
-      .then((res) => res.json())
-      .then((data) => {
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const headers: Record<string, string> = {}
+        if (typeof window !== "undefined") {
+          const storedPassword = window.localStorage.getItem(`event_${eventId}_password`)
+          if (storedPassword) headers["X-Event-Password"] = storedPassword
+          const storedToken = window.localStorage.getItem("atsumalo_admin_token")
+          if (storedToken) headers.Authorization = `Bearer ${storedToken}`
+        }
+
+        const res = await fetch(`/api/events/${eventId}`, { headers })
+        if (res.status === 401) {
+          if (!cancelled) {
+            const message = isEnglish ? "Authentication required" : "認証が必要です"
+            setEventName(message)
+            setScheduleTypes([])
+            setGradeOptions([])
+            setResponses([])
+          }
+          return
+        }
+
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          if (!cancelled) {
+            const message = isEnglish ? "Failed to load event" : "イベントを読み込めませんでした"
+            setEventName(message)
+            setScheduleTypes([])
+            setGradeOptions([])
+            setResponses([])
+          }
+          return
+        }
+
+        if (cancelled) return
+
         setEventName(data.name || "")
         setScheduleTypes(Array.isArray(data.scheduleTypes) ? data.scheduleTypes : [])
         if (Array.isArray(data.gradeOptions)) {
@@ -48,6 +85,8 @@ export default function AnalyticsPage() {
             (a: string, b: string) => (order[a] ?? 999) - (order[b] ?? 999)
           )
           setGradeOptions(sorted)
+        } else {
+          setGradeOptions([])
         }
         setResponses(
           Array.isArray(data.participants)
@@ -55,17 +94,30 @@ export default function AnalyticsPage() {
                 id: p.id,
                 name: p.name,
                 grade: p.grade,
-                // Firestore may store schedule as an object keyed by slot id
-                // or as an array. Normalize to an array to simplify later
-                // aggregation and avoid runtime errors when calling forEach.
                 schedule: Array.isArray(p.schedule)
                   ? p.schedule.map((s: any) => ({ typeId: s.typeId }))
                   : Object.values(p.schedule || {}).map((typeId: string) => ({ typeId })),
               }))
             : [],
         )
-      })
-  }, [eventId])
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load analytics data", error)
+          const message = isEnglish ? "Failed to load event" : "イベントを読み込めませんでした"
+          setEventName(message)
+          setScheduleTypes([])
+          setGradeOptions([])
+          setResponses([])
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId, isEnglish])
 
   const scheduleCounts = useMemo(() => {
     const counts: Record<string, number> = {}

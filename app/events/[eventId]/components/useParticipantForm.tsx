@@ -11,6 +11,8 @@ export function useParticipantForm(
   setActiveTab: (tab: string) => void,
   gradeOptions: string[],
   gradeOrder: Record<string, number>,
+  eventPassword: string,
+  adminToken: string,
 ) {
   const [name, setName] = useState<string>("")
   const [grade, setGrade] = useState<string>("")
@@ -117,9 +119,12 @@ export function useParticipantForm(
         schedule: Object.entries(selections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
         comment: trimmedComment === "" ? "" : trimmedComment,
       }
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (eventPassword) headers["X-Event-Password"] = eventPassword
+      if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
       const response = await fetch(`/api/events/${eventId}/participants`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(responseData),
       })
       if (!response.ok) throw new Error("回答の送信に失敗しました")
@@ -154,9 +159,12 @@ export function useParticipantForm(
         schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
         comment: trimmedComment === "" ? "" : trimmedComment,
       }
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (eventPassword) headers["X-Event-Password"] = eventPassword
+      if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(responseData),
       })
       if (!response.ok) throw new Error("回答の更新に失敗しました")
@@ -182,7 +190,13 @@ export function useParticipantForm(
     if (!editingResponse) return
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, { method: "DELETE" })
+      const headers: Record<string, string> = {}
+      if (eventPassword) headers["X-Event-Password"] = eventPassword
+      if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
+      const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
+        method: "DELETE",
+        headers,
+      })
       if (!response.ok) throw new Error("回答の削除に失敗しました")
       setExistingResponses(prev => prev.filter(r => r.id !== editingResponse.id))
       toast({ title: "回答を削除しました", description: `${editingResponse.name}さんの回答が削除されました。` })

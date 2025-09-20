@@ -28,6 +28,8 @@ type Props = {
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
   addGradeOption: (name: string, priority: number) => void
+  eventPassword: string
+  adminToken: string
 }
 
 export default function OneTimeInputTab({
@@ -40,6 +42,8 @@ export default function OneTimeInputTab({
   gradeOptions,
   gradeOrder,
   addGradeOption,
+  eventPassword,
+  adminToken,
 }: Props) {
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
@@ -97,11 +101,12 @@ export default function OneTimeInputTab({
       }
 
       // APIエンドポイントに送信（実際の実装に合わせて調整）      
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (eventPassword) headers["X-Event-Password"] = eventPassword
+      if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
       const response = await fetch(`/api/events/${eventId}/participants`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(responseData),
       })
 

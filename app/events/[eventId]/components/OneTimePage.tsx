@@ -46,9 +46,20 @@ type Props = {
   responses?: Response[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  eventPassword: string
+  adminToken: string
 }
 
-export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [], gradeOptions, gradeOrder }: Props) {
+export default function OneTimePage({
+  eventId,
+  dateTimeOptions,
+  scheduleTypes,
+  responses = [],
+  gradeOptions,
+  gradeOrder,
+  eventPassword,
+  adminToken,
+}: Props) {
   const [activeTab, setActiveTab] = useState("input")
   const [gradeOptionsState, setGradeOptionsState] = useState<string[]>(gradeOptions)
   const [gradeOrderState, setGradeOrderState] = useState<Record<string, number>>(gradeOrder)
@@ -67,7 +78,17 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
       return updated
     })
   }
-  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState, gradeOrderState)
+  const form = useParticipantForm(
+    eventId,
+    dateTimeOptions,
+    scheduleTypes,
+    responses,
+    setActiveTab,
+    gradeOptionsState,
+    gradeOrderState,
+    eventPassword,
+    adminToken,
+  )
   const isMobile = useMediaQuery("(max-width: 768px)")      
 
   // 最適な日時を取得
@@ -102,6 +123,8 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             gradeOptions={gradeOptionsState}
             gradeOrder={gradeOrderState}
             addGradeOption={addGrade}
+            eventPassword={eventPassword}
+            adminToken={adminToken}
         />
 
         {/* 回答状況タブ */}

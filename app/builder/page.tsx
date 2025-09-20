@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,7 @@ export default function HomePage() {
   const [eventDesc, setEventDesc] = useState("")
   const [usePassword, setUsePassword] = useState(false)
   const [eventPassword, setEventPassword] = useState("")
+  const [adminToken, setAdminToken] = useState("")
   const [eventType, setEventType] = useState<"recurring" | "onetime" | undefined>(undefined)
 
   // 定期イベント用の軸
@@ -72,6 +73,23 @@ export default function HomePage() {
   const dateTimeRefs = useRef<HTMLInputElement[]>([])
   const typeLabelRefs = useRef<HTMLInputElement[]>([])
   const gradeOptionRefs = useRef<HTMLInputElement[]>([])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem("atsumalo_admin_token")
+    if (stored) {
+      setAdminToken(stored)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (adminToken) {
+      window.localStorage.setItem("atsumalo_admin_token", adminToken)
+    } else {
+      window.localStorage.removeItem("atsumalo_admin_token")
+    }
+  }, [adminToken])
 
   // X軸の項目を追加
   const addXItem = () => {
@@ -341,9 +359,21 @@ export default function HomePage() {
         password: usePassword ? eventPassword : undefined,
       }
 
+      if (!adminToken.trim()) {
+        toast({
+          title: "管理者トークンが必要です",
+          description: "イベントを作成するには管理者トークンを入力してください",
+          variant: "destructive",
+        })
+        return
+      }
+
       const res = await fetch("/api/events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken.trim()}`,
+        },
         body: JSON.stringify(eventData),
       })
 
@@ -402,6 +432,26 @@ export default function HomePage() {
                 placeholder="例：ゼミ日程調整"
                 required
               />
+            </CardContent>
+          </Card>
+          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                管理者トークン
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                id="adminToken"
+                type="password"
+                value={adminToken}
+                onChange={(e) => setAdminToken(e.target.value)}
+                placeholder="管理用のトークンを入力"
+              />
+              <p className="text-xs text-muted-foreground">
+                この値はブラウザのローカルストレージに保存され、イベントの作成や編集時に使用されます。
+              </p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border shadow-sm">

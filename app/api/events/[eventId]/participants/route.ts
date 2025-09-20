@@ -1,27 +1,71 @@
-// 例：app/api/participants/[eventId]/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { db, FieldValue } from '@/lib/firebase'
+import { NextRequest, NextResponse } from "next/server"
+import { FieldValue } from "@/lib/firebase"
+import {
+  applyRateLimit,
+  buildUnauthorizedResponse,
+  extractPasswordFromRequest,
+  getEventDocument,
+  isAdminRequest,
+  requiresPassword,
+  verifyEventPassword,
+} from "@/lib/security"
 
 export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
+  const rateLimit = applyRateLimit(req, { limit: 60, windowMs: 60_000 })
+  if (rateLimit) return rateLimit
+
   const { eventId } = await params
-  const snap = await db
-    .collection("events")
-    .doc(eventId)
+  const { ref, snap } = await getEventDocument(eventId)
+  if (!snap.exists) {
+    return NextResponse.json({ error: "not found" }, { status: 404 })
+  }
+
+  const eventData = snap.data() || {}
+  const admin = isAdminRequest(req)
+  if (!admin && requiresPassword(eventData)) {
+    const provided = extractPasswordFromRequest(req)
+    const allowed = await verifyEventPassword(ref, eventData, provided)
+    if (!allowed) {
+      return buildUnauthorizedResponse()
+    }
+  }
+
+  const snapParticipants = await ref
     .collection("participants")
     .orderBy("createdAt")
     .get()
 
-  const participants = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  const participants = snapParticipants.docs.map((d) => ({ id: d.id, ...d.data() }))
   return NextResponse.json({ participants })
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimit = applyRateLimit(req, { limit: 30, windowMs: 60_000 })
+  if (rateLimit) return rateLimit
+
   const body = await req.json()
   const { eventId, name, grade, gradePriority, schedule, comment: rawComment } = body
 
   if (!eventId || typeof eventId !== "string") {
     return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
-  }  
+  }
+
+  const { ref, snap } = await getEventDocument(eventId)
+  if (!snap.exists) {
+    return NextResponse.json({ error: "not found" }, { status: 404 })
+  }
+
+  const eventData = snap.data() || {}
+  const admin = isAdminRequest(req)
+  const providedPassword =
+    typeof body?.eventPassword === "string" ? body.eventPassword : extractPasswordFromRequest(req)
+  if (!admin && requiresPassword(eventData)) {
+    const allowed = await verifyEventPassword(ref, eventData, providedPassword ?? null)
+    if (!allowed) {
+      return buildUnauthorizedResponse()
+    }
+  }
+
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "名前が必要です" }, { status: 400 })
   }
@@ -47,15 +91,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // ────────────── ここを修正 ──────────────
-    // トップレベルの 'events' コレクション内の eventId ドキュメントを取得して、
-    // その下のサブコレクション 'participants' を参照します。
-    const participantsRef = db
-      .collection("events")
-      .doc(eventId)
-      .collection("participants")
-    // ────────────────────────────────────────
-
+    const participantsRef = ref.collection("participants")
     const docRef = await participantsRef.add({
       name,
       grade,
@@ -70,7 +106,7 @@ export async function POST(req: NextRequest) {
     if (gradePriority != null) {
       updateData.gradeOrder = { [grade]: gradePriority }
     }
-    await db.collection("events").doc(eventId).set(updateData, { merge: true })
+    await ref.set(updateData, { merge: true })
 
     return NextResponse.json({ message: "保存しました", id: docRef.id })
   } catch (err) {
@@ -78,5 +114,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 })
   }
 }
-
-

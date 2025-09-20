@@ -38,6 +38,8 @@ type Props = {
   editingIndex: number | null
   setEditingIndex: Dispatch<SetStateAction<number | null>>
   setActiveTab: (tab: string) => void
+  eventPassword: string
+  adminToken: string
 }
 
 export default function ScheduleForm({
@@ -60,6 +62,8 @@ export default function ScheduleForm({
   editingIndex,
   setEditingIndex,
   setActiveTab,
+  eventPassword,
+  adminToken,
 }: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ""
@@ -171,11 +175,15 @@ export default function ScheduleForm({
     }
 
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (eventPassword) headers["X-Event-Password"] = eventPassword
+      if (adminToken.trim()) headers.Authorization = `Bearer ${adminToken.trim()}`
+
       if (editingIndex !== null) {
         const id = participants[editingIndex].id
         const res = await fetch(`/api/events/${eventId}/participants/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
@@ -192,7 +200,7 @@ export default function ScheduleForm({
       } else {
         const res = await fetch(`/api/events/${eventId}/participants`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(payload),
         })
         const { id } = await res.json()

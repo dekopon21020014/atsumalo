@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
+import { applyRateLimit, requireAdmin } from "@/lib/security"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(req: Request) {
+  const nextReq = NextRequest.from(req)
+
+  const rateLimit = applyRateLimit(nextReq, { limit: 10, windowMs: 60_000 })
+  if (rateLimit) return rateLimit
+
+  const authError = requireAdmin(nextReq)
+  if (authError) return authError
+
   try {
     const cutoff = new Date()
     cutoff.setMonth(cutoff.getMonth() - 3)
