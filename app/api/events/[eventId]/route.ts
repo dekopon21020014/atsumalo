@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
+import { verifyEventAccessToken } from "@/lib/event-access-token"
 
 interface ScheduleType {
   id: string
@@ -25,7 +26,14 @@ export async function GET(
 
   const url = new URL(req.url)
   const provided = url.searchParams.get("password") || ""
-  if (data.password && data.password !== provided) {
+
+  const requiresProtection = Boolean(data.password)
+  const hasValidToken = requiresProtection
+    ? await verifyEventAccessToken(req, eventId)
+    : true
+  const hasValidPassword = !requiresProtection || data.password === provided
+
+  if (requiresProtection && !hasValidToken && !hasValidPassword) {
     return NextResponse.json({ error: "password required" }, { status: 401 })
   }
 
