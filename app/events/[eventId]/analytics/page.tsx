@@ -37,8 +37,19 @@ export default function AnalyticsPage() {
   
   useEffect(() => {
     if (!eventId) return
-    fetch(`/api/events/${eventId}`)
-      .then((res) => res.json())
+    const tokenKey = typeof eventId === 'string' ? `event_${eventId}_token` : ''
+    let storedToken: string | null = null
+    if (tokenKey && typeof window !== 'undefined') {
+      storedToken = window.localStorage.getItem(tokenKey)
+    }
+    const headers: HeadersInit = storedToken ? { Authorization: `Bearer ${storedToken}` } : {}
+    fetch(`/api/events/${eventId}`, { headers })
+      .then((res) => {
+        if (res.status === 401) {
+          throw new Error('認証が必要です')
+        }
+        return res.json()
+      })
       .then((data) => {
         setEventName(data.name || "")
         setScheduleTypes(Array.isArray(data.scheduleTypes) ? data.scheduleTypes : [])
@@ -64,6 +75,10 @@ export default function AnalyticsPage() {
               }))
             : [],
         )
+      })
+      .catch((err) => {
+        console.error('Failed to load analytics data', err)
+        setEventName(err?.message ?? '認証が必要です')
       })
   }, [eventId])
 

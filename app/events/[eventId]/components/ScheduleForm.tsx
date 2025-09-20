@@ -16,9 +16,11 @@ import { createEmptySchedule } from "./utils"
 import { useMediaQuery } from "@/hooks/use-mobile"
 import ScheduleTable from "./ScheduleTable"
 import ScheduleCellMobile from "./ScheduleCellMobile"
-import { useParams, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 type Props = {
+  eventId: string
+  accessToken?: string | null
   xAxis: string[]
   yAxis: string[]
   scheduleTypes: ScheduleType[]
@@ -41,6 +43,8 @@ type Props = {
 }
 
 export default function ScheduleForm({
+  eventId,
+  accessToken,
   xAxis,
   yAxis,
   scheduleTypes,
@@ -69,7 +73,6 @@ export default function ScheduleForm({
   const [scheduleError, setScheduleError] = useState("")
   const [nameError, setNameError] = useState("")
   const [gradeError, setGradeError] = useState("")
-  const { eventId } = useParams()
   const pathname = usePathname()
   const isEnglish = pathname.startsWith("/en")
 
@@ -171,14 +174,28 @@ export default function ScheduleForm({
     }
 
     try {
+      if (!eventId) {
+        throw new Error(isEnglish ? "Missing event identifier" : "イベントIDが不明です")
+      }
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      }
+
       if (editingIndex !== null) {
         const id = participants[editingIndex].id
         const res = await fetch(`/api/events/${eventId}/participants/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(payload),
         })
-        if (!res.ok) throw new Error()
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error(isEnglish ? "Authentication required" : "認証が必要です")
+          }
+          throw new Error()
+        }
         const updated = [...participants]
         updated[editingIndex] = {
           id,
@@ -192,9 +209,15 @@ export default function ScheduleForm({
       } else {
         const res = await fetch(`/api/events/${eventId}/participants`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(payload),
         })
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error(isEnglish ? "Authentication required" : "認証が必要です")
+          }
+          throw new Error(isEnglish ? "Failed to submit" : "送信に失敗しました")
+        }
         const { id } = await res.json()
         setParticipants([
           ...participants,
@@ -220,10 +243,15 @@ export default function ScheduleForm({
       setBulkScheduleType(defaultTypeId)
       setScheduleError("")
       setActiveTab("summary")
-    } catch {
+    } catch (error: any) {
       toast({
         title: isEnglish ? "Error" : "エラー",
-        description: isEnglish ? "Failed to save" : "保存に失敗しました",
+        description:
+          typeof error?.message === "string"
+            ? error.message
+            : isEnglish
+            ? "Failed to save"
+            : "保存に失敗しました",
         variant: "destructive",
       })
     }

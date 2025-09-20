@@ -1,12 +1,31 @@
 // app/api/events/[eventId]/participants/[participantId]/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { db, FieldValue } from '@/lib/firebase'
+import { NextRequest, NextResponse } from "next/server"
+import { db, FieldValue } from "@/lib/firebase"
+import { extractEventAccessToken, verifyEventAccessToken } from "@/lib/event-auth"
+
+async function assertEventAccess(req: NextRequest, eventId: string) {
+  const eventSnap = await db.collection("events").doc(eventId).get()
+  if (!eventSnap.exists) {
+    return { ok: false, status: 404 as const, body: { error: "not found" } }
+  }
+
+  const data = eventSnap.data() || {}
+  if (data.password) {
+    const token = extractEventAccessToken(req)
+    const valid = verifyEventAccessToken(token, eventId, data.password)
+    if (!valid) {
+      return { ok: false, status: 401 as const, body: { error: "password required" } }
+    }
+  }
+
+  return { ok: true as const }
+}
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: { eventId: string; participantId: string } }
 ) {
-  const { eventId, participantId } = await params
+  const { eventId, participantId } = params
   const { name, grade, gradePriority, schedule, comment: rawComment } = await req.json()
 
   if (!name || typeof name !== 'string') {
@@ -34,6 +53,11 @@ export async function PUT(
   }
 
   try {
+    const access = await assertEventAccess(req, eventId)
+    if (!access.ok) {
+      return NextResponse.json(access.body, { status: access.status })
+    }
+
     await db
       .collection('events')
       .doc(eventId)
@@ -66,6 +90,11 @@ export async function DELETE(
   { params }: { params: { eventId: string; participantId: string } }
 ) {
   const { eventId, participantId } = params
+
+  const access = await assertEventAccess(_req, eventId)
+  if (!access.ok) {
+    return NextResponse.json(access.body, { status: access.status })
+  }
 
   try {
     await db

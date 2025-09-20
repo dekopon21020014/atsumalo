@@ -26,6 +26,10 @@
 - Node.js 18 以上
 - Yarn
 
+## 環境変数
+- `EVENT_PASSWORD_SECRET` (16文字以上): パスワード付きイベント向けアクセストークンの署名に使用します。
+- `CRON_SECRET_TOKEN`: `/api/cron/delete-old-events` を実行するリクエストは `Authorization: Bearer <このトークン>` ヘッダー、もしくは `?token=<このトークン>` のクエリパラメータを必ず付与してください。
+
 ## セットアップ
 ```bash
 yarn install

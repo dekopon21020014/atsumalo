@@ -43,6 +43,8 @@ export default function EventPage() {
   const [activeTab, setActiveTab] = useState("basic")
   const [needPassword, setNeedPassword] = useState(false)
   const [passwordInput, setPasswordInput] = useState("")
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [requiresPassword, setRequiresPassword] = useState(false)
 
   // 編集用の日程候補と選択肢
   const [editXAxis, setEditXAxis] = useState<string[]>([])
@@ -57,16 +59,43 @@ export default function EventPage() {
   const dateTimeRefs = useRef<HTMLInputElement[]>([])
   const typeLabelRefs = useRef<HTMLInputElement[]>([])
   const gradeOptionRefs = useRef<HTMLInputElement[]>([])
+  const eventIdValue = typeof eventId === "string" ? eventId : ""
 
+
+  
   const loadEvent = async (pass?: string) => {
-    if (!eventId) return
+    if (!eventIdValue) return
+  
+    const tokenStorageKey = `event_${eventIdValue}_token`
+  
     try {
-      const url = `/api/events/${eventId}${pass ? `?password=${encodeURIComponent(pass)}` : ""}`
-      const res = await fetch(url)
+      const headers: HeadersInit = {}
+      let tokenToUse = accessToken
+  
+      if (!pass && !tokenToUse && typeof window !== "undefined") {
+        const stored = window.localStorage.getItem(tokenStorageKey)
+        if (stored) {
+          tokenToUse = stored
+          setAccessToken(stored)
+        }
+      }
+  
+      if (tokenToUse) {
+        headers["Authorization"] = `Bearer ${tokenToUse}`
+      }
+  
+      const url = `/api/events/${eventIdValue}${pass ? `?password=${encodeURIComponent(pass)}` : ""}`
+      const res = await fetch(url, { headers })
       if (res.status === 401) {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(tokenStorageKey)
+        }
+        setAccessToken(null)
+        setRequiresPassword(true)
         setNeedPassword(true)
         return
       }
+  
       const resData = await res.json()
       if (resData.error) {
         toast({
@@ -76,13 +105,31 @@ export default function EventPage() {
         })
         return
       }
+  
+      const passwordRequired = Boolean(resData.requiresPassword)
+      setRequiresPassword(passwordRequired)
+  
+      if (passwordRequired && typeof resData.accessToken === "string") {
+        setAccessToken(resData.accessToken)
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(tokenStorageKey, resData.accessToken)
+        }
+      } else {
+        setAccessToken(null)
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(tokenStorageKey)
+        }
+      }
+  
       setData({
         name: resData.name,
         description: resData.description ?? "",
         eventType: resData.eventType === "onetime" ? "onetime" : "recurring",
         xAxis: Array.isArray(resData.xAxis) ? resData.xAxis : [],
         yAxis: Array.isArray(resData.yAxis) ? resData.yAxis : [],
-        dateTimeOptions: Array.isArray(resData.dateTimeOptions) ? resData.dateTimeOptions : [],
+        dateTimeOptions: Array.isArray(resData.dateTimeOptions)
+          ? resData.dateTimeOptions
+          : [],
         scheduleTypes: Array.isArray(resData.scheduleTypes) ? resData.scheduleTypes : [],
         existingResponses: Array.isArray(resData.participants)
           ? resData.participants.map((p: any) => ({
@@ -96,7 +143,7 @@ export default function EventPage() {
         gradeOptions: Array.isArray(resData.gradeOptions)
           ? resData.gradeOptions.sort(
               (a: string, b: string) =>
-                (resData.gradeOrder?.[a] ?? 999) - (resData.gradeOrder?.[b] ?? 999)
+                (resData.gradeOrder?.[a] ?? 999) - (resData.gradeOrder?.[b] ?? 999),
             )
           : [],
         gradeOrder:
@@ -107,10 +154,10 @@ export default function EventPage() {
       setEditXAxis(Array.isArray(resData.xAxis) ? [...resData.xAxis] : [])
       setEditYAxis(Array.isArray(resData.yAxis) ? [...resData.yAxis] : [])
       setEditDateTimeOptions(
-        Array.isArray(resData.dateTimeOptions) ? [...resData.dateTimeOptions] : []
+        Array.isArray(resData.dateTimeOptions) ? [...resData.dateTimeOptions] : [],
       )
       setEditScheduleTypes(
-        Array.isArray(resData.scheduleTypes) ? [...resData.scheduleTypes] : []
+        Array.isArray(resData.scheduleTypes) ? [...resData.scheduleTypes] : [],
       )
       setEditGradeOptions(
         Array.isArray(resData.gradeOptions)
@@ -140,9 +187,10 @@ export default function EventPage() {
     }
   }
 
+
   useEffect(() => {
     loadEvent()
-  }, [eventId])
+  }, [eventIdValue])
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -404,7 +452,18 @@ export default function EventPage() {
       return
     }
 
-    if (!eventId) return
+    if (!eventIdValue) return
+
+    if (requiresPassword && !accessToken) {
+      toast({
+        title: isEnglish ? "Authentication required" : "認証が必要です",
+        description: isEnglish
+          ? "Please unlock the event with the correct password before updating."
+          : "正しい合言葉でイベントを解錠してから更新してください。",
+        variant: "destructive",
+      })
+      return
+    }
 
     // イベントタイプに応じたバリデーション
     if (data.eventType === "recurring") {
@@ -479,9 +538,12 @@ export default function EventPage() {
           : { dateTimeOptions: cleanedDateTimes }),
       }
 
-      const res = await fetch(`/api/events/${eventId}`, {
+      const res = await fetch(`/api/events/${eventIdValue}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify(updateData),
       })
 
@@ -1044,6 +1106,8 @@ export default function EventPage() {
         <div className="mt-6">
           {data.eventType === "recurring" ? (
             <SchedulePage
+              eventId={eventIdValue}
+              accessToken={accessToken}
               xAxis={data.xAxis}
               yAxis={data.yAxis}
               scheduleTypes={data.scheduleTypes}
@@ -1052,7 +1116,8 @@ export default function EventPage() {
             />
           ) : (
             <OneTimePage
-              eventId={eventId ? String(eventId) : ""}
+              eventId={eventIdValue}
+              accessToken={accessToken}
               dateTimeOptions={data.dateTimeOptions}
               scheduleTypes={data.scheduleTypes}
               responses={data.existingResponses}

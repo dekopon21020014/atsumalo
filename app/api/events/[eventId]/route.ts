@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
-import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
+import {
+  defaultGradeOptions,
+  defaultGradeOrder,
+} from "@/app/events/[eventId]/components/constants"
+import {
+  createEventAccessToken,
+  extractEventAccessToken,
+  passwordsMatch,
+  verifyEventAccessToken,
+} from "@/lib/event-auth"
 
 interface ScheduleType {
   id: string
@@ -52,6 +61,28 @@ export async function GET(
       ? data.dateTimeOptions
       : []
 
+  const tokenFromHeader = extractEventAccessToken(req)
+  let accessToken: string | undefined
+
+  if (typeof data.password === "string" && data.password.length > 0) {
+    const provided = url.searchParams.get("password") || ""
+    const hasValidToken = verifyEventAccessToken(tokenFromHeader, eventId, data.password)
+    const hasValidPassword = provided
+      ? passwordsMatch(provided, data.password)
+      : false
+
+    if (!hasValidToken && !hasValidPassword) {
+      return NextResponse.json({ error: "password required" }, { status: 401 })
+    }
+
+    try {
+      accessToken = createEventAccessToken(eventId, data.password)
+    } catch (err) {
+      console.error("Failed to create event access token", err)
+      return NextResponse.json({ error: "server configuration error" }, { status: 500 })
+    }
+  }
+
   const participantsSnap = await db
     .collection("events")
     .doc(eventId)
@@ -74,6 +105,8 @@ export async function GET(
     gradeOrder: typeof data.gradeOrder === "object" ? data.gradeOrder : defaultGradeOrder,
     ...(eventType === "recurring" ? { xAxis, yAxis } : { dateTimeOptions }),
     participants,
+    requiresPassword: Boolean(data.password),
+    ...(accessToken ? { accessToken } : {}),
   })
 }
 
@@ -189,6 +222,24 @@ export async function PUT(
   }
 
   // 更新データ作成
+  const eventRef = db.collection("events").doc(eventId)
+  const eventSnap = await eventRef.get()
+  if (!eventSnap.exists) {
+    return NextResponse.json({ error: "not found" }, { status: 404 })
+  }
+  const existingData = eventSnap.data() || {}
+
+  if (existingData.password) {
+    const tokenFromHeader = extractEventAccessToken(req)
+    const hasAccess = verifyEventAccessToken(tokenFromHeader, eventId, existingData.password)
+    if (!hasAccess) {
+      const providedPassword = typeof json.currentPassword === "string" ? json.currentPassword : undefined
+      if (!providedPassword || !passwordsMatch(providedPassword, existingData.password)) {
+        return NextResponse.json({ error: "password required" }, { status: 401 })
+      }
+    }
+  }
+
   const updateData: any = {
     name,
     description: description || "",
@@ -214,7 +265,7 @@ export async function PUT(
   }
 
   try {
-    await db.collection("events").doc(eventId).update(updateData)
+    await eventRef.update(updateData)
     return NextResponse.json({ message: "更新しました" })
   } catch (err) {
     console.error("イベント更新エラー:", err)

@@ -21,11 +21,13 @@ import {
 import { useMediaQuery } from '@/hooks/use-mobile'
 import { toast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
-import { useParams, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import type { Participant } from './types'
 import type { ScheduleType } from './constants'
 
 type Props = {
+  eventId: string
+  accessToken?: string | null
   participants: Participant[]
   setParticipants: (ps: Participant[]) => void
   setCurrentName: (s: string) => void
@@ -43,6 +45,8 @@ type Props = {
 }
 
 export default function ParticipantList({
+  eventId,
+  accessToken,
   participants,
   setParticipants,
   setCurrentName,
@@ -59,7 +63,6 @@ export default function ParticipantList({
   scheduleTypes,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
-  const { eventId } = useParams()
   const pathname = usePathname()
   const isEnglish = pathname.startsWith('/en')
 
@@ -125,11 +128,18 @@ export default function ParticipantList({
       return
 
     try {
-      const res = await fetch(
-        `/api/events/${eventId}/participants/${part.id}`,
-        { method: 'DELETE' }
-      )
-      if (!res.ok) throw new Error(isEnglish ? 'Failed to delete' : '削除に失敗しました')
+      if (!eventId) throw new Error(isEnglish ? 'Missing event ID' : 'イベントIDが不明です')
+      const headers: HeadersInit = accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+      const res = await fetch(`/api/events/${eventId}/participants/${part.id}`, {
+        method: 'DELETE',
+        headers,
+      })
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error(isEnglish ? 'Authentication required' : '認証が必要です')
+        }
+        throw new Error(isEnglish ? 'Failed to delete' : '削除に失敗しました')
+      }
       setParticipants(participants.filter((p) => p.id !== part.id))
       toast({
         title: isEnglish ? 'Deleted' : '削除完了',
