@@ -25,10 +25,12 @@ import ScheduleSummary from './ScheduleSummary'
 import BestTimeSlots from './BestTimeSlots'
 import { createEmptySchedule } from './utils'
 import type { Participant, Schedule } from './types'
-import { useParams, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { ScheduleType } from './constants'
 
 type Props = {
+  eventId: string
+  accessToken?: string | null
   xAxis: string[]
   yAxis: string[]
   scheduleTypes: ScheduleType[]
@@ -36,7 +38,15 @@ type Props = {
   gradeOrder: { [key: string]: number }
 }
 
-export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions, gradeOrder }: Props) {
+export default function SchedulePage({
+  eventId,
+  accessToken,
+  xAxis,
+  yAxis,
+  scheduleTypes,
+  gradeOptions,
+  gradeOrder,
+}: Props) {
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
   const [participants, setParticipants] = useState<Participant[]>([])
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
@@ -52,7 +62,6 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   const [filterGrades, setFilterGrades] = useState<string[]>([])
   const [gradeOpts, setGradeOpts] = useState<string[]>(gradeOptions)
   const [gradeOrderMap, setGradeOrderMap] = useState<Record<string, number>>(gradeOrder)
-  const { eventId } = useParams()
   const pathname = usePathname()
   const isEnglish = pathname.startsWith('/en')
   const t = {
@@ -76,22 +85,35 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   // イベント参加者の読み込み
   useEffect(() => {
     if (!eventId) return
-    fetch(`/api/events/${eventId}/participants`)
-      .then((res) => res.json())
+    const headers: HeadersInit = accessToken
+      ? { Authorization: `Bearer ${accessToken}` }
+      : {}
+    fetch(`/api/events/${eventId}/participants`, { headers })
+      .then((res) => {
+        if (res.status === 401) {
+          throw new Error(isEnglish ? 'Authentication required' : '認証が必要です')
+        }
+        return res.json()
+      })
       .then((data) => {
         if (Array.isArray(data.participants)) {
           setParticipants(
             data.participants.map((p: any) => ({
               ...p,
               comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
-            }))
+            })),
           )
         }
       })
       .catch((e) => {
         console.error('Failed to load participants', e)
+        if (isEnglish) {
+          toast({ title: 'Error', description: e.message, variant: 'destructive' })
+        } else {
+          toast({ title: 'エラー', description: e.message, variant: 'destructive' })
+        }
       })
-  }, [eventId])
+  }, [eventId, accessToken, isEnglish])
 
   useEffect(() => {
     setGradeOpts(gradeOptions)
@@ -230,6 +252,8 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
 
         <TabsContent value="input">
           <ScheduleForm
+            eventId={eventId}
+            accessToken={accessToken}
             xAxis={xAxis}
             yAxis={yAxis}
             scheduleTypes={scheduleTypes}
@@ -254,6 +278,8 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
 
         <TabsContent value="participants">
           <ParticipantList
+            eventId={eventId}
+            accessToken={accessToken}
             participants={participants}
             setParticipants={setParticipants}
             setCurrentName={setCurrentName}

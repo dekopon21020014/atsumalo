@@ -41,6 +41,7 @@ import OneTimeSummaryTab from "./OneTimeSummary"
 
 type Props = {
   eventId: string
+  accessToken?: string | null
   dateTimeOptions: string[]
   scheduleTypes: ScheduleType[]
   responses?: Response[]
@@ -48,7 +49,7 @@ type Props = {
   gradeOrder: { [key: string]: number }
 }
 
-export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [], gradeOptions, gradeOrder }: Props) {
+export default function OneTimePage({ eventId, accessToken, dateTimeOptions, scheduleTypes, responses = [], gradeOptions, gradeOrder }: Props) {
   const [activeTab, setActiveTab] = useState("input")
   const [gradeOptionsState, setGradeOptionsState] = useState<string[]>(gradeOptions)
   const [gradeOrderState, setGradeOrderState] = useState<Record<string, number>>(gradeOrder)
@@ -67,7 +68,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
       return updated
     })
   }
-  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState, gradeOrderState)
+  const form = useParticipantForm(eventId, accessToken, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState, gradeOrderState)
   const isMobile = useMediaQuery("(max-width: 768px)")      
 
   // 最適な日時を取得
@@ -94,6 +95,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
         {/* 入力タブ */}
         <OneTimeInputTab
             eventId={eventId}
+            accessToken={accessToken}
             dateTimeOptions={dateTimeOptions}
             scheduleTypes={scheduleTypes}
             existingResponses={form.existingResponses}

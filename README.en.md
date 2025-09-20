@@ -27,6 +27,10 @@ Administrators manage resources and user permissions, approve reservations, and 
 - Node.js 18 or later
 - Yarn
 
+## Environment variables
+- `EVENT_PASSWORD_SECRET` (16+ characters): used to sign access tokens for password-protected events.
+- `CRON_SECRET_TOKEN`: requests to `/api/cron/delete-old-events` must include an `Authorization: Bearer <token>` header or a `?token=<token>` query parameter matching this value.
+
 ## Setup
 ```bash
 yarn install

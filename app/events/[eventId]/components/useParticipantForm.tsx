@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/use-toast"
 
 export function useParticipantForm(
   eventId: string,
+  accessToken: string | null | undefined,
   dateTimeOptions: string[],
   scheduleTypes: ScheduleType[],
   responses: Response[],
@@ -117,12 +118,21 @@ export function useParticipantForm(
         schedule: Object.entries(selections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
         comment: trimmedComment === "" ? "" : trimmedComment,
       }
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      }
       const response = await fetch(`/api/events/${eventId}/participants`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(responseData),
       })
-      if (!response.ok) throw new Error("回答の送信に失敗しました")
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("認証が必要です")
+        }
+        throw new Error("回答の送信に失敗しました")
+      }
       const { id } = await response.json()
       setExistingResponses(prev => [
         ...prev,
@@ -132,9 +142,16 @@ export function useParticipantForm(
       setActiveTab("responses")
       setComment("")
       localStorage.removeItem(`event_${eventId}_comment`)
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast({ title: "送信エラー", description: "回答の送信中にエラーが発生しました。再度お試しください。", variant: "destructive" })
+      toast({
+        title: "送信エラー",
+        description:
+          typeof error?.message === "string"
+            ? error.message
+            : "回答の送信中にエラーが発生しました。再度お試しください。",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -154,12 +171,21 @@ export function useParticipantForm(
         schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
         comment: trimmedComment === "" ? "" : trimmedComment,
       }
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      }
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(responseData),
       })
-      if (!response.ok) throw new Error("回答の更新に失敗しました")
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("認証が必要です")
+        }
+        throw new Error("回答の更新に失敗しました")
+      }
       setExistingResponses(prev =>
         prev.map(r =>
           r.id === editingResponse.id
@@ -170,9 +196,16 @@ export function useParticipantForm(
       toast({ title: "回答を更新しました", description: `${editName}さんの回答が更新されました。` })
       setIsEditDialogOpen(false)
       setEditingResponse(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast({ title: "更新エラー", description: "回答の更新中にエラーが発生しました。再度お試しください。", variant: "destructive" })
+      toast({
+        title: "更新エラー",
+        description:
+          typeof error?.message === "string"
+            ? error.message
+            : "回答の更新中にエラーが発生しました。再度お試しください。",
+        variant: "destructive",
+      })
     } finally {
       setIsEditing(false)
     }
@@ -182,16 +215,34 @@ export function useParticipantForm(
     if (!editingResponse) return
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, { method: "DELETE" })
-      if (!response.ok) throw new Error("回答の削除に失敗しました")
+      const headers: HeadersInit = accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {}
+      const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
+        method: "DELETE",
+        headers,
+      })
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("認証が必要です")
+        }
+        throw new Error("回答の削除に失敗しました")
+      }
       setExistingResponses(prev => prev.filter(r => r.id !== editingResponse.id))
       toast({ title: "回答を削除しました", description: `${editingResponse.name}さんの回答が削除されました。` })
       setIsDeleteDialogOpen(false)
       setIsEditDialogOpen(false)
       setEditingResponse(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast({ title: "削除エラー", description: "回答の削除中にエラーが発生しました。再度お試しください。", variant: "destructive" })
+      toast({
+        title: "削除エラー",
+        description:
+          typeof error?.message === "string"
+            ? error.message
+            : "回答の削除中にエラーが発生しました。再度お試しください。",
+        variant: "destructive",
+      })
     } finally {
       setIsDeleting(false)
     }

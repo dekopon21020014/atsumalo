@@ -1,9 +1,33 @@
 // 例：app/api/participants/[eventId]/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { db, FieldValue } from '@/lib/firebase'
+import { NextRequest, NextResponse } from "next/server"
+import { db, FieldValue } from "@/lib/firebase"
+import { extractEventAccessToken, verifyEventAccessToken } from "@/lib/event-auth"
+
+async function assertEventAccess(req: NextRequest, eventId: string) {
+  const eventSnap = await db.collection("events").doc(eventId).get()
+  if (!eventSnap.exists) {
+    return { ok: false, status: 404 as const, body: { error: "not found" } }
+  }
+
+  const data = eventSnap.data() || {}
+  if (data.password) {
+    const token = extractEventAccessToken(req)
+    const valid = verifyEventAccessToken(token, eventId, data.password)
+    if (!valid) {
+      return { ok: false, status: 401 as const, body: { error: "password required" } }
+    }
+  }
+
+  return { ok: true as const, data }
+}
 
 export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
-  const { eventId } = await params
+  const { eventId } = params
+  const access = await assertEventAccess(req, eventId)
+  if (!access.ok) {
+    return NextResponse.json(access.body, { status: access.status })
+  }
+
   const snap = await db
     .collection("events")
     .doc(eventId)
@@ -15,13 +39,11 @@ export async function GET(req: NextRequest, { params }: { params: { eventId: str
   return NextResponse.json({ participants })
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest, { params }: { params: { eventId: string } }) {
+  const { eventId } = params
   const body = await req.json()
-  const { eventId, name, grade, gradePriority, schedule, comment: rawComment } = body
+  const { name, grade, gradePriority, schedule, comment: rawComment } = body
 
-  if (!eventId || typeof eventId !== "string") {
-    return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
-  }  
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "名前が必要です" }, { status: 400 })
   }
@@ -47,6 +69,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const access = await assertEventAccess(req, eventId)
+    if (!access.ok) {
+      return NextResponse.json(access.body, { status: access.status })
+    }
+
     // ────────────── ここを修正 ──────────────
     // トップレベルの 'events' コレクション内の eventId ドキュメントを取得して、
     // その下のサブコレクション 'participants' を参照します。

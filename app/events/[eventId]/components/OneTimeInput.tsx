@@ -20,6 +20,7 @@ import {
 
 type Props = {
   eventId: string
+  accessToken?: string | null
   dateTimeOptions: string[]
   scheduleTypes: ScheduleType[]
   existingResponses: Response[]
@@ -32,6 +33,7 @@ type Props = {
 
 export default function OneTimeInputTab({
   eventId,
+  accessToken,
   dateTimeOptions,
   scheduleTypes,
   existingResponses = [],
@@ -97,15 +99,20 @@ export default function OneTimeInputTab({
       }
 
       // APIエンドポイントに送信（実際の実装に合わせて調整）      
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      }
       const response = await fetch(`/api/events/${eventId}/participants`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(responseData),
       })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("認証が必要です")
+        }
         throw new Error("回答の送信に失敗しました")
       }
 
