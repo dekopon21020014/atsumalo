@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
+import { ensurePasswordHash, hashPassword, verifyPassword } from "@/lib/password-utils"
 
 interface ScheduleType {
   id: string
@@ -24,9 +25,16 @@ export async function GET(
   const data = eventSnap.data() || {}
 
   const url = new URL(req.url)
-  const provided = url.searchParams.get("password") || ""
-  if (data.password && data.password !== provided) {
-    return NextResponse.json({ error: "password required" }, { status: 401 })
+  const providedPassword =
+    url.searchParams.get("password") || req.headers.get("x-event-password") || ""
+  const storedPassword = typeof data.password === "string" ? data.password : ""
+  if (storedPassword) {
+    const hashedPassword = await ensurePasswordHash(eventSnap.ref, storedPassword)
+    const passwordValid =
+      providedPassword && (await verifyPassword(hashedPassword, providedPassword))
+    if (!passwordValid) {
+      return NextResponse.json({ error: "password required" }, { status: 401 })
+    }
   }
 
   const eventType =
@@ -82,6 +90,44 @@ export async function PUT(
   { params }: { params: { eventId: string } },
 ) {
   const { eventId } = params
+  const eventRef = db.collection("events").doc(eventId)
+  const eventSnap = await eventRef.get()
+  if (!eventSnap.exists) {
+    return NextResponse.json({ error: "not found" }, { status: 404 })
+  }
+
+  const eventData = eventSnap.data() || {}
+  const url = new URL(req.url)
+  const providedPassword =
+    url.searchParams.get("password") || req.headers.get("x-event-password") || ""
+  const providedToken =
+    url.searchParams.get("token") ||
+    req.headers.get("x-event-token") ||
+    (req.headers.get("authorization")?.split(" ")[1] ?? "")
+
+  const storedPassword = typeof eventData.password === "string" ? eventData.password : ""
+  const passwordRequired = storedPassword.trim() !== ""
+  if (passwordRequired) {
+    const hashedPassword = await ensurePasswordHash(eventRef, storedPassword)
+    const passwordValid =
+      providedPassword && (await verifyPassword(hashedPassword, providedPassword))
+    if (!passwordValid) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+    }
+  }
+
+  const tokens: string[] = Array.isArray(eventData.tokens)
+    ? eventData.tokens.filter((token: unknown): token is string =>
+        typeof token === "string" && token.trim() !== "",
+      )
+    : typeof eventData.token === "string" && eventData.token.trim() !== ""
+      ? [eventData.token]
+      : []
+  const tokenRequired = tokens.length > 0
+  if (tokenRequired && !tokens.includes(providedToken)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 })
+  }
+
   const json = await req.json()
   let {
     name,
@@ -200,7 +246,8 @@ export async function PUT(
   }
 
   if (typeof password === "string") {
-    updateData.password = password
+    const trimmedPassword = password.trim()
+    updateData.password = trimmedPassword ? await hashPassword(trimmedPassword) : ""
   }
 
   if (eventType === "recurring") {
@@ -214,7 +261,7 @@ export async function PUT(
   }
 
   try {
-    await db.collection("events").doc(eventId).update(updateData)
+    await eventRef.update(updateData)
     return NextResponse.json({ message: "更新しました" })
   } catch (err) {
     console.error("イベント更新エラー:", err)

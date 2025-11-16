@@ -15,7 +15,7 @@ import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
 import * as ja from "@/app/events/[eventId]/components/constants"
 import * as en from "@/app/en/events/[eventId]/components/constants"
-import type { EventAccess } from "@/app/events/[eventId]/components/utils"
+import { buildEventAuthHeaders, type EventAccess } from "@/app/events/[eventId]/components/utils"
 import Link from "next/link"
 
 export default function EventPage() {
@@ -45,6 +45,7 @@ export default function EventPage() {
   const [accessStatus, setAccessStatus] = useState<'checking' | 'needsPassword' | 'granted' | 'error'>('checking')
   const [passwordInput, setPasswordInput] = useState("")
   const [eventAccess, setEventAccess] = useState<EventAccess>({})
+  const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
 
   // 編集用の日程候補と選択肢
   const [editXAxis, setEditXAxis] = useState<string[]>([])
@@ -521,7 +522,7 @@ export default function EventPage() {
 
       const res = await fetch(`/api/events/${eventId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(updateData),
       })
 

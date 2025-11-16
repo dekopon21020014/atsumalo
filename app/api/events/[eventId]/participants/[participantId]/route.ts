@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, FieldValue } from '@/lib/firebase'
 import type { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore'
+import { ensurePasswordHash, verifyPassword } from '@/lib/password-utils'
 
 type EventAuthResult =
   | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
@@ -25,8 +26,8 @@ async function authorizeEventAccess(
     req.headers.get('x-event-token') ||
     (req.headers.get('authorization')?.split(' ')[1] ?? '')
 
-  const passwordRequired =
-    typeof eventData.password === 'string' && eventData.password.trim() !== ''
+  const storedPassword = typeof eventData.password === 'string' ? eventData.password : ''
+  const passwordRequired = storedPassword.trim() !== ''
   const tokens: string[] = Array.isArray(eventData.tokens)
     ? eventData.tokens.filter((token: unknown): token is string =>
         typeof token === 'string' && token.trim() !== '',
@@ -36,10 +37,16 @@ async function authorizeEventAccess(
       : []
   const tokenRequired = tokens.length > 0
 
-  if (
-    (passwordRequired && providedPassword !== eventData.password) ||
-    (tokenRequired && !tokens.includes(providedToken))
-  ) {
+  if (passwordRequired) {
+    const hashedPassword = await ensurePasswordHash(eventSnap.ref, storedPassword)
+    const passwordValid =
+      providedPassword && (await verifyPassword(hashedPassword, providedPassword))
+    if (!passwordValid) {
+      return { response: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) }
+    }
+  }
+
+  if (tokenRequired && !tokens.includes(providedToken)) {
     return { response: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) }
   }
 
