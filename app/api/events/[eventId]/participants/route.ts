@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, FieldValue } from '@/lib/firebase'
 import { randomUUID } from 'crypto'
 import type { DocumentSnapshot } from 'firebase-admin/firestore'
+import { compareEventPassword, extractEventTokens } from '@/lib/eventAuth'
 
 type EventAuthResult =
   | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
@@ -22,22 +23,27 @@ async function authorizeEventAccess(req: NextRequest, eventId: string): Promise<
     url.searchParams.get("token") ||
     req.headers.get("x-event-token") ||
     (req.headers.get("authorization")?.split(" ")[1] ?? "")
+  const normalizedToken = providedToken.trim()
 
-  const passwordRequired =
-    typeof eventData.password === "string" && eventData.password.trim() !== ""
-  const tokens: string[] = Array.isArray(eventData.tokens)
-    ? eventData.tokens.filter((token: unknown): token is string =>
-        typeof token === "string" && token.trim() !== "",
-      )
-    : typeof eventData.token === "string" && eventData.token.trim() !== ""
-      ? [eventData.token]
-      : []
+  const storedPassword = typeof eventData.password === "string" ? eventData.password : ""
+  const passwordRequired = storedPassword.trim() !== ""
+  const tokens = Array.from(
+    new Set([
+      ...extractEventTokens((eventData as any).adminTokens),
+      ...extractEventTokens((eventData as any).tokens),
+      ...extractEventTokens((eventData as any).token),
+    ]),
+  )
   const tokenRequired = tokens.length > 0
 
-  if (
-    (passwordRequired && providedPassword !== eventData.password) ||
-    (tokenRequired && !tokens.includes(providedToken))
-  ) {
+  if (passwordRequired) {
+    const isPasswordValid = await compareEventPassword(providedPassword, storedPassword)
+    if (!isPasswordValid) {
+      return { response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) }
+    }
+  }
+
+  if (tokenRequired && !tokens.includes(normalizedToken)) {
     return { response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) }
   }
 

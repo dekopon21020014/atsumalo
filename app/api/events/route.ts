@@ -2,6 +2,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
+import { hashEventPassword } from "@/lib/eventAuth"
 
 export async function POST(req: NextRequest) {
   const json = await req.json()
@@ -108,7 +109,8 @@ export async function POST(req: NextRequest) {
         }, {})
       : defaultGradeOrder
 
-  const pass = password && typeof password === "string" ? password : ""
+  const rawPassword = typeof password === "string" ? password.trim() : ""
+  const hashedPassword = rawPassword ? await hashEventPassword(rawPassword) : ""
 
   // --- Firestore に保存 ---
   try {
@@ -120,7 +122,7 @@ export async function POST(req: NextRequest) {
       gradeOptions: grades,
       gradeOrder: order,
       createdAt: new Date(),
-      ...(pass ? { password: pass } : {}),
+      ...(hashedPassword ? { password: hashedPassword } : {}),
     }
     if (eventType === "recurring") {
       payload.xAxis = xAxis

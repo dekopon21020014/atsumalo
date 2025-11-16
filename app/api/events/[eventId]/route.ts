@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
+import { compareEventPassword, extractEventTokens, hashEventPassword } from "@/lib/eventAuth"
 
 interface ScheduleType {
   id: string
@@ -24,9 +25,14 @@ export async function GET(
   const data = eventSnap.data() || {}
 
   const url = new URL(req.url)
-  const provided = url.searchParams.get("password") || ""
-  if (data.password && data.password !== provided) {
-    return NextResponse.json({ error: "password required" }, { status: 401 })
+  const provided =
+    url.searchParams.get("password") || req.headers.get("x-event-password") || ""
+  const storedPassword = typeof data.password === "string" ? data.password : ""
+  if (storedPassword) {
+    const isPasswordValid = await compareEventPassword(provided, storedPassword)
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "password required" }, { status: 401 })
+    }
   }
 
   const eventType =
@@ -82,6 +88,40 @@ export async function PUT(
   { params }: { params: { eventId: string } },
 ) {
   const { eventId } = params
+  const eventSnap = await db.collection("events").doc(eventId).get()
+  if (!eventSnap.exists) {
+    return NextResponse.json({ error: "not found" }, { status: 404 })
+  }
+
+  const eventData = eventSnap.data() || {}
+  const url = new URL(req.url)
+  const providedPassword =
+    req.headers.get("x-event-password") || url.searchParams.get("password") || ""
+  const providedToken =
+    req.headers.get("x-event-token") ||
+    url.searchParams.get("token") ||
+    (req.headers.get("authorization")?.split(" ")[1] ?? "")
+  const normalizedToken = providedToken.trim()
+
+  const storedPassword = typeof eventData.password === "string" ? eventData.password : ""
+  if (storedPassword) {
+    const isPasswordValid = await compareEventPassword(providedPassword, storedPassword)
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+    }
+  }
+
+  const tokens = Array.from(
+    new Set([
+      ...extractEventTokens((eventData as any).adminTokens),
+      ...extractEventTokens((eventData as any).tokens),
+      ...extractEventTokens((eventData as any).token),
+    ]),
+  )
+  if (tokens.length > 0 && !tokens.includes(normalizedToken)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 })
+  }
+
   const json = await req.json()
   let {
     name,
@@ -200,7 +240,10 @@ export async function PUT(
   }
 
   if (typeof password === "string") {
-    updateData.password = password
+    const trimmedPassword = password.trim()
+    updateData.password = trimmedPassword
+      ? await hashEventPassword(trimmedPassword)
+      : ""
   }
 
   if (eventType === "recurring") {
