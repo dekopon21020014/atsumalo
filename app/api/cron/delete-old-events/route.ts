@@ -4,24 +4,21 @@ import { db } from "@/lib/firebase"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const CRON_SECRET_TOKEN = process.env.CRON_SECRET_TOKEN
+const CRON_SECRET = process.env.CRON_SECRET
 
 export async function GET(request: Request) {
   try {
-    if (!CRON_SECRET_TOKEN) {
-      console.error("CRON_SECRET_TOKEN is not configured")
+    if (!CRON_SECRET) {
+      console.error("CRON_SECRET is not configured")
       return NextResponse.json(
         { error: "Cron secret is not configured" },
         { status: 500 }
       )
     }
 
-    const providedToken = request.headers.get("authorization")
-    const normalizedToken = providedToken?.startsWith("Bearer ")
-      ? providedToken.slice(7)
-      : providedToken ?? undefined
+    const authHeader = request.headers.get("authorization")
 
-    if (!normalizedToken || normalizedToken !== CRON_SECRET_TOKEN) {
+    if (authHeader !== `Bearer ${CRON_SECRET}`) {
       return NextResponse.json(
         { error: "Unauthorized request" },
         { status: 401 }
