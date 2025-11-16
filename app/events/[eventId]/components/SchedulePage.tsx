@@ -34,8 +34,15 @@ type Props = {
   scheduleTypes: ScheduleType[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  initialParticipants?: Participant[]
   eventAccess?: EventAccess
 }
+
+const sanitizeParticipants = (items: Participant[]) =>
+  items.map((p) => ({
+    ...p,
+    comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
+  }))
 
 export default function SchedulePage({
   xAxis,
@@ -43,10 +50,13 @@ export default function SchedulePage({
   scheduleTypes,
   gradeOptions,
   gradeOrder,
+  initialParticipants = [],
   eventAccess,
 }: Props) {
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
-  const [participants, setParticipants] = useState<Participant[]>([])
+  const [participants, setParticipants] = useState<Participant[]>(() =>
+    sanitizeParticipants(Array.isArray(initialParticipants) ? initialParticipants : []),
+  )
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('input')
@@ -95,10 +105,12 @@ export default function SchedulePage({
       .then((data) => {
         if (Array.isArray(data.participants)) {
           setParticipants(
-            data.participants.map((p: any) => ({
-              ...p,
-              comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
-            }))
+            sanitizeParticipants(
+              data.participants.map((p: any) => ({
+                ...p,
+                comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
+              })),
+            ),
           )
         }
       })
@@ -106,6 +118,12 @@ export default function SchedulePage({
         console.error('Failed to load participants', e)
       })
   }, [eventId, authHeaders])
+
+  useEffect(() => {
+    setParticipants(
+      sanitizeParticipants(Array.isArray(initialParticipants) ? initialParticipants : []),
+    )
+  }, [initialParticipants])
 
   useEffect(() => {
     setGradeOpts(gradeOptions)

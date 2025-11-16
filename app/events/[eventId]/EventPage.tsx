@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, usePathname } from "next/navigation"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,7 +42,7 @@ export default function EventPage() {
   const [description, setDescription] = useState(data.description)
   const [editMode, setEditMode] = useState(false)
   const [activeTab, setActiveTab] = useState("basic")
-  const [needPassword, setNeedPassword] = useState(false)
+  const [accessStatus, setAccessStatus] = useState<'checking' | 'needsPassword' | 'granted' | 'error'>('checking')
   const [passwordInput, setPasswordInput] = useState("")
   const [eventAccess, setEventAccess] = useState<EventAccess>({})
 
@@ -62,11 +62,13 @@ export default function EventPage() {
 
   const loadEvent = async (pass?: string) => {
     if (!eventId) return
+    setAccessStatus('checking')
     try {
       const url = `/api/events/${eventId}${pass ? `?password=${encodeURIComponent(pass)}` : ""}`
       const res = await fetch(url)
       if (res.status === 401) {
-        setNeedPassword(true)
+        setAccessStatus('needsPassword')
+        setEventAccess({})
         if (pass) {
           toast({
             title: isEnglish ? "Password error" : "認証エラー",
@@ -137,7 +139,7 @@ export default function EventPage() {
               priority: defaultGradeOrder[g] ?? 0,
             }))
       )
-      setNeedPassword(false)
+      setAccessStatus('granted')
       setPasswordInput("")
       setEventAccess(pass ? { password: pass } : {})
     } catch (err) {
@@ -147,6 +149,7 @@ export default function EventPage() {
         description: isEnglish ? "Failed to communicate" : "通信に失敗しました",
         variant: "destructive",
       })
+      setAccessStatus('error')
     }
   }
 
@@ -158,6 +161,33 @@ export default function EventPage() {
     e.preventDefault()
     await loadEvent(passwordInput)
   }
+
+  const retryLoad = () => {
+    loadEvent(passwordInput || eventAccess.password)
+  }
+
+  const recurringParticipants = useMemo(() => {
+    return data.existingResponses.map((res) => {
+      const rawSchedule = (res as any)?.schedule
+      const schedule: Record<string, string> = Array.isArray(rawSchedule)
+        ? rawSchedule.reduce((acc: Record<string, string>, entry: any) => {
+            if (entry && typeof entry.dateTime === "string" && typeof entry.typeId === "string") {
+              acc[entry.dateTime] = entry.typeId
+            }
+            return acc
+          }, {})
+        : typeof rawSchedule === "object" && rawSchedule !== null
+          ? rawSchedule
+          : {}
+      return {
+        id: res.id,
+        name: res.name,
+        grade: res.grade ?? "",
+        comment: typeof res.comment === "string" ? res.comment : "",
+        schedule,
+      }
+    })
+  }, [data.existingResponses])
 
   // X軸の項目を追加
   const addXItem = () => {
@@ -534,7 +564,15 @@ export default function EventPage() {
     }
   }
 
-  if (needPassword) {
+  if (accessStatus === 'checking') {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <p>{isEnglish ? "Loading event..." : "イベント情報を読み込み中です..."}</p>
+      </div>
+    )
+  }
+
+  if (accessStatus === 'needsPassword') {
     return (
       <div className="container mx-auto py-10 px-4">
         <form onSubmit={handlePasswordSubmit} className="max-w-sm mx-auto space-y-4">
@@ -549,6 +587,15 @@ export default function EventPage() {
           </div>
           <Button type="submit">{isEnglish ? "Submit" : "送信"}</Button>
         </form>
+      </div>
+    )
+  }
+
+  if (accessStatus === 'error') {
+    return (
+      <div className="container mx-auto py-10 px-4 space-y-4">
+        <p>{isEnglish ? "Failed to load the event." : "イベント情報の取得に失敗しました。"}</p>
+        <Button onClick={retryLoad}>{isEnglish ? "Retry" : "再読み込み"}</Button>
       </div>
     )
   }
@@ -1059,6 +1106,7 @@ export default function EventPage() {
               scheduleTypes={data.scheduleTypes}
               gradeOptions={data.gradeOptions}
               gradeOrder={data.gradeOrder}
+              initialParticipants={recurringParticipants}
               eventAccess={eventAccess}
             />
           ) : (
