@@ -27,6 +27,12 @@
 - Yarn
 
 ## セットアップ
+環境変数ファイルを作成します。
+```bash
+cp .env.example .env
+# 必要に応じて .env の値を編集
+```
+
 ```bash
 yarn install
 ```
