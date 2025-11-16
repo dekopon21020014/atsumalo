@@ -27,6 +27,24 @@
 - Yarn
 
 ## セットアップ
+環境変数ファイルを作成します。
+```bash
+cp .env.example .env
+# 必要に応じて .env の値を編集
+```
+
+## Vercel での Cron ジョブ設定
+本番環境では Vercel の Cron Job を利用して `DELETE_OLD_EVENTS_CRON_SECRET` をヘッダーに埋め込み、`/api/cron/delete-old-events` が Vercel からのリクエストだけを受け付けるようにしています。
+
+1. Vercel のプロジェクトにシークレットを登録します。
+   ```bash
+   vercel env add delete_old_events_cron_secret production
+   vercel env add delete_old_events_cron_secret preview
+   ```
+2. `vercel.json` は上記シークレットを `DELETE_OLD_EVENTS_CRON_SECRET` という環境変数と `x-cron-secret` ヘッダーの両方に差し込みます。ローカル開発では `.env` に同じ値を設定してください。
+
+シークレット名（`delete_old_events_cron_secret`）と環境変数名（`DELETE_OLD_EVENTS_CRON_SECRET`）の両方を変更した場合は `vercel.json` も忘れずに更新してください。
+
 ```bash
 yarn install
 ```
