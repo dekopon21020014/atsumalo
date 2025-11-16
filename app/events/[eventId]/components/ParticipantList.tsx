@@ -72,8 +72,12 @@ export default function ParticipantList({
   const isEnglish = pathname.startsWith('/en')
   const eventIdStr = eventId ? String(eventId) : ''
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
 
   const ensureParticipantToken = (participantId: string) => {
+    if (!requireParticipantToken) {
+      return ''
+    }
     const token = getParticipantToken(eventIdStr, participantId)
     if (!token) {
       toast({
@@ -129,8 +133,10 @@ export default function ParticipantList({
   const handleEdit = (idx: number) => {
     const part = displayed[idx]
     const origIdx = participants.findIndex((p) => p.id === part.id)
-    const token = ensureParticipantToken(part.id)
-    if (!token) return
+    if (requireParticipantToken) {
+      const token = ensureParticipantToken(part.id)
+      if (!token) return
+    }
     setCurrentName(part.name)
     setCurrentGrade(part.grade)
     setCurrentComment(part.comment ?? '')
@@ -151,11 +157,13 @@ export default function ParticipantList({
       return
 
     try {
-      const token = ensureParticipantToken(part.id)
-      if (!token) return
       const headers: Record<string, string> = {
         ...authHeaders,
-        'x-participant-token': token,
+      }
+      if (requireParticipantToken) {
+        const token = ensureParticipantToken(part.id)
+        if (!token) return
+        headers['x-participant-token'] = token
       }
       const res = await fetch(
         `/api/events/${eventIdStr}/participants/${part.id}`,

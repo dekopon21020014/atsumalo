@@ -83,6 +83,7 @@ export default function ScheduleForm({
   const pathname = usePathname()
   const isEnglish = pathname.startsWith("/en")
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
 
   const withAuthHeaders = (extra?: Record<string, string>) => ({
     "Content-Type": "application/json",
@@ -190,20 +191,26 @@ export default function ScheduleForm({
     try {
       if (editingIndex !== null) {
         const id = participants[editingIndex].id
-        const token = getParticipantToken(eventIdStr, id)
-        if (!token) {
-          toast({
-            title: isEnglish ? "Forbidden" : "編集権限がありません",
-            description: isEnglish
-              ? "Use the device that created this response to edit it."
-              : "この回答を編集するには作成した端末で操作してください。",
-            variant: "destructive",
-          })
-          return
+        let token = ""
+        if (requireParticipantToken) {
+          token = getParticipantToken(eventIdStr, id)
+          if (!token) {
+            toast({
+              title: isEnglish ? "Forbidden" : "編集権限がありません",
+              description: isEnglish
+                ? "Use the device that created this response to edit it."
+                : "この回答を編集するには作成した端末で操作してください。",
+              variant: "destructive",
+            })
+            return
+          }
         }
+        const headers = requireParticipantToken
+          ? withAuthHeaders({ "x-participant-token": token })
+          : withAuthHeaders()
         const res = await fetch(`/api/events/${eventIdStr}/participants/${id}`, {
           method: "PUT",
-          headers: withAuthHeaders({ "x-participant-token": token }),
+          headers,
           body: JSON.stringify(payload),
         })
         const result = await res.json().catch(() => ({}))

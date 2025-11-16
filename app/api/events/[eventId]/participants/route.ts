@@ -2,8 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, FieldValue } from '@/lib/firebase'
 import { randomUUID } from 'crypto'
+import type { DocumentSnapshot } from 'firebase-admin/firestore'
 
-async function authorizeEventAccess(req: NextRequest, eventId: string) {
+type EventAuthResult =
+  | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
+  | { response: NextResponse }
+
+async function authorizeEventAccess(req: NextRequest, eventId: string): Promise<EventAuthResult> {
   const eventSnap = await db.collection("events").doc(eventId).get()
   if (!eventSnap.exists) {
     return { response: NextResponse.json({ error: "not found" }, { status: 404 }) }
@@ -38,7 +43,7 @@ async function authorizeEventAccess(req: NextRequest, eventId: string) {
 
   // TODO: ユーザー認証導入時に Firebase Auth 等でユーザー権限チェックを追加する
 
-  return { eventSnap }
+  return { eventSnap, requireParticipantToken: passwordRequired || tokenRequired }
 }
 
 export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
@@ -108,15 +113,20 @@ export async function POST(
     const participantsRef = authResult.eventSnap.ref.collection("participants")
     // ────────────────────────────────────────
 
-    const editToken = randomUUID()
-    const docRef = await participantsRef.add({
+    const participantData: Record<string, any> = {
       name,
       grade,
       schedule,
       comment,
-      editToken,
       createdAt: FieldValue.serverTimestamp(),
-    })
+    }
+
+    const editToken = authResult.requireParticipantToken ? randomUUID() : ""
+    if (editToken) {
+      participantData.editToken = editToken
+    }
+
+    const docRef = await participantsRef.add(participantData)
 
     const updateData: Record<string, any> = {
       gradeOptions: FieldValue.arrayUnion(grade),
@@ -126,7 +136,11 @@ export async function POST(
     }
     await db.collection("events").doc(eventId).set(updateData, { merge: true })
 
-    return NextResponse.json({ message: "保存しました", id: docRef.id, editToken })
+    const responseBody: Record<string, any> = { message: "保存しました", id: docRef.id }
+    if (editToken) {
+      responseBody.editToken = editToken
+    }
+    return NextResponse.json(responseBody)
   } catch (err) {
     console.error("保存エラー:", err)
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 })

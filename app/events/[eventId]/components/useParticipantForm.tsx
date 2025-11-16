@@ -50,6 +50,7 @@ export function useParticipantForm(
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
 
   const withAuthHeaders = (extra?: Record<string, string>) => ({
     "Content-Type": "application/json",
@@ -58,6 +59,9 @@ export function useParticipantForm(
   })
 
   const ensureParticipantToken = (participantId: string) => {
+    if (!requireParticipantToken) {
+      return ''
+    }
     const token = getParticipantToken(eventId, participantId)
     if (!token) {
       toast({
@@ -185,14 +189,18 @@ export function useParticipantForm(
         schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
         comment: trimmedComment === "" ? "" : trimmedComment,
       }
-      const token = ensureParticipantToken(editingResponse.id)
-      if (!token) {
-        setIsEditing(false)
-        return
+      let headers = withAuthHeaders()
+      if (requireParticipantToken) {
+        const token = ensureParticipantToken(editingResponse.id)
+        if (!token) {
+          setIsEditing(false)
+          return
+        }
+        headers = withAuthHeaders({ "x-participant-token": token })
       }
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
         method: "PUT",
-        headers: withAuthHeaders({ "x-participant-token": token }),
+        headers,
         body: JSON.stringify(responseData),
       })
       if (!response.ok) {
@@ -221,14 +229,18 @@ export function useParticipantForm(
     if (!editingResponse) return
     setIsDeleting(true)
     try {
-      const token = ensureParticipantToken(editingResponse.id)
-      if (!token) {
-        setIsDeleting(false)
-        return
+      let headers = withAuthHeaders()
+      if (requireParticipantToken) {
+        const token = ensureParticipantToken(editingResponse.id)
+        if (!token) {
+          setIsDeleting(false)
+          return
+        }
+        headers = withAuthHeaders({ "x-participant-token": token })
       }
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
         method: "DELETE",
-        headers: withAuthHeaders({ "x-participant-token": token }),
+        headers,
       })
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
@@ -249,8 +261,10 @@ export function useParticipantForm(
   }
 
   const openEditDialog = (response: Response) => {
-    const token = ensureParticipantToken(response.id)
-    if (!token) return
+    if (requireParticipantToken) {
+      const token = ensureParticipantToken(response.id)
+      if (!token) return
+    }
     setEditingResponse(response)
     setEditName(response.name)
     setEditGrade(response.grade || "")
@@ -265,8 +279,10 @@ export function useParticipantForm(
 
   const openDeleteConfirmation = () => {
     if (!editingResponse) return
-    const token = ensureParticipantToken(editingResponse.id)
-    if (!token) return
+    if (requireParticipantToken) {
+      const token = ensureParticipantToken(editingResponse.id)
+      if (!token) return
+    }
     setIsDeleteDialogOpen(true)
   }
 

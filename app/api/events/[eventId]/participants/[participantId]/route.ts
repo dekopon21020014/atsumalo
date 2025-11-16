@@ -4,7 +4,7 @@ import { db, FieldValue } from '@/lib/firebase'
 import type { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore'
 
 type EventAuthResult =
-  | { eventSnap: DocumentSnapshot }
+  | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
   | { response: NextResponse }
 
 async function authorizeEventAccess(
@@ -45,7 +45,7 @@ async function authorizeEventAccess(
 
   // TODO: ユーザー認証導入時に Firebase Auth 等でユーザー権限チェックを追加する
 
-  return { eventSnap }
+  return { eventSnap, requireParticipantToken: passwordRequired || tokenRequired }
 }
 
 function extractParticipantToken(req: NextRequest) {
@@ -117,9 +117,11 @@ export async function PUT(
     return NextResponse.json({ error: '参加者が見つかりません' }, { status: 404 })
   }
 
-  const ownershipError = ensureParticipantOwnership(req, participantSnap.data())
-  if (ownershipError) {
-    return ownershipError
+  if (authResult.requireParticipantToken) {
+    const ownershipError = ensureParticipantOwnership(req, participantSnap.data())
+    if (ownershipError) {
+      return ownershipError
+    }
   }
 
   try {
@@ -163,9 +165,11 @@ export async function DELETE(
     return NextResponse.json({ error: '参加者が見つかりません' }, { status: 404 })
   }
 
-  const ownershipError = ensureParticipantOwnership(_req, participantSnap.data())
-  if (ownershipError) {
-    return ownershipError
+  if (authResult.requireParticipantToken) {
+    const ownershipError = ensureParticipantOwnership(_req, participantSnap.data())
+    if (ownershipError) {
+      return ownershipError
+    }
   }
 
   try {
