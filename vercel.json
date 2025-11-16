@@ -1,6 +1,6 @@
 {
   "env": {
-    "CRON_TOKEN": "@CRON_TOKEN"
+    "CRON_SECRET_TOKEN": "@CRON_SECRET_TOKEN"
   },
   "crons": [
     {
