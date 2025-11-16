@@ -50,7 +50,7 @@ async function authorizeEventAccess(req: NextRequest, eventId: string): Promise<
 
   // TODO: ユーザー認証導入時に Firebase Auth 等でユーザー権限チェックを追加する
 
-  return { eventSnap, requireParticipantToken: passwordRequired || tokenRequired }
+  return { eventSnap, requireParticipantToken: tokenRequired }
 }
 
 export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
@@ -153,5 +153,4 @@ export async function POST(
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 })
   }
 }
-
 

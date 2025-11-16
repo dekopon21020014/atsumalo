@@ -50,7 +50,7 @@ export function useParticipantForm(
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
-  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
+  const requireParticipantToken = Boolean(eventAccess?.token)
 
   const withAuthHeaders = (extra?: Record<string, string>) => ({
     "Content-Type": "application/json",

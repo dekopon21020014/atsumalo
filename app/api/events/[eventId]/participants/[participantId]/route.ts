@@ -52,7 +52,7 @@ async function authorizeEventAccess(
 
   // TODO: ユーザー認証導入時に Firebase Auth 等でユーザー権限チェックを追加する
 
-  return { eventSnap, requireParticipantToken: passwordRequired || tokenRequired }
+  return { eventSnap, requireParticipantToken: tokenRequired }
 }
 
 function extractParticipantToken(req: NextRequest) {

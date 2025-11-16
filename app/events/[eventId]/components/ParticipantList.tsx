@@ -72,7 +72,7 @@ export default function ParticipantList({
   const isEnglish = pathname.startsWith('/en')
   const eventIdStr = eventId ? String(eventId) : ''
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
-  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
+  const requireParticipantToken = Boolean(eventAccess?.token)
 
   const ensureParticipantToken = (participantId: string) => {
     if (!requireParticipantToken) {
