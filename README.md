@@ -36,14 +36,14 @@ cp .env.example .env
 ## Vercel での Cron ジョブ設定
 本番環境では Vercel の Cron Job を利用して `DELETE_OLD_EVENTS_CRON_SECRET` をヘッダーに埋め込み、`/api/cron/delete-old-events` が Vercel からのリクエストだけを受け付けるようにしています。
 
-1. Vercel のプロジェクトにシークレットを登録します。
+1. Vercel のプロジェクトにシークレットを登録します。既に `DELETE_OLD_EVENTS_CRON_SECRET` という名前で登録済みであればそのまま利用できます。
    ```bash
-   vercel env add delete_old_events_cron_secret production
-   vercel env add delete_old_events_cron_secret preview
+   # 新規で登録する場合の例
+   vercel secrets add DELETE_OLD_EVENTS_CRON_SECRET <your-secret-value>
    ```
-2. `vercel.json` は上記シークレットを `DELETE_OLD_EVENTS_CRON_SECRET` という環境変数と `x-cron-secret` ヘッダーの両方に差し込みます。ローカル開発では `.env` に同じ値を設定してください。
+2. `vercel.json` は上記シークレット `@DELETE_OLD_EVENTS_CRON_SECRET` を `DELETE_OLD_EVENTS_CRON_SECRET` という環境変数と `x-cron-secret` ヘッダーの両方に差し込みます。ローカル開発では `.env` に同じ値を設定してください。
 
-シークレット名（`delete_old_events_cron_secret`）と環境変数名（`DELETE_OLD_EVENTS_CRON_SECRET`）の両方を変更した場合は `vercel.json` も忘れずに更新してください。
+シークレットや環境変数の名前を変更した場合は `vercel.json` の参照名も忘れずに更新してください。
 
 ### Vercel で `delete_old_events_cron_secret` が見つからないと言われたら？
 
@@ -53,11 +53,11 @@ Vercel のデプロイログに次のようなエラーが表示される場合�
 Environment Variable "DELETE_OLD_EVENTS_CRON_SECRET" references Secret "delete_old_events_cron_secret", which does not exist.
 ```
 
-このメッセージは `vercel.json` の `env` と `crons.headers` で参照しているシークレット `@delete_old_events_cron_secret` が Vercel プロジェクトに登録されていないことを意味します。以下の手順で解決できます。
+このメッセージは `vercel.json` の `env` と `crons.headers` で参照しているシークレット `@DELETE_OLD_EVENTS_CRON_SECRET` が Vercel プロジェクトに登録されていないことを意味します。以下の手順で解決できます。
 
-1. Vercel CLI で `vercel env add delete_old_events_cron_secret production` と `vercel env add delete_old_events_cron_secret preview` を実行し、Cron 用のシークレットを追加する。
+1. Vercel CLI で `vercel secrets add DELETE_OLD_EVENTS_CRON_SECRET <your-secret-value>` を実行し、Cron 用のシークレットを追加する（既に同名のシークレットがあればこのステップは不要）。
 2. ローカル開発でも `.env` に `DELETE_OLD_EVENTS_CRON_SECRET=...` を追記し、`app/api/cron/delete-old-events/route.ts` が同じ値を参照できるようにする。
-3. 既に別名のシークレットを使いたい場合は、`vercel.json` 内の `@delete_old_events_cron_secret` と環境変数名の双方を同じ名前に揃える。
+3. 別名のシークレットを使いたい場合は、`vercel.json` 内の `@DELETE_OLD_EVENTS_CRON_SECRET` と環境変数名の双方を同じ名前に揃える。
 
 上記を設定すれば、Cron API の認証に必要なシークレットが正しく展開され、デプロイ時のエラーも解消されます。
 
