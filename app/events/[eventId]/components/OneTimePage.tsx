@@ -38,6 +38,7 @@ import {
 import OneTimeInputTab from "@/app/events/[eventId]/components/OneTimeInput"
 import OneTimeResponsesTab from "./OneTimeResponseStatus"
 import OneTimeSummaryTab from "./OneTimeSummary"
+import type { EventAccess } from "./utils"
 
 type Props = {
   eventId: string
@@ -46,9 +47,18 @@ type Props = {
   responses?: Response[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  eventAccess?: EventAccess
 }
 
-export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, responses = [], gradeOptions, gradeOrder }: Props) {
+export default function OneTimePage({
+  eventId,
+  dateTimeOptions,
+  scheduleTypes,
+  responses = [],
+  gradeOptions,
+  gradeOrder,
+  eventAccess,
+}: Props) {
   const [activeTab, setActiveTab] = useState("input")
   const [gradeOptionsState, setGradeOptionsState] = useState<string[]>(gradeOptions)
   const [gradeOrderState, setGradeOrderState] = useState<Record<string, number>>(gradeOrder)
@@ -67,7 +77,16 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
       return updated
     })
   }
-  const form = useParticipantForm(eventId, dateTimeOptions, scheduleTypes, responses, setActiveTab, gradeOptionsState, gradeOrderState)
+  const form = useParticipantForm(
+    eventId,
+    dateTimeOptions,
+    scheduleTypes,
+    responses,
+    setActiveTab,
+    gradeOptionsState,
+    gradeOrderState,
+    eventAccess,
+  )
   const isMobile = useMediaQuery("(max-width: 768px)")      
 
   // 最適な日時を取得
@@ -102,6 +121,7 @@ export default function OneTimePage({ eventId, dateTimeOptions, scheduleTypes, r
             gradeOptions={gradeOptionsState}
             gradeOrder={gradeOrderState}
             addGradeOption={addGrade}
+            eventAccess={eventAccess}
         />
 
         {/* 回答状況タブ */}

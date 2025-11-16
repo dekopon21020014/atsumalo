@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import { Check, Save, User, MessageSquare, X, GraduationCap } from "lucide-react"
 import { type ScheduleType, type Response } from "./constants"
+import { buildEventAuthHeaders, type EventAccess, storeParticipantToken } from "./utils"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +29,7 @@ type Props = {
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
   addGradeOption: (name: string, priority: number) => void
+  eventAccess?: EventAccess
 }
 
 export default function OneTimeInputTab({
@@ -40,6 +42,7 @@ export default function OneTimeInputTab({
   gradeOptions,
   gradeOrder,
   addGradeOption,
+  eventAccess,
 }: Props) {
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
@@ -53,6 +56,7 @@ export default function OneTimeInputTab({
   const [selections, setSelections] = useState<Record<string, string>>(initialSelections)
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
 
   const handleSelection = (dateTime: string, typeId: string) => {
     const newSelections = { ...selections, [dateTime]: typeId }
@@ -101,19 +105,22 @@ export default function OneTimeInputTab({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...authHeaders,
         },
         body: JSON.stringify(responseData),
       })
 
-      if (!response.ok) {
-        throw new Error("回答の送信に失敗しました")
+      const result = await response.json()
+      if (!response.ok || !result?.id) {
+        throw new Error(result?.error || "回答の送信に失敗しました")
       }
-
-      const { id } = await response.json()
+      if (result.editToken) {
+        storeParticipantToken(eventId, result.id, result.editToken)
+      }
       // ローカル state に「自分の回答」を追加
       setExistingResponses((prev) => [
         ...prev,
-        { id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
+        { id: result.id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
       ])
 
       toast({

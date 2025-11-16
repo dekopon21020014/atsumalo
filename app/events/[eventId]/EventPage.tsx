@@ -15,6 +15,7 @@ import OneTimePage from "@/app/events/[eventId]/components/OneTimePage"
 import type { EventData, ScheduleType } from "@/app/events/[eventId]/components/constants"
 import * as ja from "@/app/events/[eventId]/components/constants"
 import * as en from "@/app/en/events/[eventId]/components/constants"
+import type { EventAccess } from "@/app/events/[eventId]/components/utils"
 import Link from "next/link"
 
 export default function EventPage() {
@@ -43,6 +44,7 @@ export default function EventPage() {
   const [activeTab, setActiveTab] = useState("basic")
   const [needPassword, setNeedPassword] = useState(false)
   const [passwordInput, setPasswordInput] = useState("")
+  const [eventAccess, setEventAccess] = useState<EventAccess>({})
 
   // 編集用の日程候補と選択肢
   const [editXAxis, setEditXAxis] = useState<string[]>([])
@@ -65,6 +67,13 @@ export default function EventPage() {
       const res = await fetch(url)
       if (res.status === 401) {
         setNeedPassword(true)
+        if (pass) {
+          toast({
+            title: isEnglish ? "Password error" : "認証エラー",
+            description: isEnglish ? "Invalid event password" : "合言葉が正しくありません",
+            variant: "destructive",
+          })
+        }
         return
       }
       const resData = await res.json()
@@ -130,6 +139,7 @@ export default function EventPage() {
       )
       setNeedPassword(false)
       setPasswordInput("")
+      setEventAccess(pass ? { password: pass } : {})
     } catch (err) {
       console.error(err)
       toast({
@@ -1049,6 +1059,7 @@ export default function EventPage() {
               scheduleTypes={data.scheduleTypes}
               gradeOptions={data.gradeOptions}
               gradeOrder={data.gradeOrder}
+              eventAccess={eventAccess}
             />
           ) : (
             <OneTimePage
@@ -1058,6 +1069,7 @@ export default function EventPage() {
               responses={data.existingResponses}
               gradeOptions={data.gradeOptions}
               gradeOrder={data.gradeOrder}
+              eventAccess={eventAccess}
             />
           )}
         </div>
