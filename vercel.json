@@ -1,7 +1,4 @@
 {
-  "env": {
-    "CRON_SECRET": "@CRON_SECRET"
-  },
   "crons": [
     {
       "path": "/api/cron/delete-old-events",

@@ -34,14 +34,10 @@ cp .env.example .env
 ```
 
 ## Vercel での Cron ジョブ設定
-Vercel の Cron Jobs は、プロジェクトの環境変数に `CRON_SECRET` を設定しておくと Cron 実行時に `authorization` ヘッダーへ `Bearer <CRON_SECRET>` を自動で差し込みます。本番環境の `/api/cron/delete-old-events` でもこの仕組みを利用し、Vercel の Cron からのリクエストだけを受け付けるようにしています。トークンは少なくとも 16 文字以上のランダムな文字列を推奨します。
+Vercel の Cron Jobs は、プロジェクトの環境変数に `CRON_SECRET` を設定しておくと Cron 実行時に `authorization` ヘッダーへ `Bearer <CRON_SECRET>` を自動で差し込みます。本番環境の `/api/cron/delete-old-events` でもこの仕組みを利用し、Vercel の Cron からのリクエストだけを受け付けるようにしています。トークンは少なくとも 16 文字以上のランダムな文字列を推奨します。詳しい設定方法は [Vercel 公式ドキュメント](https://vercel.com/docs/cron-jobs/manage-cron-jobs) も参照してください。
 
-1. Vercel のプロジェクトに `CRON_SECRET` を登録します。既にダッシュボードで `CRON_SECRET` を設定済みならそのまま利用できます。
-   ```bash
-   # 新規で登録する場合の例（Secret として登録し、環境変数へ割り当てる）
-   vercel secrets add CRON_SECRET <your-cron-token>
-   ```
-2. `vercel.json` では Cron のスケジュールのみを設定します。`CRON_SECRET` は Vercel 側が `authorization` ヘッダーへ挿入するため、追加のヘッダー指定は不要です。
+1. Vercel の「Project Settings > Environment Variables」で `CRON_SECRET` を登録します。既にダッシュボードで同名の環境変数があればそれを利用し、未設定なら直接値を貼り付けるか、必要に応じて `vercel secrets add CRON_SECRET <your-cron-token>` で Secret を作って紐づけます。
+2. `vercel.json` には Cron のスケジュールのみを記述します（Vercel のサンプルと同じく `crons` 配列だけで OK）。`CRON_SECRET` は Vercel 側が `authorization` ヘッダーへ挿入するため、追加のヘッダー指定や `env` セクションは不要です。
 3. ローカル開発でも `.env` に `CRON_SECRET=...` を追加し、`app/api/cron/delete-old-events/route.ts` が同じ値を参照できるようにしてください。ローカルから Cron API を叩く際は `Authorization: Bearer <CRON_SECRET>` を付与すれば OK です。
 
 `CRON_SECRET` を更新した場合は、Vercel の環境変数と `.env` の両方を忘れずに入れ替えてください。
@@ -58,11 +54,10 @@ Vercel の Cron Jobs は、プロジェクトの環境変数に `CRON_SECRET` �
 
 ### 「Environment Variable "CRON_SECRET" references Secret "CRON_SECRET", which does not exist.」と表示されたら？
 
-このエラーは、`vercel.json` の `"CRON_SECRET": "@CRON_SECRET"` という記述により **Secret 名 `CRON_SECRET` を参照しているのに、Vercel 側で同名の Secret をまだ登録していない** 場合に発生します。
+このエラーは、環境変数の値に `@CRON_SECRET` のような Secret 参照を指定しているのに、Vercel 側で同名の Secret をまだ登録していない場合に発生します。今回のように `vercel.json` を Cron スケジュールだけにしておけば、そもそも `@CRON_SECRET` を書かなくても済むのでエラーを避けられます。
 
-1. `vercel secrets ls` で Secret 一覧を確認し、`CRON_SECRET` が存在しない場合は `vercel secrets add CRON_SECRET <your-cron-token>` を実行して作成します。
-2. Vercel の「Project Settings > Environment Variables」で `CRON_SECRET` という環境変数を作り、値に `@CRON_SECRET` を設定します（直接値を貼り付けたい場合は `vercel.json` 側の `@CRON_SECRET` を削除し、UI で値を入力します）。
-3. もう一度デプロイすると、作成した Secret が参照されるためエラーは解消されます。
+1. 既に `@CRON_SECRET` を利用している場合は、`vercel secrets add CRON_SECRET <your-cron-token>` で Secret を作るか、環境変数の値をプレーンなトークン文字列に変更してください。
+2. もう一度デプロイすると、作成した Secret か直接入力した値が読み込まれるためエラーは解消されます。
 
 Secret を一度作成してしまえば、その後は同じ名前の Secret を再利用できるので、環境変数の値を変更する際も `vercel secrets rm` → `add` の手順だけで安全に更新できます。
 
