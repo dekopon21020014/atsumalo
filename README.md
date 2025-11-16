@@ -45,6 +45,22 @@ cp .env.example .env
 
 シークレット名（`delete_old_events_cron_secret`）と環境変数名（`DELETE_OLD_EVENTS_CRON_SECRET`）の両方を変更した場合は `vercel.json` も忘れずに更新してください。
 
+### Vercel で `delete_old_events_cron_secret` が見つからないと言われたら？
+
+Vercel のデプロイログに次のようなエラーが表示される場合があります。
+
+```
+Environment Variable "DELETE_OLD_EVENTS_CRON_SECRET" references Secret "delete_old_events_cron_secret", which does not exist.
+```
+
+このメッセージは `vercel.json` の `env` と `crons.headers` で参照しているシークレット `@delete_old_events_cron_secret` が Vercel プロジェクトに登録されていないことを意味します。以下の手順で解決できます。
+
+1. Vercel CLI で `vercel env add delete_old_events_cron_secret production` と `vercel env add delete_old_events_cron_secret preview` を実行し、Cron 用のシークレットを追加する。
+2. ローカル開発でも `.env` に `DELETE_OLD_EVENTS_CRON_SECRET=...` を追記し、`app/api/cron/delete-old-events/route.ts` が同じ値を参照できるようにする。
+3. 既に別名のシークレットを使いたい場合は、`vercel.json` 内の `@delete_old_events_cron_secret` と環境変数名の双方を同じ名前に揃える。
+
+上記を設定すれば、Cron API の認証に必要なシークレットが正しく展開され、デプロイ時のエラーも解消されます。
+
 ```bash
 yarn install
 ```
