@@ -1,6 +1,7 @@
 // 例：app/api/participants/[eventId]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { db, FieldValue } from '@/lib/firebase'
+import { randomUUID } from 'crypto'
 
 async function authorizeEventAccess(req: NextRequest, eventId: string) {
   const eventSnap = await db.collection("events").doc(eventId).get()
@@ -107,11 +108,13 @@ export async function POST(
     const participantsRef = authResult.eventSnap.ref.collection("participants")
     // ────────────────────────────────────────
 
+    const editToken = randomUUID()
     const docRef = await participantsRef.add({
       name,
       grade,
       schedule,
       comment,
+      editToken,
       createdAt: FieldValue.serverTimestamp(),
     })
 
@@ -123,7 +126,7 @@ export async function POST(
     }
     await db.collection("events").doc(eventId).set(updateData, { merge: true })
 
-    return NextResponse.json({ message: "保存しました", id: docRef.id })
+    return NextResponse.json({ message: "保存しました", id: docRef.id, editToken })
   } catch (err) {
     console.error("保存エラー:", err)
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 })
