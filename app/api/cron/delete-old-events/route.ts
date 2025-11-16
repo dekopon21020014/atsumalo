@@ -4,8 +4,26 @@ import { db } from "@/lib/firebase"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+const CRON_SECRET = process.env.DELETE_OLD_EVENTS_CRON_SECRET
+
+export async function GET(request: Request) {
   try {
+    if (!CRON_SECRET) {
+      console.error("DELETE_OLD_EVENTS_CRON_SECRET is not configured")
+      return NextResponse.json(
+        { error: "Cron secret is not configured" },
+        { status: 500 }
+      )
+    }
+
+    const providedSecret = request.headers.get("x-cron-secret")
+    if (!providedSecret || providedSecret !== CRON_SECRET) {
+      return NextResponse.json(
+        { error: "Unauthorized request" },
+        { status: 401 }
+      )
+    }
+
     const cutoff = new Date()
     cutoff.setMonth(cutoff.getMonth() - 3)
 
