@@ -83,7 +83,7 @@ export default function ScheduleForm({
   const pathname = usePathname()
   const isEnglish = pathname.startsWith("/en")
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
-  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
+  const requireParticipantToken = Boolean(eventAccess?.token)
 
   const withAuthHeaders = (extra?: Record<string, string>) => ({
     "Content-Type": "application/json",
