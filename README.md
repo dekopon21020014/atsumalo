@@ -56,6 +56,16 @@ Vercel の Cron Jobs は、プロジェクトの環境変数に `CRON_TOKEN` を
 
 上記を満たせば、Cron API の認証が正しく行われ、Vercel からのみジョブが実行されるようになります。
 
+### 「Environment Variable "CRON_TOKEN" references Secret "CRON_TOKEN", which does not exist.」と表示されたら？
+
+このエラーは、`vercel.json` の `"CRON_TOKEN": "@CRON_TOKEN"` という記述により **Secret 名 `CRON_TOKEN` を参照しているのに、Vercel 側で同名の Secret をまだ登録していない** 場合に発生します。
+
+1. `vercel secrets ls` で Secret 一覧を確認し、`CRON_TOKEN` が存在しない場合は `vercel secrets add CRON_TOKEN <your-cron-token>` を実行して作成します。
+2. Vercel の「Project Settings > Environment Variables」で `CRON_TOKEN` という環境変数を作り、値に `@CRON_TOKEN` を設定します（直接値を貼り付けたい場合は `vercel.json` 側の `@CRON_TOKEN` を削除し、UI で値を入力します）。
+3. もう一度デプロイすると、作成した Secret が参照されるためエラーは解消されます。
+
+Secret を一度作成してしまえば、その後は同じ名前の Secret を再利用できるので、環境変数の値を変更する際も `vercel secrets rm` → `add` の手順だけで安全に更新できます。
+
 ```bash
 yarn install
 ```
