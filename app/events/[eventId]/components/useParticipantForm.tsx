@@ -2,6 +2,13 @@
 import { useState, useEffect, useMemo } from "react"
 import { type ScheduleType, type Response } from "@/app/events/[eventId]/components/constants"
 import { toast } from "@/components/ui/use-toast"
+import {
+  buildEventAuthHeaders,
+  type EventAccess,
+  getParticipantToken,
+  storeParticipantToken,
+  removeParticipantToken,
+} from "./utils"
 
 export function useParticipantForm(
   eventId: string,
@@ -11,6 +18,7 @@ export function useParticipantForm(
   setActiveTab: (tab: string) => void,
   gradeOptions: string[],
   gradeOrder: Record<string, number>,
+  eventAccess?: EventAccess,
 ) {
   const [name, setName] = useState<string>("")
   const [grade, setGrade] = useState<string>("")
@@ -41,6 +49,30 @@ export function useParticipantForm(
   const [sortColumn, setSortColumn] = useState<"name" | "grade" | "availability">("grade")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
+
+  const withAuthHeaders = (extra?: Record<string, string>) => ({
+    "Content-Type": "application/json",
+    ...authHeaders,
+    ...(extra ?? {}),
+  })
+
+  const ensureParticipantToken = (participantId: string) => {
+    if (!requireParticipantToken) {
+      return ''
+    }
+    const token = getParticipantToken(eventId, participantId)
+    if (!token) {
+      toast({
+        title: "操作できません / Forbidden",
+        description:
+          "この回答を編集・削除できるのは作成した端末のみです。\nOnly the device that created this response can modify it.",
+        variant: "destructive",
+      })
+    }
+    return token
+  }
 
   useEffect(() => {
     const s = localStorage.getItem(`event_${eventId}_selections`)
@@ -119,14 +151,17 @@ export function useParticipantForm(
       }
       const response = await fetch(`/api/events/${eventId}/participants`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: withAuthHeaders(),
         body: JSON.stringify(responseData),
       })
-      if (!response.ok) throw new Error("回答の送信に失敗しました")
-      const { id } = await response.json()
+      const result = await response.json()
+      if (!response.ok || !result?.id) throw new Error(result?.error || "回答の送信に失敗しました")
+      if (result.editToken) {
+        storeParticipantToken(eventId, result.id, result.editToken)
+      }
       setExistingResponses(prev => [
         ...prev,
-        { id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
+        { id: result.id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
       ])
       toast({ title: "回答を送信しました", description: "あなたの回答が正常に保存されました。" })
       setActiveTab("responses")
@@ -154,12 +189,24 @@ export function useParticipantForm(
         schedule: Object.entries(editSelections).map(([dateTime, typeId]) => ({ dateTime, typeId })),
         comment: trimmedComment === "" ? "" : trimmedComment,
       }
+      let headers = withAuthHeaders()
+      if (requireParticipantToken) {
+        const token = ensureParticipantToken(editingResponse.id)
+        if (!token) {
+          setIsEditing(false)
+          return
+        }
+        headers = withAuthHeaders({ "x-participant-token": token })
+      }
       const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(responseData),
       })
-      if (!response.ok) throw new Error("回答の更新に失敗しました")
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err?.error || "回答の更新に失敗しました")
+      }
       setExistingResponses(prev =>
         prev.map(r =>
           r.id === editingResponse.id
@@ -182,9 +229,25 @@ export function useParticipantForm(
     if (!editingResponse) return
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, { method: "DELETE" })
-      if (!response.ok) throw new Error("回答の削除に失敗しました")
+      let headers = withAuthHeaders()
+      if (requireParticipantToken) {
+        const token = ensureParticipantToken(editingResponse.id)
+        if (!token) {
+          setIsDeleting(false)
+          return
+        }
+        headers = withAuthHeaders({ "x-participant-token": token })
+      }
+      const response = await fetch(`/api/events/${eventId}/participants/${editingResponse.id}`, {
+        method: "DELETE",
+        headers,
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err?.error || "回答の削除に失敗しました")
+      }
       setExistingResponses(prev => prev.filter(r => r.id !== editingResponse.id))
+      removeParticipantToken(eventId, editingResponse.id)
       toast({ title: "回答を削除しました", description: `${editingResponse.name}さんの回答が削除されました。` })
       setIsDeleteDialogOpen(false)
       setIsEditDialogOpen(false)
@@ -198,6 +261,10 @@ export function useParticipantForm(
   }
 
   const openEditDialog = (response: Response) => {
+    if (requireParticipantToken) {
+      const token = ensureParticipantToken(response.id)
+      if (!token) return
+    }
     setEditingResponse(response)
     setEditName(response.name)
     setEditGrade(response.grade || "")
@@ -211,6 +278,11 @@ export function useParticipantForm(
   }
 
   const openDeleteConfirmation = () => {
+    if (!editingResponse) return
+    if (requireParticipantToken) {
+      const token = ensureParticipantToken(editingResponse.id)
+      if (!token) return
+    }
     setIsDeleteDialogOpen(true)
   }
 

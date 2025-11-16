@@ -24,6 +24,12 @@ import { cn } from '@/lib/utils'
 import { useParams, usePathname } from 'next/navigation'
 import type { Participant } from './types'
 import type { ScheduleType } from './constants'
+import {
+  buildEventAuthHeaders,
+  getParticipantToken,
+  removeParticipantToken,
+  type EventAccess,
+} from './utils'
 
 type Props = {
   participants: Participant[]
@@ -40,6 +46,7 @@ type Props = {
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
   scheduleTypes: ScheduleType[]
+  eventAccess?: EventAccess
 }
 
 export default function ParticipantList({
@@ -57,11 +64,32 @@ export default function ParticipantList({
   gradeOptions,
   gradeOrder,
   scheduleTypes,
+  eventAccess,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
   const pathname = usePathname()
   const isEnglish = pathname.startsWith('/en')
+  const eventIdStr = eventId ? String(eventId) : ''
+  const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
+
+  const ensureParticipantToken = (participantId: string) => {
+    if (!requireParticipantToken) {
+      return ''
+    }
+    const token = getParticipantToken(eventIdStr, participantId)
+    if (!token) {
+      toast({
+        title: isEnglish ? 'Forbidden' : '操作できません',
+        description: isEnglish
+          ? 'Use the device that created this response to edit or delete it.'
+          : 'この回答を編集・削除できるのは作成した端末のみです。',
+        variant: 'destructive',
+      })
+    }
+    return token
+  }
 
   // 所属/役職フィルタ／ソート／ビュー切り替え
   const [filterGrade, setFilterGrade] = useState<string>('All')
@@ -105,6 +133,10 @@ export default function ParticipantList({
   const handleEdit = (idx: number) => {
     const part = displayed[idx]
     const origIdx = participants.findIndex((p) => p.id === part.id)
+    if (requireParticipantToken) {
+      const token = ensureParticipantToken(part.id)
+      if (!token) return
+    }
     setCurrentName(part.name)
     setCurrentGrade(part.grade)
     setCurrentComment(part.comment ?? '')
@@ -125,12 +157,21 @@ export default function ParticipantList({
       return
 
     try {
+      const headers: Record<string, string> = {
+        ...authHeaders,
+      }
+      if (requireParticipantToken) {
+        const token = ensureParticipantToken(part.id)
+        if (!token) return
+        headers['x-participant-token'] = token
+      }
       const res = await fetch(
-        `/api/events/${eventId}/participants/${part.id}`,
-        { method: 'DELETE' }
+        `/api/events/${eventIdStr}/participants/${part.id}`,
+        { method: 'DELETE', headers }
       )
       if (!res.ok) throw new Error(isEnglish ? 'Failed to delete' : '削除に失敗しました')
       setParticipants(participants.filter((p) => p.id !== part.id))
+      removeParticipantToken(eventIdStr, part.id)
       toast({
         title: isEnglish ? 'Deleted' : '削除完了',
         description: isEnglish ? 'Schedule deleted' : 'スケジュールが削除されました',

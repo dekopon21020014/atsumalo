@@ -1,6 +1,6 @@
 "use client"
 
-import { type Dispatch, type SetStateAction, useEffect, useState, useRef } from "react"
+import { type Dispatch, type SetStateAction, useEffect, useState, useRef, useMemo } from "react"
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/use-toast"
 import { type ScheduleType } from "@/app/events/[eventId]/components/constants"
 import type { Schedule, Participant } from "./types"
-import { createEmptySchedule } from "./utils"
+import {
+  createEmptySchedule,
+  buildEventAuthHeaders,
+  type EventAccess,
+  getParticipantToken,
+  storeParticipantToken,
+} from "./utils"
 import { useMediaQuery } from "@/hooks/use-mobile"
 import ScheduleTable from "./ScheduleTable"
 import ScheduleCellMobile from "./ScheduleCellMobile"
@@ -38,6 +44,7 @@ type Props = {
   editingIndex: number | null
   setEditingIndex: Dispatch<SetStateAction<number | null>>
   setActiveTab: (tab: string) => void
+  eventAccess?: EventAccess
 }
 
 export default function ScheduleForm({
@@ -60,6 +67,7 @@ export default function ScheduleForm({
   editingIndex,
   setEditingIndex,
   setActiveTab,
+  eventAccess,
 }: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ""
@@ -69,9 +77,19 @@ export default function ScheduleForm({
   const [scheduleError, setScheduleError] = useState("")
   const [nameError, setNameError] = useState("")
   const [gradeError, setGradeError] = useState("")
-  const { eventId } = useParams()
+  const params = useParams()
+  const eventIdParam = params.eventId
+  const eventIdStr = typeof eventIdParam === "string" ? eventIdParam : Array.isArray(eventIdParam) ? eventIdParam[0] : ""
   const pathname = usePathname()
   const isEnglish = pathname.startsWith("/en")
+  const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+  const requireParticipantToken = Boolean(eventAccess?.password || eventAccess?.token)
+
+  const withAuthHeaders = (extra?: Record<string, string>) => ({
+    "Content-Type": "application/json",
+    ...authHeaders,
+    ...(extra ?? {}),
+  })
 
   const tableRef = useRef<HTMLDivElement>(null)
 
@@ -162,7 +180,7 @@ export default function ScheduleForm({
     const trimmedComment = currentComment.trim()
     const commentValue = trimmedComment === "" ? "" : trimmedComment
     const payload = {
-      eventId,
+      eventId: eventIdStr,
       name: currentName,
       grade: currentGrade,
       gradePriority: gradeOrder[currentGrade],
@@ -173,12 +191,32 @@ export default function ScheduleForm({
     try {
       if (editingIndex !== null) {
         const id = participants[editingIndex].id
-        const res = await fetch(`/api/events/${eventId}/participants/${id}`, {
+        let token = ""
+        if (requireParticipantToken) {
+          token = getParticipantToken(eventIdStr, id)
+          if (!token) {
+            toast({
+              title: isEnglish ? "Forbidden" : "編集権限がありません",
+              description: isEnglish
+                ? "Use the device that created this response to edit it."
+                : "この回答を編集するには作成した端末で操作してください。",
+              variant: "destructive",
+            })
+            return
+          }
+        }
+        const headers = requireParticipantToken
+          ? withAuthHeaders({ "x-participant-token": token })
+          : withAuthHeaders()
+        const res = await fetch(`/api/events/${eventIdStr}/participants/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(payload),
         })
-        if (!res.ok) throw new Error()
+        const result = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          throw new Error(result?.error || (isEnglish ? "Failed to update" : "更新に失敗しました"))
+        }
         const updated = [...participants]
         updated[editingIndex] = {
           id,
@@ -190,16 +228,22 @@ export default function ScheduleForm({
         setParticipants(updated)
         setEditingIndex(null)
       } else {
-        const res = await fetch(`/api/events/${eventId}/participants`, {
+        const res = await fetch(`/api/events/${eventIdStr}/participants`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: withAuthHeaders(),
           body: JSON.stringify(payload),
         })
-        const { id } = await res.json()
+        const result = await res.json()
+        if (!res.ok || !result?.id) {
+          throw new Error(result?.error || (isEnglish ? "Failed to save" : "保存に失敗しました"))
+        }
+        if (result.editToken) {
+          storeParticipantToken(eventIdStr, result.id, result.editToken)
+        }
         setParticipants([
           ...participants,
           {
-            id,
+            id: result.id,
             name: currentName,
             grade: currentGrade,
             schedule: scheduleData,

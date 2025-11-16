@@ -1,7 +1,7 @@
 // app/events/[eventId]/components/SchedulePage.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Download, UserPlus, PenSquare, BarChart3, Users, Check } from 'lucide-react'
@@ -23,7 +23,7 @@ import ScheduleForm from './ScheduleForm'
 import ParticipantList from './ParticipantList'
 import ScheduleSummary from './ScheduleSummary'
 import BestTimeSlots from './BestTimeSlots'
-import { createEmptySchedule } from './utils'
+import { createEmptySchedule, buildEventAuthHeaders, type EventAccess } from './utils'
 import type { Participant, Schedule } from './types'
 import { useParams, usePathname } from 'next/navigation'
 import { ScheduleType } from './constants'
@@ -34,11 +34,29 @@ type Props = {
   scheduleTypes: ScheduleType[]
   gradeOptions: string[]
   gradeOrder: { [key: string]: number }
+  initialParticipants?: Participant[]
+  eventAccess?: EventAccess
 }
 
-export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions, gradeOrder }: Props) {
+const sanitizeParticipants = (items: Participant[]) =>
+  items.map((p) => ({
+    ...p,
+    comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
+  }))
+
+export default function SchedulePage({
+  xAxis,
+  yAxis,
+  scheduleTypes,
+  gradeOptions,
+  gradeOrder,
+  initialParticipants = [],
+  eventAccess,
+}: Props) {
   const defaultTypeId = scheduleTypes.find((t) => t.isAvailable)?.id || ''
-  const [participants, setParticipants] = useState<Participant[]>([])
+  const [participants, setParticipants] = useState<Participant[]>(() =>
+    sanitizeParticipants(Array.isArray(initialParticipants) ? initialParticipants : []),
+  )
   const [availableOptions, setAvailableOptions] = useState<string[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('input')
@@ -74,24 +92,38 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
   }, [scheduleTypes])
 
   // イベント参加者の読み込み
+  const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
+
   useEffect(() => {
     if (!eventId) return
-    fetch(`/api/events/${eventId}/participants`)
+    const options: RequestInit = {}
+    if (Object.keys(authHeaders).length > 0) {
+      options.headers = authHeaders
+    }
+    fetch(`/api/events/${eventId}/participants`, options)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.participants)) {
           setParticipants(
-            data.participants.map((p: any) => ({
-              ...p,
-              comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
-            }))
+            sanitizeParticipants(
+              data.participants.map((p: any) => ({
+                ...p,
+                comment: typeof p?.comment === 'string' ? p.comment.trim() : '',
+              })),
+            ),
           )
         }
       })
       .catch((e) => {
         console.error('Failed to load participants', e)
       })
-  }, [eventId])
+  }, [eventId, authHeaders])
+
+  useEffect(() => {
+    setParticipants(
+      sanitizeParticipants(Array.isArray(initialParticipants) ? initialParticipants : []),
+    )
+  }, [initialParticipants])
 
   useEffect(() => {
     setGradeOpts(gradeOptions)
@@ -249,6 +281,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             editingIndex={editingIndex}
             setEditingIndex={setEditingIndex}
             setActiveTab={setActiveTab}
+            eventAccess={eventAccess}
           />
         </TabsContent>
 
@@ -268,6 +301,7 @@ export default function SchedulePage({ xAxis, yAxis, scheduleTypes, gradeOptions
             gradeOptions={gradeOpts}
             gradeOrder={gradeOrderMap}
             scheduleTypes={scheduleTypes}
+            eventAccess={eventAccess}
           />
         </TabsContent>
 
