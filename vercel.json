@@ -1,14 +1,11 @@
 {
   "env": {
-    "DELETE_OLD_EVENTS_CRON_SECRET": "@DELETE_OLD_EVENTS_CRON_SECRET"
+    "CRON_TOKEN": "@CRON_TOKEN"
   },
   "crons": [
     {
       "path": "/api/cron/delete-old-events",
-      "schedule": "37 2 * * *",
-      "headers": {
-        "x-cron-secret": "@DELETE_OLD_EVENTS_CRON_SECRET"
-      }
+      "schedule": "37 2 * * *"
     }
   ]
 }

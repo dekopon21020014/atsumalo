@@ -34,32 +34,27 @@ cp .env.example .env
 ```
 
 ## Vercel での Cron ジョブ設定
-本番環境では Vercel の Cron Job を利用して `DELETE_OLD_EVENTS_CRON_SECRET` をヘッダーに埋め込み、`/api/cron/delete-old-events` が Vercel からのリクエストだけを受け付けるようにしています。
+Vercel の Cron Jobs は、プロジェクトの環境変数に `CRON_TOKEN` を設定すると、Cron が API を呼び出す際に `authorization` ヘッダーへ自動で同じトークンを挿入してくれます。本番環境の `/api/cron/delete-old-events` はこの仕組みを利用し、Vercel の Cron からのリクエストだけを受け付けるようにしています。
 
-1. Vercel のプロジェクトにシークレットを登録します。既に `DELETE_OLD_EVENTS_CRON_SECRET` という名前で登録済みであればそのまま利用できます。
+1. Vercel のプロジェクトに `CRON_TOKEN` を登録します。既に Vercel のダッシュボードで `CRON_TOKEN` を設定済みであればそのまま利用できます。
    ```bash
-   # 新規で登録する場合の例
-   vercel secrets add DELETE_OLD_EVENTS_CRON_SECRET <your-secret-value>
+   # 新規で登録する場合の例（Secret として登録し、環境変数へ割り当てる）
+   vercel secrets add CRON_TOKEN <your-cron-token>
    ```
-2. `vercel.json` は上記シークレット `@DELETE_OLD_EVENTS_CRON_SECRET` を `DELETE_OLD_EVENTS_CRON_SECRET` という環境変数と `x-cron-secret` ヘッダーの両方に差し込みます。ローカル開発では `.env` に同じ値を設定してください。
+2. `vercel.json` では Cron のスケジュールのみを設定します。`CRON_TOKEN` は Vercel 側でヘッダーへ挿入されるため、追加のヘッダー指定は不要です。
+3. ローカル開発でも `.env` に `CRON_TOKEN=...` を追加し、`app/api/cron/delete-old-events/route.ts` が同じ値を参照できるようにしてください。
 
-シークレットや環境変数の名前を変更した場合は `vercel.json` の参照名も忘れずに更新してください。
+`CRON_TOKEN` を更新した場合は、Vercel の環境変数と `.env` の両方を忘れずに入れ替えてください。
 
-### Vercel で `delete_old_events_cron_secret` が見つからないと言われたら？
+### Vercel で `CRON_TOKEN` に関するエラーが出たら？
 
-Vercel のデプロイログに次のようなエラーが表示される場合があります。
+`/api/cron/delete-old-events` のログに `CRON_TOKEN is not configured` や `Unauthorized request` が出力される場合は、以下を確認してください。
 
-```
-Environment Variable "DELETE_OLD_EVENTS_CRON_SECRET" references Secret "delete_old_events_cron_secret", which does not exist.
-```
+1. Vercel のプロジェクトに `CRON_TOKEN` が設定されているか（Secret を利用する場合は `vercel secrets add CRON_TOKEN ...` を実行した後、Environment Variables で参照する）。
+2. `vercel.json` の Cron 設定が正しいパス（`/api/cron/delete-old-events`）を指しているか。
+3. ローカル開発中に Cron API を叩く場合は `.env` の `CRON_TOKEN` と `Authorization` ヘッダーの値が一致しているか。
 
-このメッセージは `vercel.json` の `env` と `crons.headers` で参照しているシークレット `@DELETE_OLD_EVENTS_CRON_SECRET` が Vercel プロジェクトに登録されていないことを意味します。以下の手順で解決できます。
-
-1. Vercel CLI で `vercel secrets add DELETE_OLD_EVENTS_CRON_SECRET <your-secret-value>` を実行し、Cron 用のシークレットを追加する（既に同名のシークレットがあればこのステップは不要）。
-2. ローカル開発でも `.env` に `DELETE_OLD_EVENTS_CRON_SECRET=...` を追記し、`app/api/cron/delete-old-events/route.ts` が同じ値を参照できるようにする。
-3. 別名のシークレットを使いたい場合は、`vercel.json` 内の `@DELETE_OLD_EVENTS_CRON_SECRET` と環境変数名の双方を同じ名前に揃える。
-
-上記を設定すれば、Cron API の認証に必要なシークレットが正しく展開され、デプロイ時のエラーも解消されます。
+上記を満たせば、Cron API の認証が正しく行われ、Vercel からのみジョブが実行されるようになります。
 
 ```bash
 yarn install
