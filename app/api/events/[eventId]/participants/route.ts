@@ -2,11 +2,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, FieldValue } from '@/lib/firebase'
 
+async function authorizeEventAccess(req: NextRequest, eventId: string) {
+  const eventSnap = await db.collection("events").doc(eventId).get()
+  if (!eventSnap.exists) {
+    return { response: NextResponse.json({ error: "not found" }, { status: 404 }) }
+  }
+
+  const eventData = eventSnap.data() || {}
+  const url = new URL(req.url)
+  const providedPassword =
+    url.searchParams.get("password") || req.headers.get("x-event-password") || ""
+  const providedToken =
+    url.searchParams.get("token") ||
+    req.headers.get("x-event-token") ||
+    (req.headers.get("authorization")?.split(" ")[1] ?? "")
+
+  const passwordRequired =
+    typeof eventData.password === "string" && eventData.password.trim() !== ""
+  const tokens: string[] = Array.isArray(eventData.tokens)
+    ? eventData.tokens.filter((token: unknown): token is string =>
+        typeof token === "string" && token.trim() !== "",
+      )
+    : typeof eventData.token === "string" && eventData.token.trim() !== ""
+      ? [eventData.token]
+      : []
+  const tokenRequired = tokens.length > 0
+
+  if (
+    (passwordRequired && providedPassword !== eventData.password) ||
+    (tokenRequired && !tokens.includes(providedToken))
+  ) {
+    return { response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) }
+  }
+
+  // TODO: ユーザー認証導入時に Firebase Auth 等でユーザー権限チェックを追加する
+
+  return { eventSnap }
+}
+
 export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
-  const { eventId } = await params
-  const snap = await db
-    .collection("events")
-    .doc(eventId)
+  const { eventId } = params
+  const authResult = await authorizeEventAccess(req, eventId)
+  if ("response" in authResult) {
+    return authResult.response
+  }
+
+  const snap = await authResult.eventSnap.ref
     .collection("participants")
     .orderBy("createdAt")
     .get()
@@ -15,13 +56,26 @@ export async function GET(req: NextRequest, { params }: { params: { eventId: str
   return NextResponse.json({ participants })
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { eventId: string } },
+) {
+  const { eventId } = params
   const body = await req.json()
-  const { eventId, name, grade, gradePriority, schedule, comment: rawComment } = body
+  const { eventId: bodyEventId, name, grade, gradePriority, schedule, comment: rawComment } = body
 
-  if (!eventId || typeof eventId !== "string") {
+  if (!bodyEventId || typeof bodyEventId !== "string") {
     return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
-  }  
+  }
+  if (bodyEventId !== eventId) {
+    return NextResponse.json({ error: "eventId が一致しません" }, { status: 400 })
+  }
+
+  const authResult = await authorizeEventAccess(req, eventId)
+  if ("response" in authResult) {
+    return authResult.response
+  }
+
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "名前が必要です" }, { status: 400 })
   }
@@ -50,10 +104,7 @@ export async function POST(req: NextRequest) {
     // ────────────── ここを修正 ──────────────
     // トップレベルの 'events' コレクション内の eventId ドキュメントを取得して、
     // その下のサブコレクション 'participants' を参照します。
-    const participantsRef = db
-      .collection("events")
-      .doc(eventId)
-      .collection("participants")
+    const participantsRef = authResult.eventSnap.ref.collection("participants")
     // ────────────────────────────────────────
 
     const docRef = await participantsRef.add({
