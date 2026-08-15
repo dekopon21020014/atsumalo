@@ -5,6 +5,7 @@ import { Check, Save, User, MessageSquare, X, GraduationCap } from "lucide-react
 import { type ScheduleType, type Response } from "./constants"
 import { buildEventAuthHeaders, type EventAccess, storeParticipantToken } from "./utils"
 import { toast } from "@/components/ui/use-toast"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -44,6 +45,8 @@ export default function OneTimeInputTab({
   addGradeOption,
   eventAccess,
 }: Props) {
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
   const available = scheduleTypes.find((t) => t.isAvailable)
@@ -67,7 +70,8 @@ export default function OneTimeInputTab({
   const handleSubmit = async () => {
     if (!name.trim()) {
       toast({
-        title: "名前を入力してください",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish ? "Please enter your name" : "名前を入力してください",
         variant: "destructive",
       })
       return
@@ -75,7 +79,8 @@ export default function OneTimeInputTab({
 
     if (!grade.trim()) {
       toast({
-        title: "所属/役職を選択してください",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish ? "Please select affiliation/role" : "所属/役職を選択してください",
         variant: "destructive",
       })
       return
@@ -84,7 +89,8 @@ export default function OneTimeInputTab({
     // 少なくとも1つの選択があるか確認
     if (Object.keys(selections).length === 0) {      
       toast({
-        title: "少なくとも1つの日時に回答してください",
+        title: isEnglish ? "Error" : "エラー",
+        description: isEnglish ? "Please select at least one schedule" : "少なくとも1つの日時に回答してください",
         variant: "destructive",
       })
       return
@@ -131,8 +137,8 @@ export default function OneTimeInputTab({
       ])
 
       toast({
-        title: "回答を送信しました",
-        description: "あなたの回答が正常に保存されました。",
+        title: isEnglish ? "Submitted" : "回答を送信しました",
+        description: isEnglish ? "Your response has been saved." : "あなたの回答が正常に保存されました。",
       })
 
       // 送信成功後、回答状況タブに切り替え
@@ -144,8 +150,8 @@ export default function OneTimeInputTab({
     } catch (error) {
       console.error("送信エラー:", error)
       toast({
-        title: "送信エラー",
-        description: "回答の送信中にエラーが発生しました。もう一度お試しください。",
+        title: isEnglish ? "Submit error" : "送信エラー",
+        description: isEnglish ? "Failed to submit response. Please try again." : "回答の送信中にエラーが発生しました。もう一度お試しください。",
         variant: "destructive",
       })
     } finally {

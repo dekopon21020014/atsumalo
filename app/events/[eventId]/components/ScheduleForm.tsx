@@ -74,9 +74,6 @@ export default function ScheduleForm({
   const [selectedCells, setSelectedCells] = useState<{ [key: string]: boolean }>({})
   const [bulkScheduleType, setBulkScheduleType] = useState<string>(defaultTypeId)
   const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
-  const [scheduleError, setScheduleError] = useState("")
-  const [nameError, setNameError] = useState("")
-  const [gradeError, setGradeError] = useState("")
   const params = useParams()
   const eventIdParam = params.eventId
   const eventIdStr = typeof eventIdParam === "string" ? eventIdParam : Array.isArray(eventIdParam) ? eventIdParam[0] : ""
@@ -137,7 +134,6 @@ export default function ScheduleForm({
   const submit = async () => {
     if (!currentName.trim()) {
       const message = isEnglish ? "Please enter your name" : "名前を入力してください"
-      setNameError(message)
       toast({
         title: isEnglish ? "Error" : "エラー",
         description: message,
@@ -145,12 +141,10 @@ export default function ScheduleForm({
       })
       return
     }
-    setNameError("")
     if (!currentGrade) {
       const message = isEnglish
         ? "Please select affiliation/role"
         : "所属/役職を選択してください"
-      setGradeError(message)
       toast({
         title: isEnglish ? "Error" : "エラー",
         description: message,
@@ -158,7 +152,6 @@ export default function ScheduleForm({
       })
       return
     }
-    setGradeError("")
 
     const total = Object.keys(currentSchedule).length
     const filled = Object.values(currentSchedule).filter(Boolean).length
@@ -166,7 +159,6 @@ export default function ScheduleForm({
       const message = isEnglish
         ? "Please fill in all cells"
         : "すべてのセルに予定を入力してください"
-      setScheduleError(message)
       toast({
         title: isEnglish ? "Error" : "エラー",
         description: message,
@@ -174,7 +166,6 @@ export default function ScheduleForm({
       })
       return
     }
-    setScheduleError("")
 
     const scheduleData = { ...currentSchedule }
     const trimmedComment = currentComment.trim()
@@ -262,7 +253,6 @@ export default function ScheduleForm({
       setCurrentSchedule(createEmptySchedule(xAxis, yAxis, defaultTypeId))
       setSelectedCells({})
       setBulkScheduleType(defaultTypeId)
-      setScheduleError("")
       setActiveTab("summary")
     } catch {
       toast({
@@ -303,11 +293,9 @@ export default function ScheduleForm({
               value={currentName}
               onChange={(e) => {
                 setCurrentName(e.target.value)
-                setNameError("")
               }}
               placeholder={isEnglish ? "Name" : "名前"}
             />
-            {nameError && <p className="mt-2 text-sm text-red-500">{nameError}</p>}
           </div>
           <div>
             <Label htmlFor="grade-select">{isEnglish ? "Affiliation/Role" : "所属/役職"}</Label>
@@ -356,7 +344,6 @@ export default function ScheduleForm({
                   return
                 }
                 setCurrentGrade(v)
-                setGradeError("")
               }}
             >
               <SelectTrigger id="grade-select" className="w-full">
@@ -375,7 +362,6 @@ export default function ScheduleForm({
                 <SelectItem value="__add__">{isEnglish ? "Add" : "追加"}</SelectItem>
               </SelectContent>
             </Select>
-            {gradeError && <p className="mt-2 text-sm text-red-500">{gradeError}</p>}
           </div>
         </div>
 
@@ -493,9 +479,6 @@ export default function ScheduleForm({
               bulkScheduleType={bulkScheduleType}
             />
           </div>
-        )}
-        {scheduleError && (
-          <p className="mt-2 text-sm text-red-500">{scheduleError}</p>
         )}
       </CardContent>
       <CardFooter>

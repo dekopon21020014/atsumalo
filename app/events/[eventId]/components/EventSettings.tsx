@@ -399,7 +399,7 @@ export default function EventSettings({
                     {editXAxis.map((item, i) => (
                       <div key={`x-${i}`} className="flex items-center gap-2">
                         <Input
-                          ref={(el) => (xAxisRefs.current[i] = el)}
+                          ref={(el) => { if (el) xAxisRefs.current[i] = el }}
                           id={`x-axis-${i}`}
                           value={item}
                           onChange={(e) => updateXItem(i, e.target.value)}
@@ -447,7 +447,7 @@ export default function EventSettings({
                     {editYAxis.map((item, i) => (
                       <div key={`y-${i}`} className="flex items-center gap-2">
                         <Input
-                          ref={(el) => (yAxisRefs.current[i] = el)}
+                          ref={(el) => { if (el) yAxisRefs.current[i] = el }}
                           id={`y-axis-${i}`}
                           value={item}
                           onChange={(e) => updateYItem(i, e.target.value)}
@@ -494,7 +494,7 @@ export default function EventSettings({
                   {editDateTimeOptions.map((item, index) => (
                     <div key={`datetime-${index}`} className="flex items-center gap-2">
                       <Input
-                        ref={(el) => (dateTimeRefs.current[index] = el)}
+                        ref={(el) => { if (el) dateTimeRefs.current[index] = el }}
                         id={`datetime-option-${index}`}
                         value={item}
                         onChange={(e) => updateDateTimeOption(index, e.target.value)}
@@ -572,7 +572,7 @@ export default function EventSettings({
                         {isEnglish ? "Label" : "ラベル"}
                       </Label>
                       <Input
-                        ref={(el) => (typeLabelRefs.current[index] = el)}
+                        ref={(el) => { if (el) typeLabelRefs.current[index] = el }}
                         id={`type-label-${index}`}
                         value={type.label}
                         onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
