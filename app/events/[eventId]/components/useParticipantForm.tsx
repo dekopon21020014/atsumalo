@@ -133,6 +133,10 @@ export function useParticipantForm(
       toast({ title: "名前を入力してください", variant: "destructive" })
       return
     }
+    if (!grade.trim()) {
+      toast({ title: "所属/役職を選択してください", variant: "destructive" })
+      return
+    }
     if (Object.keys(selections).length === 0) {
       toast({ title: "少なくとも1つの日時に回答してください", variant: "destructive" })
       return
@@ -177,6 +181,7 @@ export function useParticipantForm(
   const handleUpdateResponse = async () => {
     if (!editingResponse) return
     if (!editName.trim()) { toast({ title: "名前を入力してください", variant: "destructive" }); return }
+    if (!editGrade.trim()) { toast({ title: "所属/役職を選択してください", variant: "destructive" }); return }
     if (Object.keys(editSelections).length === 0) { toast({ title: "少なくとも1つの日時に回答してください", variant: "destructive" }); return }
     setIsEditing(true)
     try {

@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Toaster } from '@/components/ui/toaster'
+
 import { toast } from '@/components/ui/use-toast'
 import { Label } from '@/components/ui/label'
 
@@ -425,7 +425,6 @@ export default function SchedulePage({
         </TabsContent>
       </Tabs>
 
-      <Toaster />
     </div>
   )
 }

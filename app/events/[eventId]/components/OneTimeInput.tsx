@@ -73,6 +73,14 @@ export default function OneTimeInputTab({
       return
     }
 
+    if (!grade.trim()) {
+      toast({
+        title: "所属/役職を選択してください",
+        variant: "destructive",
+      })
+      return
+    }
+
     // 少なくとも1つの選択があるか確認
     if (Object.keys(selections).length === 0) {      
       toast({
