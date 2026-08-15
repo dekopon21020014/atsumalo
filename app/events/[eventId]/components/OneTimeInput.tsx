@@ -70,7 +70,14 @@ export default function OneTimeInputTab({
         title: "名前を入力してください",
         variant: "destructive",
       })
-      alert("送信処理は実装されていません。")
+      return
+    }
+
+    if (!grade.trim()) {
+      toast({
+        title: "所属/役職を選択してください",
+        variant: "destructive",
+      })
       return
     }
 

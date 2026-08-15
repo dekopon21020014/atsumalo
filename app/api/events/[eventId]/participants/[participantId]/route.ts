@@ -82,7 +82,7 @@ function ensureParticipantOwnership(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { eventId: string; participantId: string } }
+  { params }: { params: Promise<{ eventId: string; participantId: string }> }
 ) {
   const { eventId, participantId } = await params
   const { name, grade, gradePriority, schedule, comment: rawComment } = await req.json()
@@ -156,9 +156,9 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { eventId: string; participantId: string } }
+  { params }: { params: Promise<{ eventId: string; participantId: string }> }
 ) {
-  const { eventId, participantId } = params
+  const { eventId, participantId } = await params
   const authResult = await authorizeEventAccess(_req, eventId)
   if ('response' in authResult) {
     return authResult.response
