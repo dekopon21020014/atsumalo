@@ -60,7 +60,7 @@ export default function AnalyticsPage() {
                 // aggregation and avoid runtime errors when calling forEach.
                 schedule: Array.isArray(p.schedule)
                   ? p.schedule.map((s: any) => ({ typeId: s.typeId }))
-                  : Object.values(p.schedule || {}).map((typeId: string) => ({ typeId })),
+                  : Object.values(p.schedule || {}).map((typeId) => ({ typeId: typeId as string })),
               }))
             : [],
         )

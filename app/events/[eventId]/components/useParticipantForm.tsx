@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { type ScheduleType, type Response } from "@/app/events/[eventId]/components/constants"
 import { toast } from "@/components/ui/use-toast"
+import { usePathname } from "next/navigation"
 import {
   buildEventAuthHeaders,
   type EventAccess,
@@ -36,6 +37,8 @@ export function useParticipantForm(
     Array.isArray(responses) ? sanitizeResponses(responses) : [],
   )
   const [editComment, setEditComment] = useState<string>("")
+  const pathname = usePathname()
+  const isEnglish = pathname.startsWith("/en")
   const [editingResponse, setEditingResponse] = useState<Response | null>(null)
   const [editName, setEditName] = useState<string>("")
   const [editGrade, setEditGrade] = useState<string>("")
@@ -125,20 +128,20 @@ export function useParticipantForm(
   const clearEditResponses = () => {
     setEditSelections({})
     setEditComment("")
-    toast({ title: "回答をクリアしました", description: "すべての選択とコメントがクリアされました。" })
+    toast({ title: isEnglish ? "Cleared" : "回答をクリアしました", description: isEnglish ? "All selections and comments have been cleared." : "すべての選択とコメントがクリアされました。" })
   }
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      toast({ title: "名前を入力してください", variant: "destructive" })
+      toast({ title: isEnglish ? "Error" : "エラー", description: isEnglish ? "Please enter your name" : "名前を入力してください", variant: "destructive" })
       return
     }
     if (!grade.trim()) {
-      toast({ title: "所属/役職を選択してください", variant: "destructive" })
+      toast({ title: isEnglish ? "Error" : "エラー", description: isEnglish ? "Please select affiliation/role" : "所属/役職を選択してください", variant: "destructive" })
       return
     }
     if (Object.keys(selections).length === 0) {
-      toast({ title: "少なくとも1つの日時に回答してください", variant: "destructive" })
+      toast({ title: isEnglish ? "Error" : "エラー", description: isEnglish ? "Please select at least one schedule" : "少なくとも1つの日時に回答してください", variant: "destructive" })
       return
     }
     setIsSubmitting(true)
@@ -166,13 +169,13 @@ export function useParticipantForm(
         ...prev,
         { id: result.id, name, grade, schedule: responseData.schedule, comment: responseData.comment },
       ])
-      toast({ title: "回答を送信しました", description: "あなたの回答が正常に保存されました。" })
+      toast({ title: isEnglish ? "Submitted" : "回答を送信しました", description: isEnglish ? "Your response has been saved." : "あなたの回答が正常に保存されました。" })
       setActiveTab("responses")
       setComment("")
       localStorage.removeItem(`event_${eventId}_comment`)
     } catch (error) {
       console.error(error)
-      toast({ title: "送信エラー", description: "回答の送信中にエラーが発生しました。再度お試しください。", variant: "destructive" })
+      toast({ title: isEnglish ? "Submit error" : "送信エラー", description: isEnglish ? "Failed to submit response. Please try again." : "回答の送信中にエラーが発生しました。再度お試しください。", variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
@@ -180,9 +183,9 @@ export function useParticipantForm(
 
   const handleUpdateResponse = async () => {
     if (!editingResponse) return
-    if (!editName.trim()) { toast({ title: "名前を入力してください", variant: "destructive" }); return }
-    if (!editGrade.trim()) { toast({ title: "所属/役職を選択してください", variant: "destructive" }); return }
-    if (Object.keys(editSelections).length === 0) { toast({ title: "少なくとも1つの日時に回答してください", variant: "destructive" }); return }
+    if (!editName.trim()) { toast({ title: isEnglish ? "Error" : "エラー", description: isEnglish ? "Please enter your name" : "名前を入力してください", variant: "destructive" }); return }
+    if (!editGrade.trim()) { toast({ title: isEnglish ? "Error" : "エラー", description: isEnglish ? "Please select affiliation/role" : "所属/役職を選択してください", variant: "destructive" }); return }
+    if (Object.keys(editSelections).length === 0) { toast({ title: isEnglish ? "Error" : "エラー", description: isEnglish ? "Please select at least one schedule" : "少なくとも1つの日時に回答してください", variant: "destructive" }); return }
     setIsEditing(true)
     try {
       const trimmedComment = editComment.trim()
@@ -218,12 +221,12 @@ export function useParticipantForm(
             : r,
         ),
       )
-      toast({ title: "回答を更新しました", description: `${editName}さんの回答が更新されました。` })
+      toast({ title: isEnglish ? "Updated" : "回答を更新しました", description: isEnglish ? `${editName}'s response has been updated.` : `${editName}さんの回答が更新されました。` })
       setIsEditDialogOpen(false)
       setEditingResponse(null)
     } catch (error) {
       console.error(error)
-      toast({ title: "更新エラー", description: "回答の更新中にエラーが発生しました。再度お試しください。", variant: "destructive" })
+      toast({ title: isEnglish ? "Update error" : "更新エラー", description: isEnglish ? "Failed to update response. Please try again." : "回答の更新中にエラーが発生しました。再度お試しください。", variant: "destructive" })
     } finally {
       setIsEditing(false)
     }
@@ -252,13 +255,13 @@ export function useParticipantForm(
       }
       setExistingResponses(prev => prev.filter(r => r.id !== editingResponse.id))
       removeParticipantToken(eventId, editingResponse.id)
-      toast({ title: "回答を削除しました", description: `${editingResponse.name}さんの回答が削除されました。` })
+      toast({ title: isEnglish ? "Deleted" : "回答を削除しました", description: isEnglish ? `${editingResponse.name}'s response has been deleted.` : `${editingResponse.name}さんの回答が削除されました。` })
       setIsDeleteDialogOpen(false)
       setIsEditDialogOpen(false)
       setEditingResponse(null)
     } catch (error) {
       console.error(error)
-      toast({ title: "削除エラー", description: "回答の削除中にエラーが発生しました。再度お試しください。", variant: "destructive" })
+      toast({ title: isEnglish ? "Delete error" : "削除エラー", description: isEnglish ? "Failed to delete response. Please try again." : "回答の削除中にエラーが発生しました。再度お試しください。", variant: "destructive" })
     } finally {
       setIsDeleting(false)
     }
