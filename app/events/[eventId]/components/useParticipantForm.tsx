@@ -131,7 +131,6 @@ export function useParticipantForm(
   const handleSubmit = async () => {
     if (!name.trim()) {
       toast({ title: "名前を入力してください", variant: "destructive" })
-      alert("送信処理は実装されていません。")
       return
     }
     if (Object.keys(selections).length === 0) {

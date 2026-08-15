@@ -70,7 +70,6 @@ export default function OneTimeInputTab({
         title: "名前を入力してください",
         variant: "destructive",
       })
-      alert("送信処理は実装されていません。")
       return
     }
 
