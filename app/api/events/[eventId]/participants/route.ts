@@ -53,8 +53,8 @@ async function authorizeEventAccess(req: NextRequest, eventId: string): Promise<
   return { eventSnap, requireParticipantToken: tokenRequired }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { eventId: string } }) {
-  const { eventId } = params
+export async function GET(req: NextRequest, { params }: { params: Promise<{ eventId: string }> }) {
+  const { eventId } = await params
   const authResult = await authorizeEventAccess(req, eventId)
   if ("response" in authResult) {
     return authResult.response
@@ -71,9 +71,9 @@ export async function GET(req: NextRequest, { params }: { params: { eventId: str
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { eventId: string } },
+  { params }: { params: Promise<{ eventId: string }> },
 ) {
-  const { eventId } = params
+  const { eventId } = await params
   const body = await req.json()
   const { eventId: bodyEventId, name, grade, gradePriority, schedule, comment: rawComment } = body
 

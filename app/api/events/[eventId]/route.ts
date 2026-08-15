@@ -87,9 +87,9 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { eventId: string } },
+  { params }: { params: Promise<{ eventId: string }> },
 ) {
-  const { eventId } = params
+  const { eventId } = await params
   const eventRef = db.collection("events").doc(eventId)
   const eventSnap = await eventRef.get()
   if (!eventSnap.exists) {

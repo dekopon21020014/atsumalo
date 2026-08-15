@@ -5,10 +5,11 @@ import EventPage from "./EventPage"
 export async function generateMetadata({
   params,
 }: {
-  params: { eventId: string }
+  params: Promise<{ eventId: string }>
 }): Promise<Metadata> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/events/${params.eventId}`)
+    const { eventId } = await params
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/events/${eventId}`)
     if (!res.ok) throw new Error("failed")
     const data = await res.json()
     return {
