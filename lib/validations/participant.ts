@@ -10,5 +10,4 @@ export const participantSchema = z.object({
     (val) => Object.keys(val).length <= 100,
     { message: "スケジュールの項目数が多すぎます（最大100件）" }
   ),
-  password: z.string().max(100, "パスワードは100文字以内で入力してください").optional().nullable(),
 });

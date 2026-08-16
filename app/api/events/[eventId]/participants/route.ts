@@ -26,11 +26,11 @@ export async function POST(
   { params }: { params: Promise<{ eventId: string }> },
 ) {
   // レートリミット (1分間に20回まで参加登録可能)
-  const allowed = await checkRateLimit(req, 20, 60000)
-  if (!allowed) {
+  const rateLimit = await checkRateLimit(req, 20, 60000)
+  if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'リクエストが多すぎます。しばらく待ってから再度お試しください。' },
-      { status: 429 },
+      { status: 429, headers: { 'Retry-After': rateLimit.retryAfter.toString() } },
     )
   }
 

@@ -21,11 +21,11 @@ type EventCreatePayload = {
 
 export async function POST(req: NextRequest) {
   // レートリミット (1分間に5回まで)
-  const allowed = await checkRateLimit(req, 5, 60000);
-  if (!allowed) {
+  const rateLimit = await checkRateLimit(req, 5, 60000);
+  if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
-      { status: 429 }
+      { status: 429, headers: { "Retry-After": rateLimit.retryAfter.toString() } }
     );
   }
 

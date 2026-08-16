@@ -10,11 +10,18 @@ export default function PrivacyPage() {
           Do not enter confidential information.
         </p>
         <p className="mb-2">
-          We are not responsible for any damages arising from the use of this service. Use at your own risk.
-        </p>
-        <p className="mb-2">
           Events created will be automatically deleted 3 months after creation.
         </p>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Disclaimer of Liability</h2>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>This service is provided "AS IS" and "AS AVAILABLE" without any warranties of any kind. We do not guarantee that the service will be error-free, bug-free, or continuously available.</li>
+          <li>We shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service, including data loss or service interruptions.</li>
+          <li>We are not responsible for any disputes that may arise between users or third parties through the use of this service.</li>
+          <li>We reserve the right to modify, suspend, or terminate the service at any time without prior notice.</li>
+        </ul>
       </section>
 
       <section className="mb-6">
