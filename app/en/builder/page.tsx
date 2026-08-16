@@ -35,7 +35,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
   colorPalettes,
-  recurringTemplates,
+  xAxisTemplates,
+  yAxisTemplates,
   getOnetimeTemplates,
   scheduleTypeTemplates,
   xAxisTemplate,
@@ -421,11 +422,19 @@ export default function HomePage() {
     setScheduleTypes(newTypes)
   }
 
-  // Apply recurring event template
-  const applyRecurringTemplate = (templateIndex: number) => {
-    const template = recurringTemplates[templateIndex]
-    setXAxis([...template.x])
-    setYAxis([...template.y])
+  // X/Y Axis Templates
+  const applyXAxisTemplate = (templateIndex: number) => {
+    const template = xAxisTemplates[templateIndex]
+    setXAxis([...template.options])
+    toast({
+      title: "Template Applied",
+      description: `Applied "${template.name}"`,
+    })
+  }
+
+  const applyYAxisTemplate = (templateIndex: number) => {
+    const template = yAxisTemplates[templateIndex]
+    setYAxis([...template.options])
     toast({
       title: "Template Applied",
       description: `Applied "${template.name}"`,
@@ -659,39 +668,28 @@ export default function HomePage() {
                     />
 
                     {/* Templates */}
-                    <div className="rounded-lg border bg-muted/40 p-3">
-                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Start from Template
+                    {eventType === "onetime" && (
+                      <div className="rounded-lg border bg-muted/40 p-3">
+                        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Start from a template
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
+                            <Button
+                              key={`onetime-tpl-${index}`}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 bg-background"
+                              onClick={() => applyOnetimeTemplate(index)}
+                            >
+                              {template.name}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {eventType === "recurring"
-                          ? recurringTemplates.map((template, index) => (
-                              <Button
-                                key={`rt-${index}`}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 bg-background"
-                                onClick={() => applyRecurringTemplate(index)}
-                              >
-                                {template.name}
-                              </Button>
-                            ))
-                          : onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
-                              <Button
-                                key={`onetime-tpl-${index}`}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 bg-background"
-                                onClick={() => applyOnetimeTemplate(index)}
-                              >
-                                {template.name}
-                              </Button>
-                            ))}
-                      </div>
-                    </div>
+                    )}
 
                     {eventType === "recurring" ? (
                       <div className="grid gap-6 md:grid-cols-2">
@@ -700,13 +698,29 @@ export default function HomePage() {
                           <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-1 text-sm font-medium">
                               <ArrowRight className="h-4 w-4" />
-                              X-axis (days, etc.)
+                              Horizontal Axis (e.g. Days)
                             </Label>
                             <Button type="button" variant="ghost" size="sm" onClick={addXItem}>
                               <Plus className="mr-1 h-4 w-4" />
                               Add
                             </Button>
                           </div>
+                          
+                          <div className="flex flex-wrap gap-2 py-1">
+                            {xAxisTemplates.map((template, index) => (
+                              <Button
+                                key={`x-tpl-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs bg-background"
+                                onClick={() => applyXAxisTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                          </div>
+
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
                             {xAxis.length === 0 && (
                               <p className="py-4 text-center text-xs text-muted-foreground">
@@ -762,13 +776,29 @@ export default function HomePage() {
                           <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-1 text-sm font-medium">
                               <ArrowDown className="h-4 w-4" />
-                              Y-axis (periods, etc.)
+                              Vertical Axis (e.g. Times)
                             </Label>
                             <Button type="button" variant="ghost" size="sm" onClick={addYItem}>
                               <Plus className="mr-1 h-4 w-4" />
                               Add
                             </Button>
                           </div>
+
+                          <div className="flex flex-wrap gap-2 py-1">
+                            {yAxisTemplates.map((template, index) => (
+                              <Button
+                                key={`y-tpl-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs bg-background"
+                                onClick={() => applyYAxisTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                          </div>
+
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
                             {yAxis.length === 0 && (
                               <p className="py-4 text-center text-xs text-muted-foreground">

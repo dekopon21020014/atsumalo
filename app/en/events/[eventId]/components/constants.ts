@@ -111,10 +111,15 @@ export const colorPalettes = [
   { bg: "bg-orange-200", text: "text-orange-800", name: "Orange" },
 ]
 
-export const recurringTemplates = [
-  { name: "Weekdays (Mon–Fri)", x: ["Mon", "Tue", "Wed", "Thu", "Fri"], y: ["1", "2", "3", "4", "5"] },
-  { name: "Including Weekend (Mon–Sun)", x: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], y: ["1", "2", "3", "4", "5"] },
-  { name: "Time Slots (Morning/Afternoon)", x: ["Mon", "Tue", "Wed", "Thu", "Fri"], y: ["Morning", "Afternoon", "Evening", "Night"] },
+export const xAxisTemplates = [
+  { name: "Weekdays (Mon-Fri)", options: ["Mon", "Tue", "Wed", "Thu", "Fri"] },
+  { name: "Including Weekends (Mon-Sun)", options: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] },
+  { name: "Weekends Only", options: ["Sat", "Sun"] },
+]
+
+export const yAxisTemplates = [
+  { name: "Periods (1-5)", options: ["1", "2", "3", "4", "5"] },
+  { name: "Time of Day (Morning/Afternoon)", options: ["Morning", "Afternoon", "Evening", "Night"] },
 ]
 
 export const getOnetimeTemplates = () => {

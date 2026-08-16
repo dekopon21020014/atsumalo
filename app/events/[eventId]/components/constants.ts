@@ -111,10 +111,15 @@ export const colorPalettes = [
   { bg: "bg-orange-200", text: "text-orange-800", name: "橙" },
 ]
 
-export const recurringTemplates = [
-  { name: "平日（月〜金）", x: ["月", "火", "水", "木", "金"], y: ["1", "2", "3", "4", "5"] },
-  { name: "週末含む（月〜日）", x: ["月", "火", "水", "木", "金", "土", "日"], y: ["1", "2", "3", "4", "5"] },
-  { name: "時間帯（午前/午後）", x: ["月", "火", "水", "木", "金"], y: ["午前", "午後", "夕方", "夜"] },
+export const xAxisTemplates = [
+  { name: "平日（月〜金）", options: ["月", "火", "水", "木", "金"] },
+  { name: "週末含む（月〜日）", options: ["月", "火", "水", "木", "金", "土", "日"] },
+  { name: "週末のみ", options: ["土", "日"] },
+]
+
+export const yAxisTemplates = [
+  { name: "時限（1〜5限）", options: ["1", "2", "3", "4", "5"] },
+  { name: "時間帯（午前/午後など）", options: ["午前", "午後", "夕方", "夜"] },
 ]
 
 export const getOnetimeTemplates = () => {

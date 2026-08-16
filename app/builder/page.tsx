@@ -35,7 +35,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
   colorPalettes,
-  recurringTemplates,
+  xAxisTemplates,
+  yAxisTemplates,
   getOnetimeTemplates,
   scheduleTypeTemplates,
   xAxisTemplate,
@@ -406,11 +407,19 @@ export default function HomePage() {
     setScheduleTypes(newTypes)
   }
 
-  // 定期イベント用テンプレートを適用
-  const applyRecurringTemplate = (templateIndex: number) => {
-    const template = recurringTemplates[templateIndex]
-    setXAxis([...template.x])
-    setYAxis([...template.y])
+  // X軸・Y軸用テンプレートを適用
+  const applyXAxisTemplate = (templateIndex: number) => {
+    const template = xAxisTemplates[templateIndex]
+    setXAxis([...template.options])
+    toast({
+      title: "テンプレート適用",
+      description: `「${template.name}」を適用しました`,
+    })
+  }
+
+  const applyYAxisTemplate = (templateIndex: number) => {
+    const template = yAxisTemplates[templateIndex]
+    setYAxis([...template.options])
     toast({
       title: "テンプレート適用",
       description: `「${template.name}」を適用しました`,
@@ -643,40 +652,29 @@ export default function HomePage() {
                       }
                     />
 
-                    {/* テンプレート */}
-                    <div className="rounded-lg border bg-muted/40 p-3">
-                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        テンプレートから開始
+                    {/* テンプレート (単発のみ共通) */}
+                    {eventType === "onetime" && (
+                      <div className="rounded-lg border bg-muted/40 p-3">
+                        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          テンプレートから開始
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
+                            <Button
+                              key={`onetime-tpl-${index}`}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 bg-background"
+                              onClick={() => applyOnetimeTemplate(index)}
+                            >
+                              {template.name}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {eventType === "recurring"
-                          ? recurringTemplates.map((template, index) => (
-                              <Button
-                                key={`rt-${index}`}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 bg-background"
-                                onClick={() => applyRecurringTemplate(index)}
-                              >
-                                {template.name}
-                              </Button>
-                            ))
-                          : onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
-                              <Button
-                                key={`onetime-tpl-${index}`}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 bg-background"
-                                onClick={() => applyOnetimeTemplate(index)}
-                              >
-                                {template.name}
-                              </Button>
-                            ))}
-                      </div>
-                    </div>
+                    )}
 
                     {eventType === "recurring" ? (
                       <div className="grid gap-6 md:grid-cols-2">
@@ -692,6 +690,22 @@ export default function HomePage() {
                               追加
                             </Button>
                           </div>
+                          
+                          <div className="flex flex-wrap gap-2 py-1">
+                            {xAxisTemplates.map((template, index) => (
+                              <Button
+                                key={`x-tpl-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs bg-background"
+                                onClick={() => applyXAxisTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                          </div>
+
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
                             {xAxis.length === 0 && (
                               <p className="py-4 text-center text-xs text-muted-foreground">
@@ -755,6 +769,22 @@ export default function HomePage() {
                               追加
                             </Button>
                           </div>
+                          
+                          <div className="flex flex-wrap gap-2 py-1">
+                            {yAxisTemplates.map((template, index) => (
+                              <Button
+                                key={`y-tpl-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs bg-background"
+                                onClick={() => applyYAxisTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                          </div>
+
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
                             {yAxis.length === 0 && (
                               <p className="py-4 text-center text-xs text-muted-foreground">
