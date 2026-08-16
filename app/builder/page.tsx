@@ -422,7 +422,11 @@ export default function HomePage() {
   // 単発イベント用テンプレートを適用
   const applyOnetimeTemplate = (templateIndex: number) => {
     const template = onetimeTemplates[templateIndex]
-    setDateTimeOptions([...template.options])
+    const trimmedSuffix = timeSuffix.trim()
+    const newOptions = template.options.map((opt) =>
+      useTimeSuffix && trimmedSuffix ? `${opt} ${trimmedSuffix}` : opt
+    )
+    setDateTimeOptions([...newOptions])
     toast({
       title: "テンプレート適用",
       description: `「${template.name}」を適用しました`,

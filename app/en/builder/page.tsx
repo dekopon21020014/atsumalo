@@ -435,10 +435,14 @@ export default function HomePage() {
     })
   }
 
-  // Apply one-time event template
+  // Apply template for one-time events
   const applyOnetimeTemplate = (templateIndex: number) => {
     const template = onetimeTemplates[templateIndex]
-    setDateTimeOptions([...template.options])
+    const trimmedSuffix = timeSuffix.trim()
+    const newOptions = template.options.map((opt) =>
+      useTimeSuffix && trimmedSuffix ? `${opt} ${trimmedSuffix}` : opt
+    )
+    setDateTimeOptions([...newOptions])
     toast({
       title: "Template Applied",
       description: `Applied "${template.name}"`,

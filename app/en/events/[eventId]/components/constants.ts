@@ -138,21 +138,19 @@ export const getOnetimeTemplates = () => {
 
   return [
     {
-      name: "Weekday Evenings",
-      options: next5Weekdays.map((d) => `${d} 19:00`),
+      name: "Weekdays",
+      options: next5Weekdays,
     },
     {
       name: "Weekend",
       options: [
-        `${getFormattedDateEn(nextSat)} 10:00`,
-        `${getFormattedDateEn(nextSat)} 14:00`,
-        `${getFormattedDateEn(nextSun)} 10:00`,
-        `${getFormattedDateEn(nextSun)} 14:00`,
+        getFormattedDateEn(nextSat),
+        getFormattedDateEn(nextSun),
       ],
     },
     {
       name: "Next Weekdays",
-      options: nextWeekWeekdays.map((d) => `${d} 19:00`),
+      options: nextWeekWeekdays,
     },
   ]
 }
