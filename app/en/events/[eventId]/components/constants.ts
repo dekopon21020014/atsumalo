@@ -44,7 +44,6 @@ export const scheduleTypes = [
 export const days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 export const periods = [1, 2, 3, 4, 5]
 
-// Default group/role options
 export const defaultGradeOptions = [
   'Teacher',
   'Dr',
@@ -57,6 +56,32 @@ export const defaultGradeOptions = [
   'Others',
 ]
 
+// Grade/Role Templates
+export const gradeTemplates = [
+  {
+    name: "University",
+    options: [
+      'Teacher',
+      'Dr',
+      'M2',
+      'M1',
+      'B4',
+      'B3',
+      'B2',
+      'B1',
+      'Others',
+    ]
+  },
+  {
+    name: "General",
+    options: [
+      'Professional',
+      'Student',
+      'Other',
+    ]
+  }
+]
+
 export const defaultGradeOrder: { [key: string]: number } = {
   Teacher: 1,
   Dr: 2,
@@ -66,7 +91,10 @@ export const defaultGradeOrder: { [key: string]: number } = {
   B3: 6,
   B2: 7,
   B1: 8,
-  Others: 9,
+  Professional: 9,
+  Student: 10,
+  Others: 11,
+  Other: 12,
 }
 
 export const colorPalettes = [
@@ -83,10 +111,15 @@ export const colorPalettes = [
   { bg: "bg-orange-200", text: "text-orange-800", name: "Orange" },
 ]
 
-export const recurringTemplates = [
-  { name: "Weekdays (Mon–Fri)", x: ["Mon", "Tue", "Wed", "Thu", "Fri"], y: ["1", "2", "3", "4", "5"] },
-  { name: "Including Weekend (Mon–Sun)", x: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], y: ["1", "2", "3", "4", "5"] },
-  { name: "Time Slots (Morning/Afternoon)", x: ["Mon", "Tue", "Wed", "Thu", "Fri"], y: ["Morning", "Afternoon", "Evening", "Night"] },
+export const xAxisTemplates = [
+  { name: "Weekdays (Mon-Fri)", options: ["Mon", "Tue", "Wed", "Thu", "Fri"] },
+  { name: "Including Weekends (Mon-Sun)", options: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] },
+  { name: "Weekends Only", options: ["Sat", "Sun"] },
+]
+
+export const yAxisTemplates = [
+  { name: "Periods (1-5)", options: ["1", "2", "3", "4", "5"] },
+  { name: "Time of Day (Morning/Afternoon)", options: ["Morning", "Afternoon", "Evening", "Night"] },
 ]
 
 export const getOnetimeTemplates = () => {
@@ -155,14 +188,27 @@ export const getOnetimeTemplates = () => {
   ]
 }
 
-export const scheduleTypeTemplate = [
-  { id: "available", label: "Available", color: "bg-green-200 text-green-800", isAvailable: true },
-  { id: "social", label: "🐈", color: "bg-blue-200 text-blue-800", isAvailable: false },
-  { id: "not-yet", label: "Undecided (△)", color: "bg-yellow-200 text-yellow-800", isAvailable: false },
-  { id: "class", label: "Class", color: "bg-purple-200 text-purple-800", isAvailable: false },
-  { id: "ta", label: "TA", color: "bg-teal-200 text-teal-800", isAvailable: false },
-  { id: "unavailable", label: "Unavailable", color: "bg-red-200 text-red-800", isAvailable: false },
-  { id: "parttime", label: "Part-time", color: "bg-orange-200 text-orange-800", isAvailable: false },
+export const scheduleTypeTemplates = [
+  {
+    name: "University",
+    options: [
+      { id: "available", label: "Available", color: "bg-green-200 text-green-800", isAvailable: true },
+      { id: "social", label: "🐈", color: "bg-blue-200 text-blue-800", isAvailable: false },
+      { id: "not-yet", label: "Undecided (△)", color: "bg-yellow-200 text-yellow-800", isAvailable: false },
+      { id: "class", label: "Class", color: "bg-purple-200 text-purple-800", isAvailable: false },
+      { id: "ta", label: "TA", color: "bg-teal-200 text-teal-800", isAvailable: false },
+      { id: "unavailable", label: "Unavailable", color: "bg-red-200 text-red-800", isAvailable: false },
+      { id: "parttime", label: "Part-time", color: "bg-orange-200 text-orange-800", isAvailable: false },
+    ]
+  },
+  {
+    name: "Simple (◯/△/✕)",
+    options: [
+      { id: "available", label: "◯ (Available)", color: "bg-green-200 text-green-800", isAvailable: true },
+      { id: "maybe", label: "△ (Maybe)", color: "bg-yellow-200 text-yellow-800", isAvailable: false },
+      { id: "unavailable", label: "✕ (Unavailable)", color: "bg-red-200 text-red-800", isAvailable: false },
+    ]
+  }
 ]
 
 export const xAxisTemplate = ["Mon", "Tue", "Wed", "Thu", "Fri"]

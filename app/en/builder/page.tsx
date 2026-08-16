@@ -35,12 +35,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
   colorPalettes,
-  recurringTemplates,
+  xAxisTemplates,
+  yAxisTemplates,
   getOnetimeTemplates,
-  scheduleTypeTemplate,
+  scheduleTypeTemplates,
   xAxisTemplate,
   yAxisTemplate,
-  defaultGradeOptions,
+  gradeTemplates,
   defaultGradeOrder,
 } from "../events/[eventId]/components/constants"
 import type { ScheduleType } from "../events/[eventId]/components/constants"
@@ -212,8 +213,8 @@ export default function HomePage() {
   const [eventType, setEventType] = useState<"recurring" | "onetime" | undefined>(undefined)
 
   // Axes for recurring events
-  const [xAxis, setXAxis] = useState(xAxisTemplate)
-  const [yAxis, setYAxis] = useState(yAxisTemplate)
+  const [xAxis, setXAxis] = useState<string[]>([])
+  const [yAxis, setYAxis] = useState<string[]>([])
 
   // Axes for one-time events (date-time combinations)
   const [dateTimeOptions, setDateTimeOptions] = useState<string[]>([])
@@ -224,16 +225,13 @@ export default function HomePage() {
   const [timeSuffix, setTimeSuffix] = useState("")
 
   // Group/Role Options
-  const [gradeOptions, setGradeOptions] = useState(
-    defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 })),
-  )
+  const [gradeOptions, setGradeOptions] = useState<{ name: string; priority: number }[]>([])
 
   const router = useRouter()
   const pathname = usePathname()
-  const prefix = pathname.startsWith("/en") ? "/en" : ""
 
-  // Initial schedule types
-  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>(scheduleTypeTemplate)
+  // Initial Schedule Types
+  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
 
   const xAxisRefs = useRef<HTMLInputElement[]>([])
   const yAxisRefs = useRef<HTMLInputElement[]>([])
@@ -424,11 +422,19 @@ export default function HomePage() {
     setScheduleTypes(newTypes)
   }
 
-  // Apply recurring event template
-  const applyRecurringTemplate = (templateIndex: number) => {
-    const template = recurringTemplates[templateIndex]
-    setXAxis([...template.x])
-    setYAxis([...template.y])
+  // X/Y Axis Templates
+  const applyXAxisTemplate = (templateIndex: number) => {
+    const template = xAxisTemplates[templateIndex]
+    setXAxis([...template.options])
+    toast({
+      title: "Template Applied",
+      description: `Applied "${template.name}"`,
+    })
+  }
+
+  const applyYAxisTemplate = (templateIndex: number) => {
+    const template = yAxisTemplates[templateIndex]
+    setYAxis([...template.options])
     toast({
       title: "Template Applied",
       description: `Applied "${template.name}"`,
@@ -526,7 +532,7 @@ export default function HomePage() {
 
       if (!res.ok) throw new Error("Network response was not ok")
       const { id } = await res.json()
-      router.push(`${prefix}/events/${id}`)
+      router.push(`/en/events/${id}`)
     } catch (err) {
       console.error(err)
       toast({ title: "Creation Error", description: "Failed to create the event", variant: "destructive" })
@@ -662,39 +668,28 @@ export default function HomePage() {
                     />
 
                     {/* Templates */}
-                    <div className="rounded-lg border bg-muted/40 p-3">
-                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Start from Template
+                    {eventType === "onetime" && (
+                      <div className="rounded-lg border bg-muted/40 p-3">
+                        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Start from a template
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
+                            <Button
+                              key={`onetime-tpl-${index}`}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 bg-background"
+                              onClick={() => applyOnetimeTemplate(index)}
+                            >
+                              {template.name}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {eventType === "recurring"
-                          ? recurringTemplates.map((template, index) => (
-                              <Button
-                                key={`rt-${index}`}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 bg-background"
-                                onClick={() => applyRecurringTemplate(index)}
-                              >
-                                {template.name}
-                              </Button>
-                            ))
-                          : onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
-                              <Button
-                                key={`onetime-tpl-${index}`}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 bg-background"
-                                onClick={() => applyOnetimeTemplate(index)}
-                              >
-                                {template.name}
-                              </Button>
-                            ))}
-                      </div>
-                    </div>
+                    )}
 
                     {eventType === "recurring" ? (
                       <div className="grid gap-6 md:grid-cols-2">
@@ -703,14 +698,35 @@ export default function HomePage() {
                           <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-1 text-sm font-medium">
                               <ArrowRight className="h-4 w-4" />
-                              X-axis (days, etc.)
+                              Horizontal Axis (e.g. Days)
                             </Label>
                             <Button type="button" variant="ghost" size="sm" onClick={addXItem}>
                               <Plus className="mr-1 h-4 w-4" />
                               Add
                             </Button>
                           </div>
+                          
+                          <div className="flex flex-wrap gap-2 py-1">
+                            {xAxisTemplates.map((template, index) => (
+                              <Button
+                                key={`x-tpl-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs bg-background"
+                                onClick={() => applyXAxisTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                          </div>
+
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {xAxis.length === 0 && (
+                              <p className="py-4 text-center text-xs text-muted-foreground">
+                                Use the "Add" button to insert columns.
+                              </p>
+                            )}
                             {xAxis.map((item, i) => (
                               <div key={`x-${i}`} className="flex items-center gap-2">
                                 <Input
@@ -747,7 +763,6 @@ export default function HomePage() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeXItem(i)}
-                                  disabled={xAxis.length <= 1}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -761,14 +776,35 @@ export default function HomePage() {
                           <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-1 text-sm font-medium">
                               <ArrowDown className="h-4 w-4" />
-                              Y-axis (periods, etc.)
+                              Vertical Axis (e.g. Times)
                             </Label>
                             <Button type="button" variant="ghost" size="sm" onClick={addYItem}>
                               <Plus className="mr-1 h-4 w-4" />
                               Add
                             </Button>
                           </div>
+
+                          <div className="flex flex-wrap gap-2 py-1">
+                            {yAxisTemplates.map((template, index) => (
+                              <Button
+                                key={`y-tpl-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs bg-background"
+                                onClick={() => applyYAxisTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                          </div>
+
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {yAxis.length === 0 && (
+                              <p className="py-4 text-center text-xs text-muted-foreground">
+                                Use the "Add" button to insert rows.
+                              </p>
+                            )}
                             {yAxis.map((item, i) => (
                               <div key={`y-${i}`} className="flex items-center gap-2">
                                 <Input
@@ -805,7 +841,6 @@ export default function HomePage() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeYItem(i)}
-                                  disabled={yAxis.length <= 1}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -933,6 +968,24 @@ export default function HomePage() {
                         Add
                       </Button>
                     </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {scheduleTypeTemplates.map((template, index) => (
+                        <Button
+                          key={`st-tpl-${index}`}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 bg-background"
+                          onClick={() => {
+                            setScheduleTypes(template.options.map(opt => ({ ...opt })))
+                            toast({ title: "Template Applied", description: `Applied "${template.name}"` })
+                          }}
+                        >
+                          {template.name}
+                        </Button>
+                      ))}
+                    </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       {scheduleTypes.map((type, index) => (
@@ -1030,7 +1083,31 @@ export default function HomePage() {
                         Add
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Smaller numbers indicate higher priority.</p>
+                    <p className="text-xs text-muted-foreground">Lower numbers have higher priority.</p>
+                    
+                    <div className="flex flex-wrap gap-2 py-2">
+                      {gradeTemplates.map((template, index) => (
+                        <Button
+                          key={`grade-tpl-${index}`}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 bg-background"
+                          onClick={() => {
+                            setGradeOptions(
+                              template.options.map((grade) => ({
+                                name: grade,
+                                priority: defaultGradeOrder[grade] || 99,
+                              }))
+                            )
+                            toast({ title: "Template Applied", description: `Applied "${template.name}"` })
+                          }}
+                        >
+                          {template.name}
+                        </Button>
+                      ))}
+                    </div>
+
                     <div className="max-h-[240px] space-y-2 overflow-y-auto pr-1">
                       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         <span className="flex-1">Group/Role</span>

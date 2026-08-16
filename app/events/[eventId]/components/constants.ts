@@ -44,7 +44,6 @@ export const scheduleTypes = [
 export const days = ["月", "火", "水", "木", "金"]
 export const periods = [1, 2, 3, 4, 5]
 
-// 所属/役職のデフォルト値
 export const defaultGradeOptions = [
   'Teacher',
   'Dr',
@@ -57,6 +56,32 @@ export const defaultGradeOptions = [
   'Others',
 ]
 
+// 所属/役職のテンプレート
+export const gradeTemplates = [
+  {
+    name: "大学",
+    options: [
+      'Teacher',
+      'Dr',
+      'M2',
+      'M1',
+      'B4',
+      'B3',
+      'B2',
+      'B1',
+      'Others',
+    ]
+  },
+  {
+    name: "一般",
+    options: [
+      '社会人',
+      '学生',
+      'その他',
+    ]
+  }
+]
+
 export const defaultGradeOrder: { [key: string]: number } = {
   Teacher: 1,
   Dr: 2,
@@ -66,7 +91,10 @@ export const defaultGradeOrder: { [key: string]: number } = {
   B3: 6,
   B2: 7,
   B1: 8,
-  Others: 9,
+  社会人: 9,
+  学生: 10,
+  Others: 11,
+  その他: 12,
 }
 
 export const colorPalettes = [
@@ -83,10 +111,15 @@ export const colorPalettes = [
   { bg: "bg-orange-200", text: "text-orange-800", name: "橙" },
 ]
 
-export const recurringTemplates = [
-  { name: "平日（月〜金）", x: ["月", "火", "水", "木", "金"], y: ["1", "2", "3", "4", "5"] },
-  { name: "週末含む（月〜日）", x: ["月", "火", "水", "木", "金", "土", "日"], y: ["1", "2", "3", "4", "5"] },
-  { name: "時間帯（午前/午後）", x: ["月", "火", "水", "木", "金"], y: ["午前", "午後", "夕方", "夜"] },
+export const xAxisTemplates = [
+  { name: "平日（月〜金）", options: ["月", "火", "水", "木", "金"] },
+  { name: "週末含む（月〜日）", options: ["月", "火", "水", "木", "金", "土", "日"] },
+  { name: "週末のみ", options: ["土", "日"] },
+]
+
+export const yAxisTemplates = [
+  { name: "時限（1〜5限）", options: ["1", "2", "3", "4", "5"] },
+  { name: "時間帯（午前/午後など）", options: ["午前", "午後", "夕方", "夜"] },
 ]
 
 export const getOnetimeTemplates = () => {
@@ -146,14 +179,27 @@ export const getOnetimeTemplates = () => {
   ]
 }
 
-export const scheduleTypeTemplate = [
-    { id: "available", label: "可能", color: "bg-green-200 text-green-800", isAvailable: true },
-    { id: "social", label: "🐈", color: "bg-blue-200 text-blue-800", isAvailable: false },
-    { id: "not-yet", label: "未定(△)", color: "bg-yellow-200 text-yellow-800", isAvailable: false },
-    { id: "class", label: "授業", color: "bg-purple-200 text-purple-800", isAvailable: false },
-    { id: "ta", label: "TA", color: "bg-teal-200 text-teal-800", isAvailable: false },
-    { id: "unavailable", label: "不可", color: "bg-red-200 text-red-800", isAvailable: false },
-    { id: "parttime", label: "バイト", color: "bg-orange-200 text-orange-800", isAvailable: false },
+export const scheduleTypeTemplates = [
+  {
+    name: "大学",
+    options: [
+      { id: "available", label: "可能", color: "bg-green-200 text-green-800", isAvailable: true },
+      { id: "social", label: "🐈", color: "bg-blue-200 text-blue-800", isAvailable: false },
+      { id: "not-yet", label: "未定(△)", color: "bg-yellow-200 text-yellow-800", isAvailable: false },
+      { id: "class", label: "授業", color: "bg-purple-200 text-purple-800", isAvailable: false },
+      { id: "ta", label: "TA", color: "bg-teal-200 text-teal-800", isAvailable: false },
+      { id: "unavailable", label: "不可", color: "bg-red-200 text-red-800", isAvailable: false },
+      { id: "parttime", label: "バイト", color: "bg-orange-200 text-orange-800", isAvailable: false },
+    ]
+  },
+  {
+    name: "シンプル (◯/△/✕)",
+    options: [
+      { id: "available", label: "◯ (可能)", color: "bg-green-200 text-green-800", isAvailable: true },
+      { id: "maybe", label: "△ (未定)", color: "bg-yellow-200 text-yellow-800", isAvailable: false },
+      { id: "unavailable", label: "✕ (不可)", color: "bg-red-200 text-red-800", isAvailable: false },
+    ]
+  }
 ]
 
 export const xAxisTemplate = ["月", "火", "水", "木", "金"]
