@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 import { ensurePasswordHash, hashPassword, verifyPassword } from "@/lib/password-utils"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { eventSchema } from "@/lib/validations/event"
 
 interface ScheduleType {
@@ -9,6 +10,20 @@ interface ScheduleType {
   label: string
   color: string
   isAvailable: boolean
+}
+
+type EventUpdatePayload = {
+  name: string
+  description: string
+  eventType: "recurring" | "onetime"
+  scheduleTypes: ScheduleType[]
+  gradeOptions: string[]
+  gradeOrder: Record<string, number>
+  updatedAt: Date
+  password?: string
+  xAxis?: string[]
+  yAxis?: string[]
+  dateTimeOptions?: string[]
 }
 
 export async function GET(
@@ -25,9 +40,8 @@ export async function GET(
 
   const data = eventSnap.data() || {}
 
-  const url = new URL(req.url)
-  const providedPassword =
-    url.searchParams.get("password") || req.headers.get("x-event-password") || ""
+  // パスワードはヘッダーのみで受け付ける（クエリパラメータはログに残るため使用しない）
+  const providedPassword = req.headers.get("x-event-password") || ""
   const storedPassword = typeof data.password === "string" ? data.password : ""
   if (storedPassword) {
     const hashedPassword = await ensurePasswordHash(eventSnap.ref, storedPassword)
@@ -86,19 +100,17 @@ export async function GET(
   })
 }
 
-import { checkRateLimit } from "@/lib/rate-limit"
-
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
   // レートリミット (1分間に10回まで更新可能)
-  const allowed = await checkRateLimit(req, 10, 60000);
-  if (!allowed) {
+  const rateLimit = await checkRateLimit(req, 10, 60000)
+  if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
-      { status: 429 }
-    );
+      { status: 429, headers: { "Retry-After": rateLimit.retryAfter.toString() } },
+    )
   }
 
   const { eventId } = await params
@@ -109,11 +121,10 @@ export async function PUT(
   }
 
   const eventData = eventSnap.data() || {}
-  const url = new URL(req.url)
-  const providedPassword =
-    url.searchParams.get("password") || req.headers.get("x-event-password") || ""
+
+  // パスワードはヘッダーのみで受け付ける（クエリパラメータはログに残るため使用しない）
+  const providedPassword = req.headers.get("x-event-password") || ""
   const providedToken =
-    url.searchParams.get("token") ||
     req.headers.get("x-event-token") ||
     (req.headers.get("authorization")?.split(" ")[1] ?? "")
 
@@ -141,16 +152,16 @@ export async function PUT(
   }
 
   const json = await req.json()
-  
+
   // Zodによるバリデーション
-  const parseResult = eventSchema.safeParse(json);
-  
+  const parseResult = eventSchema.safeParse(json)
+
   if (!parseResult.success) {
     // 最初のバリデーションエラーメッセージを返す
     return NextResponse.json(
       { error: parseResult.error.errors[0]?.message || "入力内容に誤りがあります" },
-      { status: 400 }
-    );
+      { status: 400 },
+    )
   }
 
   const {
@@ -164,19 +175,16 @@ export async function PUT(
     gradeOptions,
     gradeOrder,
     password,
-  } = parseResult.data;
+  } = parseResult.data
 
-  const validGradeOptions = gradeOptions && gradeOptions.length > 0
-    ? gradeOptions
-    : defaultGradeOptions;
+  const validGradeOptions =
+    gradeOptions && gradeOptions.length > 0 ? gradeOptions : defaultGradeOptions
 
   const order =
-    gradeOrder && Object.keys(gradeOrder).length > 0
-      ? gradeOrder
-      : defaultGradeOrder;
+    gradeOrder && Object.keys(gradeOrder).length > 0 ? gradeOrder : defaultGradeOrder
 
-  // 更新データ作成
-  const updateData: any = {
+  // 更新データ作成（any を廃止して明示的な型を使用）
+  const updateData: EventUpdatePayload = {
     name,
     description: description || "",
     eventType,
@@ -212,4 +220,3 @@ export async function PUT(
     )
   }
 }
-

@@ -65,8 +65,10 @@ export default function EventPage() {
     if (!eventId) return
     setAccessStatus('checking')
     try {
-      const url = `/api/events/${eventId}${pass ? `?password=${encodeURIComponent(pass)}` : ""}`
-      const res = await fetch(url)
+      const url = `/api/events/${eventId}`
+      const headers: Record<string, string> = {}
+      if (pass) headers['x-event-password'] = pass
+      const res = await fetch(url, { headers })
       if (res.status === 401) {
         setAccessStatus('needsPassword')
         setEventAccess({})
