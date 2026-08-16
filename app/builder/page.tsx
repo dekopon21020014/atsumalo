@@ -8,12 +8,10 @@ import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Plus,
   Trash2,
-  Copy,
   ArrowDown,
   ArrowRight,
   Save,
@@ -25,11 +23,13 @@ import {
   FileText,
   UserPlus,
   Lock,
+  Sparkles,
+  Eye,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import {
   colorPalettes,
   recurringTemplates,
@@ -41,6 +41,34 @@ import {
   defaultGradeOrder,
 } from "../events/[eventId]/components/constants"
 import type { ScheduleType } from "../events/[eventId]/components/constants"
+
+// セクション見出し（番号バッジ付き）
+function SectionHeader({
+  step,
+  title,
+  description,
+  icon,
+}: {
+  step: number
+  title: string
+  description?: string
+  icon: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+        {step}
+      </div>
+      <div className="min-w-0">
+        <h2 className="flex items-center gap-2 text-lg font-semibold leading-tight">
+          <span className="text-muted-foreground">{icon}</span>
+          {title}
+        </h2>
+        {description && <p className="mt-1 text-sm text-muted-foreground text-pretty">{description}</p>}
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
@@ -61,7 +89,6 @@ export default function HomePage() {
     defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 })),
   )
 
-  const [activeTab, setActiveTab] = useState("builder")
   const router = useRouter()
 
   // 予定タイプの初期値
@@ -188,7 +215,7 @@ export default function HomePage() {
     setDateTimeOptions(newOptions)
   }
 
-  // 予定タイプを追加する関数を修正して、フォーカス移動の処理を追加
+  // 予定タイプを追加
   const addScheduleType = () => {
     const newId = `type_${Date.now()}`
     const randomColorIndex = Math.floor(Math.random() * colorPalettes.length)
@@ -236,13 +263,11 @@ export default function HomePage() {
 
   // 予定タイプの「参加可能」状態を更新
   const updateScheduleTypeAvailability = (index: number, isAvailable: boolean) => {
-    // 一旦すべてfalseにする
     const newTypes = scheduleTypes.map((type) => ({
       ...type,
       isAvailable: false,
     }))
 
-    // 選択された項目だけtrueにする
     if (isAvailable) {
       newTypes[index].isAvailable = true
     }
@@ -283,7 +308,6 @@ export default function HomePage() {
       return
     }
 
-    // イベントタイプに応じたバリデーション
     if (eventType === "recurring") {
       if (xAxis.length === 0 || yAxis.length === 0) {
         toast({ title: "エラー", description: "横軸と縦軸の項目を設定してください", variant: "destructive" })
@@ -296,7 +320,6 @@ export default function HomePage() {
       }
     }
 
-    // 参加可能な予定タイプが設定されているか確認
     const hasAvailableType = scheduleTypes.some((type) => type.isAvailable)
     if (!hasAvailableType) {
       toast({
@@ -307,7 +330,6 @@ export default function HomePage() {
       return
     }
 
-    // から文字列が選択肢にあれば除外するためのヘルパー
     function removeEmptyScheduleTypes(arr: ScheduleType[]): ScheduleType[] {
       return arr.filter((t) => t.id.trim() !== "")
     }
@@ -327,7 +349,6 @@ export default function HomePage() {
         {} as Record<string, number>,
       )
 
-      // イベントタイプに応じたデータを準備
       const eventData = {
         name: eventName,
         description: eventDesc,
@@ -356,485 +377,425 @@ export default function HomePage() {
     }
   }
 
+  const availableType = scheduleTypes.find((t) => t.isAvailable)
+
   return (
-    <div className="container mx-auto py-10 px-4 space-y-8">
-      <div className="relative overflow-hidden rounded-xl bg-black p-8 text-white">
-        <h1 className="text-4xl font-extrabold tracking-tight">あつま郎</h1>
-        <p className="mt-2 text-lg">研究室ゼミや勉強会などの「日程調整」をスマートに行うためのツールです。</p>
-        <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 md:grid-cols-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>イベントを作成</span>
+    <div className="min-h-screen bg-muted/30">
+      <div className="container mx-auto px-4 py-8">
+        {/* ヘッダー */}
+        <div className="mb-8 max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            イベント作成
           </div>
-          <div className="flex items-center space-x-2">
-            <ArrowRight className="h-5 w-5" />
-            <span>リンクを共有</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Check className="h-5 w-5" />
-            <span>参加者が回答</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Settings className="h-5 w-5" />
-            <span>結果を確認</span>
-          </div>
-        </div>
-      </div>
-
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        作成から3ヶ月後にページは自動的に削除されます。
-      </p>
-
-      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto space-y-6">
-        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                イベント名
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Input
-                id="eventName"
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                placeholder="例：ゼミ日程調整"
-                required
-              />
-            </CardContent>
-          </Card>
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                イベント説明
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                id="eventDesc"
-                value={eventDesc}
-                onChange={(e) => setEventDesc(e.target.value)}
-                placeholder="このイベントの概要を入力"
-                className="h-24"
-              />
-            </CardContent>
-          </Card>
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                合言葉
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch id="usePassword" checked={usePassword} onCheckedChange={setUsePassword} />
-                <Label htmlFor="usePassword" className="text-sm">
-                  合言葉を設定する
-                </Label>
-              </div>
-              {usePassword && (
-                <Input
-                  id="eventPassword"
-                  type="text"
-                  value={eventPassword}
-                  onChange={(e) => setEventPassword(e.target.value)}
-                  placeholder="合言葉を入力"
-                />
-              )}
-            </CardContent>
-          </Card>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance">日程調整イベントを作成</h1>
+          <p className="mt-2 text-sm text-muted-foreground text-pretty">
+            下のステップを順に埋めていくだけで、参加者に共有できる調整ページが作れます。作成から3ヶ月後にページは自動的に削除されます。
+          </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* イベントタイプ選択 */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                イベントタイプ
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                イベントの形式を選択してください。
-              </p>
-              <ToggleGroup
-                type="single"
-                value={eventType}
-                onValueChange={(value) => {
-                  if (!value) return
-                  setEventType(value as "recurring" | "onetime")
-                }}
-                className="grid w-full grid-cols-2 gap-2"
-              >
-                <ToggleGroupItem
-                  value="recurring"
-                  aria-label="定期イベント"
-                  className="w-full cursor-pointer rounded-md border py-2 data-[state=on]:bg-black data-[state=on]:text-white"
-                >
-                  <CalendarDays className="mr-2 h-4 w-4" />
-                  定期イベント
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="onetime"
-                  aria-label="単発イベント"
-                  className="w-full cursor-pointer rounded-md border py-2 data-[state=on]:bg-black data-[state=on]:text-white"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  単発イベント
-                </ToggleGroupItem>
-              </ToggleGroup>
-
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {eventType === "recurring"
-                  ? "定期的なミーティングや授業など、曜日×時間のグリッド形式で調整します。"
-                  : eventType === "onetime"
-                    ? "単発のイベントや会議など、特定の日時のリストから選択して調整します。"
-                    : null}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 所属/役職設定 */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              所属/役職の選択肢
-            </CardTitle>
-            <CardDescription>数字が小さいほど優先度が高くなります</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-[200px] overflow-y-auto">
-              <div className="flex items-center gap-2 font-semibold sticky top-0 bg-white dark:bg-gray-800">
-                <span className="flex-1">所属/役職</span>
-                <span className="w-20">優先度</span>
-                <span className="w-10" />
-              </div>
-              {gradeOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    ref={(el) => { if (el) gradeOptionRefs.current[i] = el }}
-                    value={opt.name}
-                    onChange={(e) => updateGradeOptionName(i, e.target.value)}
-                    onKeyDown={(e) => {
-                      const isComposing = (e.nativeEvent as any).isComposing as boolean
-                      if (e.key === "Enter" && !isComposing) {
-                        e.preventDefault()
-                        addGradeOption()
-                      }
-                      if (
-                        (e.key === "Backspace" || e.key === "Delete") &&
-                        !isComposing &&
-                        e.currentTarget.value === ""
-                      ) {
-                        e.preventDefault()
-                        removeGradeOption(i)
-                        requestAnimationFrame(() => {
-                          const prevIndex = Math.max(i - 1, 0)
-                          gradeOptionRefs.current[prevIndex]?.focus()
-                        })
-                        return
-                      }
-                    }}
-                    className="flex-1"
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+            {/* 左：入力セクション */}
+            <div className="space-y-6">
+              {/* Step 1: 基本情報 */}
+              <Card>
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    step={1}
+                    icon={<Calendar className="h-5 w-5" />}
+                    title="基本情報"
+                    description="イベント名は参加者にそのまま表示されます。"
                   />
-                  <Input
-                    type="number"
-                    value={opt.priority}
-                    onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeGradeOption(i)}
-                    disabled={gradeOptions.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addGradeOption}
-                className="mt-2 bg-transparent"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                追加
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {eventType && (
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                {eventType === "recurring" ? (
-                  <CalendarDays className="h-5 w-5" />
-                ) : (
-                  <Clock className="h-5 w-5" />
-                )}
-                {eventType === "recurring" ? "グリッド設定" : "日時設定"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center bg-white/60 dark:bg-gray-700/50 p-1 rounded-lg">
-                <TabsTrigger value="builder">
-                  {eventType === "recurring" ? "グリッドビルダー" : "日時リスト"}
-                </TabsTrigger>
-                <TabsTrigger value="scheduleTypes">予定タイプ</TabsTrigger>
-                <TabsTrigger value="preview">プレビュー</TabsTrigger>
-                <TabsTrigger value="templates">テンプレート</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="builder" className="space-y-6">
-                {eventType === "recurring" ? (
-                  // 定期イベント用のグリッドビルダー
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* X軸設定 */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-base font-medium flex items-center">
-                          <ArrowRight className="h-4 w-4 mr-1" />
-                          横軸の項目（曜日など）
-                        </Label>
-                        <Button type="button" variant="outline" size="sm" onClick={addXItem}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          追加
-                        </Button>
-                      </div>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                        {xAxis.map((item, i) => (
-                          <div key={`x-${i}`} className="flex items-center gap-2">
-                            <Input
-                              ref={(el) => { if (el) xAxisRefs.current[i] = el }}
-                              id={`x-axis-${i}`}
-                              value={item}
-                              onChange={(e) => updateXItem(i, e.target.value)}
-                              onKeyDown={(e) => {
-                                const isComposing = (e.nativeEvent as any).isComposing as boolean
-                                if (e.key === "Enter" && !isComposing) {
-                                  e.preventDefault()
-                                  addXItem()
-                                }
-                                if (
-                                  (e.key === "Backspace" || e.key === "Delete") &&
-                                  !isComposing &&
-                                  e.currentTarget.value === ""
-                                ) {
-                                  e.preventDefault()
-                                  removeXItem(i)
-                                  requestAnimationFrame(() => {
-                                    const prevIndex = Math.max(i - 1, 0)
-                                    xAxisRefs.current[prevIndex]?.focus()
-                                  })
-                                  return
-                                }
-                              }}
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeXItem(i)}
-                              disabled={xAxis.length <= 1}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="eventName" className="flex items-center gap-1 text-sm font-medium">
+                        イベント名
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="eventName"
+                        value={eventName}
+                        onChange={(e) => setEventName(e.target.value)}
+                        placeholder="例：ゼミ日程調整"
+                        required
+                      />
                     </div>
-
-                    {/* Y軸設定 */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-base font-medium flex items-center">
-                          <ArrowDown className="h-4 w-4 mr-1" />
-                          縦軸の項目（時限など）
-                        </Label>
-                        <Button type="button" variant="outline" size="sm" onClick={addYItem}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          追加
-                        </Button>
-                      </div>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                        {yAxis.map((item, i) => (
-                          <div key={`y-${i}`} className="flex items-center gap-2">
-                            <Input
-                              ref={(el) => { if (el) yAxisRefs.current[i] = el }}
-                              id={`y-axis-${i}`}
-                              value={item}
-                              onChange={(e) => updateYItem(i, e.target.value)}
-                              onKeyDown={(e) => {
-                                const isComposing = (e.nativeEvent as any).isComposing as boolean
-                                if (e.key === "Enter" && !isComposing) {
-                                  e.preventDefault()
-                                  addYItem()
-                                }
-                                if (
-                                  (e.key === "Backspace" || e.key === "Delete") &&
-                                  !isComposing &&
-                                  e.currentTarget.value === ""
-                                ) {
-                                  e.preventDefault()
-                                  removeYItem(i)
-                                  requestAnimationFrame(() => {
-                                    const prevIndex = Math.max(i - 1, 0)
-                                    yAxisRefs.current[prevIndex]?.focus()
-                                  })
-                                  return
-                                }
-                              }}
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeYItem(i)}
-                              disabled={yAxis.length <= 1}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="eventDesc" className="flex items-center gap-1 text-sm font-medium">
+                        <FileText className="h-3.5 w-3.5" />
+                        説明（任意）
+                      </Label>
+                      <Textarea
+                        id="eventDesc"
+                        value={eventDesc}
+                        onChange={(e) => setEventDesc(e.target.value)}
+                        placeholder="このイベントの概要を入力"
+                        className="min-h-20"
+                      />
                     </div>
                   </div>
-                ) : (
-                  // 単発イベント用の日時リスト
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-base font-medium flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        日時オプション
-                      </Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addDateTimeOption}>
-                        <Plus className="h-4 w-4 mr-1" />
+                </CardContent>
+              </Card>
+
+              {/* Step 2: 形式 */}
+              <Card>
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    step={2}
+                    icon={<Settings className="h-5 w-5" />}
+                    title="イベント形式を選ぶ"
+                    description="調整したい内容に合わせて形式を選んでください。"
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setEventType("recurring")}
+                      aria-pressed={eventType === "recurring"}
+                      className={cn(
+                        "flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-colors",
+                        eventType === "recurring"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex items-center gap-2 font-semibold">
+                        <CalendarDays className="h-5 w-5" />
+                        定期イベント
+                      </div>
+                      <p className="text-xs text-muted-foreground text-pretty">
+                        曜日 × 時限などのグリッド形式。ゼミや授業の調整に。
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEventType("onetime")}
+                      aria-pressed={eventType === "onetime"}
+                      className={cn(
+                        "flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-colors",
+                        eventType === "onetime"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex items-center gap-2 font-semibold">
+                        <Calendar className="h-5 w-5" />
+                        単発イベント
+                      </div>
+                      <p className="text-xs text-muted-foreground text-pretty">
+                        特定の日時リストから選択。飲み会や会議の調整に。
+                      </p>
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 3: 候補（グリッド or 日時） */}
+              {eventType && (
+                <Card>
+                  <CardContent className="space-y-5 p-6">
+                    <SectionHeader
+                      step={3}
+                      icon={eventType === "recurring" ? <CalendarDays className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                      title={eventType === "recurring" ? "調整するグリッド" : "候補の日時"}
+                      description={
+                        eventType === "recurring"
+                          ? "横軸（曜日など）と縦軸（時限など）を設定します。Enterで追加、空欄でBackspaceで削除できます。"
+                          : "候補となる日時を追加します。Enterで追加、空欄でBackspaceで削除できます。"
+                      }
+                    />
+
+                    {/* テンプレート */}
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        テンプレートから開始
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {eventType === "recurring"
+                          ? recurringTemplates.map((template, index) => (
+                              <Button
+                                key={`rt-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 bg-background"
+                                onClick={() => applyRecurringTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))
+                          : onetimeTemplates.map((template, index) => (
+                              <Button
+                                key={`ot-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 bg-background"
+                                onClick={() => applyOnetimeTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                      </div>
+                    </div>
+
+                    {eventType === "recurring" ? (
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {/* X軸 */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
+                              <ArrowRight className="h-4 w-4" />
+                              横軸（曜日など）
+                            </Label>
+                            <Button type="button" variant="ghost" size="sm" onClick={addXItem}>
+                              <Plus className="mr-1 h-4 w-4" />
+                              追加
+                            </Button>
+                          </div>
+                          <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {xAxis.map((item, i) => (
+                              <div key={`x-${i}`} className="flex items-center gap-2">
+                                <Input
+                                  ref={(el) => {
+                                    if (el) xAxisRefs.current[i] = el
+                                  }}
+                                  id={`x-axis-${i}`}
+                                  value={item}
+                                  onChange={(e) => updateXItem(i, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                    if (e.key === "Enter" && !isComposing) {
+                                      e.preventDefault()
+                                      addXItem()
+                                    }
+                                    if (
+                                      (e.key === "Backspace" || e.key === "Delete") &&
+                                      !isComposing &&
+                                      e.currentTarget.value === ""
+                                    ) {
+                                      e.preventDefault()
+                                      removeXItem(i)
+                                      requestAnimationFrame(() => {
+                                        const prevIndex = Math.max(i - 1, 0)
+                                        xAxisRefs.current[prevIndex]?.focus()
+                                      })
+                                      return
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeXItem(i)}
+                                  disabled={xAxis.length <= 1}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Y軸 */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
+                              <ArrowDown className="h-4 w-4" />
+                              縦軸（時限など）
+                            </Label>
+                            <Button type="button" variant="ghost" size="sm" onClick={addYItem}>
+                              <Plus className="mr-1 h-4 w-4" />
+                              追加
+                            </Button>
+                          </div>
+                          <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {yAxis.map((item, i) => (
+                              <div key={`y-${i}`} className="flex items-center gap-2">
+                                <Input
+                                  ref={(el) => {
+                                    if (el) yAxisRefs.current[i] = el
+                                  }}
+                                  id={`y-axis-${i}`}
+                                  value={item}
+                                  onChange={(e) => updateYItem(i, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                    if (e.key === "Enter" && !isComposing) {
+                                      e.preventDefault()
+                                      addYItem()
+                                    }
+                                    if (
+                                      (e.key === "Backspace" || e.key === "Delete") &&
+                                      !isComposing &&
+                                      e.currentTarget.value === ""
+                                    ) {
+                                      e.preventDefault()
+                                      removeYItem(i)
+                                      requestAnimationFrame(() => {
+                                        const prevIndex = Math.max(i - 1, 0)
+                                        yAxisRefs.current[prevIndex]?.focus()
+                                      })
+                                      return
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeYItem(i)}
+                                  disabled={yAxis.length <= 1}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="flex items-center gap-1 text-sm font-medium">
+                            <Clock className="h-4 w-4" />
+                            日時オプション
+                          </Label>
+                          <Button type="button" variant="ghost" size="sm" onClick={addDateTimeOption}>
+                            <Plus className="mr-1 h-4 w-4" />
+                            追加
+                          </Button>
+                        </div>
+                        <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                          {dateTimeOptions.map((item, index) => (
+                            <div key={`datetime-${index}`} className="flex items-center gap-2">
+                              <Input
+                                ref={(el) => {
+                                  if (el) dateTimeRefs.current[index] = el
+                                }}
+                                id={`datetime-option-${index}`}
+                                value={item}
+                                onChange={(e) => updateDateTimeOption(index, e.target.value)}
+                                onKeyDown={(e) => {
+                                  const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                  if (e.key === "Enter" && !isComposing) {
+                                    e.preventDefault()
+                                    addDateTimeOption()
+                                  }
+                                  if (
+                                    (e.key === "Backspace" || e.key === "Delete") &&
+                                    !isComposing &&
+                                    e.currentTarget.value === ""
+                                  ) {
+                                    e.preventDefault()
+                                    removeDateTimeOption(index)
+                                    requestAnimationFrame(() => {
+                                      const prevIndex = Math.max(index - 1, 0)
+                                      dateTimeRefs.current[prevIndex]?.focus()
+                                    })
+                                    return
+                                  }
+                                }}
+                                placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeDateTimeOption(index)}
+                                disabled={dateTimeOptions.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 4: 予定タイプ */}
+              {eventType && (
+                <Card>
+                  <CardContent className="space-y-5 p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <SectionHeader
+                        step={4}
+                        icon={<Check className="h-5 w-5" />}
+                        title="回答の選択肢（予定タイプ）"
+                        description="参加者が各コマで選ぶ選択肢です。1つを「参加可能」に設定すると集計の基準になります。"
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={addScheduleType} className="shrink-0 bg-background">
+                        <Plus className="mr-1 h-4 w-4" />
                         追加
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                      {dateTimeOptions.map((item, index) => (
-                        <div key={`datetime-${index}`} className="flex items-center gap-2">
-                          <Input
-                            ref={(el) => { if (el) dateTimeRefs.current[index] = el }}
-                            id={`datetime-option-${index}`}
-                            value={item}
-                            onChange={(e) => updateDateTimeOption(index, e.target.value)}
-                            onKeyDown={(e) => {
-                              const isComposing = (e.nativeEvent as any).isComposing as boolean
-                              if (e.key === "Enter" && !isComposing) {
-                                e.preventDefault()
-                                addDateTimeOption()
-                              }
-                              if (
-                                (e.key === "Backspace" || e.key === "Delete") &&
-                                !isComposing &&
-                                e.currentTarget.value === ""
-                              ) {
-                                e.preventDefault()
-                                removeDateTimeOption(index)
-                                requestAnimationFrame(() => {
-                                  const prevIndex = Math.max(index - 1, 0)
-                                  dateTimeRefs.current[prevIndex]?.focus()
-                                })
-                                return
-                              }
-                            }}
-                            placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
-                            className="flex-1"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeDateTimeOption(index)}
-                            disabled={dateTimeOptions.length <= 1}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-md">
-                      <p className="text-sm text-gray-600">
-                        日時は「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
 
-              <TabsContent value="scheduleTypes" className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-base font-medium flex items-center">
-                    <Settings className="h-4 w-4 mr-1" />
-                    予定タイプの設定
-                  </h3>
-                  <Button type="button" variant="outline" size="sm" onClick={addScheduleType}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    追加
-                  </Button>
-                </div>
-
-                <div className="bg-gray-50 p-3 rounded-md mb-4">
-                  <p className="text-sm text-gray-600">
-                    参加者が選択できる予定タイプを設定します。「参加可能」として設定された予定タイプは、集計時に「参加可能」としてカウントされます。
-                  </p>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {scheduleTypes.map((type, index) => (
-                    <div key={`type-${index}`} className="border rounded-md p-4 bg-white">
-                      <div className="flex flex-col gap-3">
-                        {/* ラベル入力 */}
-                        <div className="flex-1">
-                          <Label htmlFor={`type-label-${index}`} className="text-xs mb-1 block">
-                            ラベル
-                          </Label>
-                          <Input
-                            ref={(el) => { if (el) typeLabelRefs.current[index] = el }}
-                            id={`type-label-${index}`}
-                            value={type.label}
-                            onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
-                            onKeyDown={(e) => {
-                              const isComposing = (e.nativeEvent as any).isComposing as boolean
-                              if (e.key === "Enter" && !isComposing) {
-                                e.preventDefault()
-                                addScheduleType()
-                              }
-                              if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
-                                e.preventDefault() // 必要ならデフォルト動作を抑止
-                                removeScheduleType(index)
-                                return
-                              }
-                            }}
-                            placeholder="予定タイプの名前"
-                          />
-                        </div>
-
-                        <div className="flex items-end gap-3">
-                          {/* 色選択 */}
-                          <div className="flex-1">
-                            <Label htmlFor={`type-color-${index}`} className="text-xs mb-1 block">
-                              色
-                            </Label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {scheduleTypes.map((type, index) => (
+                        <div key={`type-${index}`} className="rounded-lg border bg-card p-3">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-sm", type.color)}>
+                              {type.label || "（無題）"}
+                              {type.isAvailable && <Check className="ml-1 h-3 w-3" />}
+                            </span>
+                            <div className="ml-auto flex items-center gap-2">
+                              <Label htmlFor={`type-available-${index}`} className="text-xs text-muted-foreground">
+                                参加可能
+                              </Label>
+                              <Switch
+                                id={`type-available-${index}`}
+                                checked={type.isAvailable}
+                                onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => removeScheduleType(index)}
+                                disabled={scheduleTypes.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex items-center gap-2">
+                            <Input
+                              ref={(el) => {
+                                if (el) typeLabelRefs.current[index] = el
+                              }}
+                              id={`type-label-${index}`}
+                              value={type.label}
+                              onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
+                              onKeyDown={(e) => {
+                                const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                if (e.key === "Enter" && !isComposing) {
+                                  e.preventDefault()
+                                  addScheduleType()
+                                }
+                                if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
+                                  e.preventDefault()
+                                  removeScheduleType(index)
+                                  return
+                                }
+                              }}
+                              placeholder="ラベル"
+                              className="flex-1"
+                            />
                             <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
-                              <SelectTrigger id={`type-color-${index}`} className={`w-full ${type.color}`}>
-                                <SelectValue placeholder="色を選択" />
+                              <SelectTrigger id={`type-color-${index}`} className={cn("w-28", type.color)}>
+                                <SelectValue placeholder="色" />
                               </SelectTrigger>
                               <SelectContent>
                                 {colorPalettes.map((color, colorIndex) => (
@@ -849,198 +810,202 @@ export default function HomePage() {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-                          {/* 参加可能フラグ */}
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id={`type-available-${index}`}
-                              checked={type.isAvailable}
-                              onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
-                            />
-                            <Label htmlFor={`type-available-${index}`} className="text-sm">
-                              参加可能
-                            </Label>
-                          </div>
+              {/* Step 5: 詳細設定 */}
+              {eventType && (
+              <Card>
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    step={5}
+                    icon={<UserPlus className="h-5 w-5" />}
+                    title="詳細設定（任意）"
+                    description="所属/役職の選択肢と合言葉を設定できます。"
+                  />
 
-                          {/* 削除ボタン */}
+                  {/* 所属/役職 */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">所属/役職の選択肢</Label>
+                      <Button type="button" variant="ghost" size="sm" onClick={addGradeOption}>
+                        <Plus className="mr-1 h-4 w-4" />
+                        追加
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">数字が小さいほど優先度が高くなります。</p>
+                    <div className="max-h-[240px] space-y-2 overflow-y-auto pr-1">
+                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <span className="flex-1">所属/役職</span>
+                        <span className="w-20 text-center">優先度</span>
+                        <span className="w-9" />
+                      </div>
+                      {gradeOptions.map((opt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Input
+                            ref={(el) => {
+                              if (el) gradeOptionRefs.current[i] = el
+                            }}
+                            value={opt.name}
+                            onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                            onKeyDown={(e) => {
+                              const isComposing = (e.nativeEvent as any).isComposing as boolean
+                              if (e.key === "Enter" && !isComposing) {
+                                e.preventDefault()
+                                addGradeOption()
+                              }
+                              if (
+                                (e.key === "Backspace" || e.key === "Delete") &&
+                                !isComposing &&
+                                e.currentTarget.value === ""
+                              ) {
+                                e.preventDefault()
+                                removeGradeOption(i)
+                                requestAnimationFrame(() => {
+                                  const prevIndex = Math.max(i - 1, 0)
+                                  gradeOptionRefs.current[prevIndex]?.focus()
+                                })
+                                return
+                              }
+                            }}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={opt.priority}
+                            onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                            className="w-20"
+                          />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeScheduleType(index)}
-                            disabled={scheduleTypes.length <= 1}
+                            onClick={() => removeGradeOption(i)}
+                            disabled={gradeOptions.length <= 1}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
-                      </div>
-
-                      {/* プレビュー */}
-                      <div className="mt-3 pt-3 border-t">
-                        <div className="text-xs text-gray-500 mb-1">プレビュー:</div>
-                        <div className={`inline-block px-3 py-1 rounded-md ${type.color}`}>
-                          {type.label}
-                          {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
+                  </div>
 
-              <TabsContent value="preview">
-                {eventType === "recurring" ? (
-                  // 定期イベント用のプレビュー（グリッド形式）
-                  <div className="border rounded overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr>
-                          <th className="border p-2"></th>
-                          {xAxis.map((item, index) => (
-                            <th key={`header-${index}`} className="border p-2 text-center min-w-[80px]">
-                              {item || `項目${index + 1}`}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {yAxis.map((item, rowIndex) => (
-                          <tr key={`row-${rowIndex}`}>
-                            <td className="border p-2 font-medium text-center">{item || `項目${rowIndex + 1}`}</td>
-                            {xAxis.map((_, colIndex) => (
-                              <td key={`cell-${rowIndex}-${colIndex}`} className="border p-2 text-center">
-                                <Select>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="選択" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {scheduleTypes.map((type, typeIndex) => (
-                                      <SelectItem
-                                        key={`preview-type-${typeIndex}`}
-                                        value={type.id}
-                                        className={type.color}
-                                      >
-                                        {type.label}
-                                        {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </td>
+                  {/* 合言葉 */}
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor="usePassword" className="flex-1 text-sm font-medium">
+                        合言葉で保護する
+                      </Label>
+                      <Switch id="usePassword" checked={usePassword} onCheckedChange={setUsePassword} />
+                    </div>
+                    {usePassword && (
+                      <Input
+                        id="eventPassword"
+                        type="text"
+                        value={eventPassword}
+                        onChange={(e) => setEventPassword(e.target.value)}
+                        placeholder="合言葉を入力"
+                      />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              )}
+            </div>
+
+            {/* 右：ライブプレビュー + 作成ボタン */}
+            <aside className="xl:sticky xl:top-6 xl:self-start">
+              <Card className="overflow-hidden">
+                <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-3">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">プレビュー</span>
+                  <span className="ml-auto text-xs text-muted-foreground">参加者に見える画面</span>
+                </div>
+                <CardContent className="space-y-4 p-4">
+                  <div>
+                    <h3 className="font-semibold leading-tight text-balance">{eventName || "（イベント名未入力）"}</h3>
+                    {eventDesc && <p className="mt-1 text-xs text-muted-foreground text-pretty">{eventDesc}</p>}
+                  </div>
+
+                  {!eventType ? (
+                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                      形式を選ぶと、ここに入力フォームのプレビューが表示されます。
+                    </div>
+                  ) : eventType === "recurring" ? (
+                    <div className="overflow-x-auto rounded-lg border">
+                      <table className="w-full border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="border p-1.5" />
+                            {xAxis.map((item, index) => (
+                              <th key={`ph-${index}`} className="border p-1.5 text-center font-medium">
+                                {item || `項目${index + 1}`}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  // 単発イベント用のプレビュー（リスト形式）
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 p-3 rounded-md mb-2">
-                      <p className="text-sm text-gray-600">
-                        参加者は各日時に対して、以下のような選択肢から1つを選びます。
-                      </p>
-                    </div>
-                    <div className="border rounded-md overflow-hidden">
-                      <div className="bg-gray-50 p-3 border-b font-medium">参加可否の入力例</div>
-                      <div className="divide-y">
-                        {dateTimeOptions.map((dateTime, index) => (
-                          <div key={`preview-datetime-${index}`} className="p-3">
-                            <div className="font-medium mb-2">{dateTime}</div>
-                            <div className="flex flex-wrap gap-2">
-                              {scheduleTypes.map((type, typeIndex) => (
-                                <button
-                                  key={`option-${index}-${typeIndex}`}
-                                  className={`px-3 py-1 rounded-md ${type.color} hover:opacity-80 transition-opacity`}
-                                >
-                                  {type.label}
-                                  {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
-                                </button>
+                        </thead>
+                        <tbody>
+                          {yAxis.map((item, rowIndex) => (
+                            <tr key={`pr-${rowIndex}`}>
+                              <td className="border bg-muted/50 p-1.5 text-center font-medium">{item || `項目${rowIndex + 1}`}</td>
+                              {xAxis.map((_, colIndex) => (
+                                <td key={`pc-${rowIndex}-${colIndex}`} className="border p-1 text-center">
+                                  <span
+                                    className={cn(
+                                      "inline-block w-full rounded px-1 py-0.5 text-[10px]",
+                                      availableType?.color ?? "bg-muted",
+                                    )}
+                                  >
+                                    {availableType?.label ?? "選択"}
+                                  </span>
+                                </td>
                               ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                )}
-                <p className="text-sm text-gray-500 mt-2">
-                  これは入力フォームのプレビューです。実際の入力フォームはこのような形式になります。
-                </p>
-              </TabsContent>
-
-              <TabsContent value="templates">
-                {eventType === "recurring" ? (
-                  // 定期イベント用のテンプレート
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recurringTemplates.map((template, index) => (
-                      <Card key={`template-${index}`} className="overflow-hidden">
-                        <CardContent className="p-4">
-                          <h3 className="font-medium mb-2">{template.name}</h3>
-                          <div className="text-sm text-gray-600 mb-2">
-                            <div>
-                              横軸: <span className="font-mono">{template.x.join(", ")}</span>
-                            </div>
-                            <div>
-                              縦軸: <span className="font-mono">{template.y.join(", ")}</span>
-                            </div>
+                  ) : (
+                    <div className="divide-y rounded-lg border">
+                      {dateTimeOptions.map((dateTime, index) => (
+                        <div key={`pl-${index}`} className="p-2.5">
+                          <div className="mb-1.5 text-xs font-medium">{dateTime}</div>
+                          <div className="flex flex-wrap gap-1">
+                            {scheduleTypes.map((type, typeIndex) => (
+                              <span
+                                key={`po-${index}-${typeIndex}`}
+                                className={cn("rounded px-2 py-0.5 text-[11px]", type.color)}
+                              >
+                                {type.label}
+                                {type.isAvailable && <Check className="ml-0.5 inline-block h-2.5 w-2.5" />}
+                              </span>
+                            ))}
                           </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full bg-transparent"
-                            onClick={() => applyRecurringTemplate(index)}
-                          >
-                            <Copy className="h-4 w-4 mr-1" />
-                            このテンプレートを使用
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  // 単発イベント用のテンプレート
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {onetimeTemplates.map((template, index) => (
-                      <Card key={`template-${index}`} className="overflow-hidden">
-                        <CardContent className="p-4">
-                          <h3 className="font-medium mb-2">{template.name}</h3>
-                          <div className="text-sm text-gray-600 mb-2">
-                            <div>
-                              日時オプション: <span className="font-mono">{template.options.join(", ")}</span>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full bg-transparent"
-                            onClick={() => applyOnetimeTemplate(index)}
-                          >
-                            <Copy className="h-4 w-4 mr-1" />
-                            このテンプレートを使用
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-        {eventType && (
-          <div className="flex justify-center pt-4">
-            <Button type="submit" size="lg" className="px-8">
-              <Save className="h-4 w-4 mr-2" />
-              イベントを作成
-            </Button>
+                  <Button type="submit" size="lg" className="w-full" disabled={!eventName.trim() || !eventType}>
+                    <Save className="mr-2 h-4 w-4" />
+                    イベントを作成
+                  </Button>
+                  {!eventType && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      イベント名と形式を設定すると作成できます。
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </aside>
           </div>
-        )}
-      </form>
+        </form>
+      </div>
     </div>
   )
 }
