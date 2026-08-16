@@ -36,6 +36,7 @@ export default function AboutPage() {
         <h2 className="text-xl font-semibold mb-2">Key Features</h2>
         <ul className="list-disc pl-6 space-y-1">
           <li>Create candidates for one-time or recurring events.</li>
+          <li>Flexible configuration of multiple date and time candidates.</li>
           <li>Share URLs to collect availability and view aggregated results.</li>
           <li>Minimal input fields for participants.</li>
           <li>Automatic deletion of events after 3 months.</li>

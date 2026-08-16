@@ -36,6 +36,7 @@ export default function AboutPage() {
         <h2 className="text-xl font-semibold mb-2">主な機能</h2>
         <ul className="list-disc pl-6 space-y-1">
           <li>単発イベント／定期イベントの候補作成．</li>
+          <li>複数の日程・時間帯候補の柔軟な設定．</li>
           <li>URL共有による参加可否の収集と集計表示．</li>
           <li>最小限の入力項目での回答フォーム．</li>
           <li>イベントの自動削除（作成から3ヶ月）．</li>

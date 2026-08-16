@@ -11,11 +11,12 @@
 -----------------------------------------------------------------------
 ```
 
-An online scheduling tool that centralizes management of laboratory equipment and room usage.
-Members can check availability on a shared calendar and easily reserve time for experiments or meetings.
-Administrators manage resources and user permissions, approve reservations, and monitor utilization.
+An event and schedule coordination tool designed for laboratories and small groups.
+Easily coordinate meetings and events among members by simply sharing a dedicated URL. It also features a reservation calendar and scheduling capabilities to centralize the management of laboratory equipment and room usage.
 
 ## Features
+- Event schedule coordination via URL sharing (Chouseisan-like functionality)
+- Flexible configuration of multiple date and time candidates
 - Calendar-based booking for equipment and rooms
 - Reservation history and notification capability for each member
 - Administrative interface to manage resources and users
