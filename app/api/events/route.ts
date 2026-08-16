@@ -2,9 +2,22 @@ import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 import { hashPassword } from "@/lib/password-utils"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { eventSchema } from "@/lib/validations/event"
 
-import { checkRateLimit } from "@/lib/rate-limit"
+type EventCreatePayload = {
+  name: string
+  description: string
+  eventType: "recurring" | "onetime"
+  scheduleTypes: { id: string; label: string; color: string; isAvailable: boolean }[]
+  gradeOptions: string[]
+  gradeOrder: Record<string, number>
+  createdAt: Date
+  password?: string
+  xAxis?: string[]
+  yAxis?: string[]
+  dateTimeOptions?: string[]
+}
 
 export async function POST(req: NextRequest) {
   // レートリミット (1分間に5回まで)
@@ -57,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   // --- Firestore に保存 ---
   try {
-    const payload: any = {
+    const payload: EventCreatePayload = {
       name,
       description: description || "",
       eventType,

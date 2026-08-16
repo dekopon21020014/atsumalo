@@ -1,60 +1,10 @@
 // app/api/events/[eventId]/participants/[participantId]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { db, FieldValue } from '@/lib/firebase'
-import type { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore'
-import { ensurePasswordHash, verifyPassword } from '@/lib/password-utils'
+import { FieldValue } from '@/lib/firebase'
+import type { DocumentData } from 'firebase-admin/firestore'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { authorizeEventAccess } from '@/lib/auth/authorize-event'
 import { participantSchema } from '@/lib/validations/participant'
-
-type EventAuthResult =
-  | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
-  | { response: NextResponse }
-
-async function authorizeEventAccess(
-  req: NextRequest,
-  eventId: string,
-): Promise<EventAuthResult> {
-  const eventSnap = await db.collection('events').doc(eventId).get()
-  if (!eventSnap.exists) {
-    return { response: NextResponse.json({ error: 'not found' }, { status: 404 }) }
-  }
-
-  const eventData = eventSnap.data() || {}
-  const url = new URL(req.url)
-  const providedPassword =
-    url.searchParams.get('password') || req.headers.get('x-event-password') || ''
-  const providedToken =
-    url.searchParams.get('token') ||
-    req.headers.get('x-event-token') ||
-    (req.headers.get('authorization')?.split(' ')[1] ?? '')
-
-  const storedPassword = typeof eventData.password === 'string' ? eventData.password : ''
-  const passwordRequired = storedPassword.trim() !== ''
-  const tokens: string[] = Array.isArray(eventData.tokens)
-    ? eventData.tokens.filter((token: unknown): token is string =>
-        typeof token === 'string' && token.trim() !== '',
-      )
-    : typeof eventData.token === 'string' && eventData.token.trim() !== ''
-      ? [eventData.token]
-      : []
-  const tokenRequired = tokens.length > 0
-
-  if (passwordRequired) {
-    const hashedPassword = await ensurePasswordHash(eventSnap.ref, storedPassword)
-    const passwordValid =
-      providedPassword && (await verifyPassword(hashedPassword, providedPassword))
-    if (!passwordValid) {
-      return { response: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) }
-    }
-  }
-
-  if (tokenRequired && !tokens.includes(providedToken)) {
-    return { response: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) }
-  }
-
-  // TODO: ユーザー認証導入時に Firebase Auth 等でユーザー権限チェックを追加する
-
-  return { eventSnap, requireParticipantToken: tokenRequired }
-}
 
 function extractParticipantToken(req: NextRequest) {
   const url = new URL(req.url)
@@ -81,40 +31,40 @@ function ensureParticipantOwnership(
   return null
 }
 
-import { checkRateLimit } from '@/lib/rate-limit'
-
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string; participantId: string }> }
 ) {
   // レートリミット (1分間に20回まで更新可能)
-  const allowed = await checkRateLimit(req, 20, 60000);
+  const allowed = await checkRateLimit(req, 20, 60000)
   if (!allowed) {
     return NextResponse.json(
-      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
-      { status: 429 }
-    );
+      { error: 'リクエストが多すぎます。しばらく待ってから再度お試しください。' },
+      { status: 429 },
+    )
   }
 
   const { eventId, participantId } = await params
-  const json = await req.json()
-  
-  // Zodによるバリデーション (eventId は URL params から取得するため除外)
-  const parseResult = participantSchema.omit({ eventId: true }).safeParse(json);
 
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: parseResult.error.errors[0]?.message || '入力内容に誤りがあります' },
-      { status: 400 }
-    );
-  }
-
-  const { name, grade, gradePriority, schedule, comment: rawComment } = parseResult.data;
-
+  // 認証を先に行う（バリデーションエラーの詳細が未認証ユーザーに漏れないようにするため）
   const authResult = await authorizeEventAccess(req, eventId)
   if ('response' in authResult) {
     return authResult.response
   }
+
+  const json = await req.json()
+
+  // Zodによるバリデーション (eventId は URL params から取得するため除外)
+  const parseResult = participantSchema.omit({ eventId: true }).safeParse(json)
+
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: parseResult.error.errors[0]?.message || '入力内容に誤りがあります' },
+      { status: 400 },
+    )
+  }
+
+  const { name, grade, gradePriority, schedule, comment: rawComment } = parseResult.data
 
   let comment = ''
   if (rawComment != null) {
@@ -148,13 +98,13 @@ export async function PUT(
       updatedAt: FieldValue.serverTimestamp(),
     })
 
-    const updateData: Record<string, any> = {
+    await authResult.eventSnap.ref.update({
       gradeOptions: FieldValue.arrayUnion(grade),
-    }
-    if (gradePriority != null) {
-      updateData.gradeOrder = { [grade]: gradePriority }
-    }
-    await authResult.eventSnap.ref.set(updateData, { merge: true })
+      // ドット記法で特定キーのみ更新し、他の grade の priority を保持する
+      ...(gradePriority != null
+        ? { [`gradeOrder.${grade}`]: gradePriority }
+        : {}),
+    })
     return NextResponse.json({ message: '更新しました' })
   } catch (err) {
     console.error('更新エラー:', err)
@@ -163,11 +113,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ eventId: string; participantId: string }> }
 ) {
   const { eventId, participantId } = await params
-  const authResult = await authorizeEventAccess(_req, eventId)
+  const authResult = await authorizeEventAccess(req, eventId)
   if ('response' in authResult) {
     return authResult.response
   }
@@ -181,7 +131,7 @@ export async function DELETE(
   }
 
   if (authResult.requireParticipantToken) {
-    const ownershipError = ensureParticipantOwnership(_req, participantSnap.data())
+    const ownershipError = ensureParticipantOwnership(req, participantSnap.data())
     if (ownershipError) {
       return ownershipError
     }

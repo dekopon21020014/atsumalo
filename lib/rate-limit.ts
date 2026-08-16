@@ -9,8 +9,8 @@ import { db } from "@/lib/firebase";
  * @returns boolean 許可される場合はtrue、制限に引っかかった場合はfalse
  */
 export async function checkRateLimit(req: NextRequest, limit: number = 10, windowMs: number = 60000): Promise<boolean> {
-  // IPアドレスの取得 (Vercel等のプロキシ経由を想定)
-  const ip = req.ip || req.headers.get('x-forwarded-for')?.split(',')[0] || "unknown-ip";
+  // IPアドレスの取得 (Vercel等のプロキシ経由を想定; req.ip は Next.js 新バージョンで廃止)
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || "unknown-ip";
   
   if (ip === "unknown-ip") {
     // IPが特定できない場合はスルー（または厳格にする場合はfalseを返す）

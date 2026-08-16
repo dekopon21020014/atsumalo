@@ -28,10 +28,17 @@ export async function GET(request: Request) {
     const cutoff = new Date()
     cutoff.setMonth(cutoff.getMonth() - 3)
 
+    // Firestoreのバッチ処理は最大500件までなのでlimit(500)を指定
+    // 500件を超える場合は次回のCronで処理される
     const snapshot = await db
       .collection("events")
       .where("createdAt", "<", cutoff)
+      .limit(500)
       .get()
+
+    if (snapshot.empty) {
+      return NextResponse.json({ deleted: 0 })
+    }
 
     const batch = db.batch()
     snapshot.docs.forEach((doc) => batch.delete(doc.ref))

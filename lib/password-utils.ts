@@ -42,5 +42,9 @@ export async function verifyPassword(
   if (isBcryptHash(storedPassword)) {
     return bcrypt.compare(provided, storedPassword)
   }
-  return storedPassword === provided
+  // 平文パスワードの比較は廃止。ensurePasswordHash でハッシュ化してから渡すこと。
+  throw new Error(
+    'verifyPassword: storedPassword is not a bcrypt hash. ' +
+      'Call ensurePasswordHash() before verifyPassword().',
+  )
 }
