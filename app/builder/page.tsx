@@ -867,7 +867,7 @@ export default function HomePage() {
                         </div>
 
                         {/* 右：補助カレンダー */}
-                        <div className="w-[220px] shrink-0 space-y-2">
+                        <div className="w-full sm:w-[220px] shrink-0 space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">
                             カレンダーから追加
                           </p>

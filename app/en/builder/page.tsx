@@ -882,8 +882,8 @@ export default function HomePage() {
                           </p>
                         </div>
 
-                        {/* Right: compact calendar assist */}
-                        <div className="w-[220px] shrink-0 space-y-2">
+                        {/* Right: Calendar Assist */}
+                        <div className="w-full sm:w-[220px] shrink-0 space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">
                             Add from calendar
                           </p>
