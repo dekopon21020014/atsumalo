@@ -25,6 +25,9 @@ import {
   Lock,
   Sparkles,
   Eye,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -70,6 +73,123 @@ function SectionHeader({
   )
 }
 
+// ── カレンダー補助ウィジェット（行追加用） ─────────────────────────────
+const WEEK_DAYS = ["日", "月", "火", "水", "木", "金", "土"] as const
+
+function CalendarAssist({
+  existingValues,
+  onPickDate,
+}: {
+  existingValues: string[] // 現在の dateTimeOptions（ハイライト判定に使う）
+  onPickDate: (label: string, date: Date) => void // 行追加コールバック（label = "M/D"、date = Date object）
+}) {
+  const today = new Date()
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth())
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11) }
+    else setViewMonth((m) => m - 1)
+  }
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0) }
+    else setViewMonth((m) => m + 1)
+  }
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+
+  const cells: (number | null)[] = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  // existingValues の中に "M/D" で始まる行があるか判定（例：8/10が8/1にマッチしないよう厳密にチェック）
+  const isAlreadyAdded = (day: number) => {
+    const label = `${viewMonth + 1}/${day}`
+    return existingValues.some((v) => v === label || v.startsWith(label + " ") || v.startsWith(label + "（"))
+  }
+
+  return (
+    <div className="w-full rounded-lg border bg-muted/30">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between border-b px-3 py-2">
+        <button
+          type="button"
+          onClick={prevMonth}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="前月"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-xs font-semibold">
+          {viewYear}年{viewMonth + 1}月
+        </span>
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="翌月"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* 曜日 */}
+      <div className="grid grid-cols-7 border-b">
+        {WEEK_DAYS.map((d, i) => (
+          <div
+            key={d}
+            className={cn(
+              "py-1 text-center text-[10px] font-semibold",
+              i === 0 && "text-red-500",
+              i === 6 && "text-blue-500",
+            )}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* 日付グリッド */}
+      <div className="grid grid-cols-7 p-1 gap-0.5">
+        {cells.map((day, idx) => {
+          if (day === null) return <div key={`empty-${idx}`} className="h-7" />
+          const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+          const isToday = dateStr === todayStr
+          const added = isAlreadyAdded(day)
+          const col = idx % 7
+          const label = `${viewMonth + 1}/${day}`
+          const dateObj = new Date(viewYear, viewMonth, day)
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => onPickDate(label, dateObj)}
+              title={added ? `${label}（追加済み）` : `${label}を追加`}
+              className={cn(
+                "h-7 w-full rounded text-xs font-medium transition-colors",
+                added
+                  ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                  : "hover:bg-primary/15",
+                isToday && !added && "ring-1 ring-inset ring-primary/50 font-bold",
+                col === 0 && !added && "text-red-500",
+                col === 6 && !added && "text-blue-500",
+              )}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
   const [eventDesc, setEventDesc] = useState("")
@@ -82,7 +202,11 @@ export default function HomePage() {
   const [yAxis, setYAxis] = useState(yAxisTemplate)
 
   // 単発イベント用の軸（日時の組み合わせ）
-  const [dateTimeOptions, setDateTimeOptions] = useState(["5/1 19:00", "5/2 19:00", "5/3 20:00"])
+  const [dateTimeOptions, setDateTimeOptions] = useState<string[]>([])
+
+  // 時刻サフィックス（カレンダークリック時に付与）
+  const [useTimeSuffix, setUseTimeSuffix] = useState(true)
+  const [timeSuffix, setTimeSuffix] = useState("")
 
   // 所属/役職の選択肢
   const [gradeOptions, setGradeOptions] = useState(
@@ -124,10 +248,26 @@ export default function HomePage() {
     })
   }
 
-  // 日時オプションを追加
+  // 日時オプションを追加（空行）
   const addDateTimeOption = () => {
     setDateTimeOptions((prev) => {
-      const newOptions = [...prev, `日時${prev.length + 1}`]
+      const newOptions = [...prev, ""]
+      requestAnimationFrame(() => {
+        const newIndex = newOptions.length - 1
+        dateTimeRefs.current[newIndex]?.focus()
+      })
+      return newOptions
+    })
+  }
+
+  // カレンダーからラベルで行を追加（曜日・時刻サフィックス付き）
+  const addDateTimeByLabel = (label: string, date: Date) => {
+    const dow = WEEK_DAYS[date.getDay()]
+    const labelWithDow = `${label}（${dow}）`
+    const trimmedSuffix = timeSuffix.trim()
+    const finalLabel = useTimeSuffix && trimmedSuffix ? `${labelWithDow} ${trimmedSuffix}` : labelWithDow
+    setDateTimeOptions((prev) => {
+      const newOptions = [...prev, finalLabel]
       requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
         dateTimeRefs.current[newIndex]?.focus()
@@ -154,7 +294,6 @@ export default function HomePage() {
 
   // 日時オプションを削除
   const removeDateTimeOption = (index: number) => {
-    if (dateTimeOptions.length <= 1) return
     const newOptions = [...dateTimeOptions]
     newOptions.splice(index, 1)
     setDateTimeOptions(newOptions)
@@ -302,12 +441,15 @@ export default function HomePage() {
     }
 
     if (eventType === "recurring") {
-      if (xAxis.length === 0 || yAxis.length === 0) {
+      const validX = xAxis.filter((v) => v.trim() !== "")
+      const validY = yAxis.filter((v) => v.trim() !== "")
+      if (validX.length === 0 || validY.length === 0) {
         toast({ title: "エラー", description: "横軸と縦軸の項目を設定してください", variant: "destructive" })
         return
       }
     } else {
-      if (dateTimeOptions.length === 0) {
+      const validDates = dateTimeOptions.filter((v) => v.trim() !== "")
+      if (validDates.length === 0) {
         toast({ title: "エラー", description: "日時の項目を設定してください", variant: "destructive" })
         return
       }
@@ -329,10 +471,10 @@ export default function HomePage() {
 
     try {
       const cleanedScheduleTypes = removeEmptyScheduleTypes(scheduleTypes)
-      const cleanedXAxis = xAxis.filter((v) => v.trim() !== "")
-      const cleanedYAxis = yAxis.filter((v) => v.trim() !== "")
-      const cleanedDateTimes = dateTimeOptions.filter((v) => v.trim() !== "")
-      const cleanedGrades = gradeOptions.filter((g) => g.name.trim() !== "").map((g) => g.name.trim())
+      const cleanedXAxis = xAxis.map((v) => v.trim()).filter((v) => v !== "")
+      const cleanedYAxis = yAxis.map((v) => v.trim()).filter((v) => v !== "")
+      const cleanedDateTimes = dateTimeOptions.map((v) => v.trim()).filter((v) => v !== "")
+      const cleanedGrades = gradeOptions.map((g) => g.name.trim()).filter((v) => v !== "")
       const gradeOrder = gradeOptions.reduce(
         (acc, g) => {
           const name = g.name.trim()
@@ -652,65 +794,102 @@ export default function HomePage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="flex items-center gap-1 text-sm font-medium">
-                            <Clock className="h-4 w-4" />
-                            日時オプション
-                          </Label>
-                          <Button type="button" variant="ghost" size="sm" onClick={addDateTimeOption}>
-                            <Plus className="mr-1 h-4 w-4" />
-                            追加
-                          </Button>
+                      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+                        {/* 左：行入力リスト */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
+                              <Clock className="h-4 w-4" />
+                              日時オプション
+                            </Label>
+                            <Button type="button" variant="ghost" size="sm" onClick={addDateTimeOption}>
+                              <Plus className="mr-1 h-4 w-4" />
+                              追加
+                            </Button>
+                          </div>
+                          <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                            {dateTimeOptions.length === 0 && (
+                              <p className="py-4 text-center text-xs text-muted-foreground">
+                                右のカレンダーで日付を選ぶか「追加」ボタンで行を追加してください。
+                              </p>
+                            )}
+                            {dateTimeOptions.map((item, index) => (
+                              <div key={`datetime-${index}`} className="flex items-center gap-2">
+                                <Input
+                                  ref={(el) => {
+                                    if (el) dateTimeRefs.current[index] = el
+                                  }}
+                                  id={`datetime-option-${index}`}
+                                  value={item}
+                                  onChange={(e) => updateDateTimeOption(index, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                    if (e.key === "Enter" && !isComposing) {
+                                      e.preventDefault()
+                                      addDateTimeOption()
+                                    }
+                                    if (
+                                      (e.key === "Backspace" || e.key === "Delete") &&
+                                      !isComposing &&
+                                      e.currentTarget.value === ""
+                                    ) {
+                                      e.preventDefault()
+                                      removeDateTimeOption(index)
+                                      requestAnimationFrame(() => {
+                                        const prevIndex = Math.max(index - 1, 0)
+                                        dateTimeRefs.current[prevIndex]?.focus()
+                                      })
+                                      return
+                                    }
+                                  }}
+                                  placeholder="例: 8/17 19:00"
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeDateTimeOption(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            「5/1 19:00」のような形式で入力。Enterで次の行を追加、空欄でBackspaceで削除。
+                          </p>
                         </div>
-                        <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
-                          {dateTimeOptions.map((item, index) => (
-                            <div key={`datetime-${index}`} className="flex items-center gap-2">
-                              <Input
-                                ref={(el) => {
-                                  if (el) dateTimeRefs.current[index] = el
-                                }}
-                                id={`datetime-option-${index}`}
-                                value={item}
-                                onChange={(e) => updateDateTimeOption(index, e.target.value)}
-                                onKeyDown={(e) => {
-                                  const isComposing = (e.nativeEvent as any).isComposing as boolean
-                                  if (e.key === "Enter" && !isComposing) {
-                                    e.preventDefault()
-                                    addDateTimeOption()
-                                  }
-                                  if (
-                                    (e.key === "Backspace" || e.key === "Delete") &&
-                                    !isComposing &&
-                                    e.currentTarget.value === ""
-                                  ) {
-                                    e.preventDefault()
-                                    removeDateTimeOption(index)
-                                    requestAnimationFrame(() => {
-                                      const prevIndex = Math.max(index - 1, 0)
-                                      dateTimeRefs.current[prevIndex]?.focus()
-                                    })
-                                    return
-                                  }
-                                }}
-                                placeholder={`日時 ${index + 1} (例: 5/1 19:00)`}
-                                className="flex-1"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeDateTimeOption(index)}
-                                disabled={dateTimeOptions.length <= 1}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
+
+                        {/* 右：補助カレンダー */}
+                        <div className="w-[220px] shrink-0 space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            カレンダーから追加
+                          </p>
+                          {/* 時刻オプション（調整さん方式） */}
+                          <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={useTimeSuffix}
+                              onChange={(e) => setUseTimeSuffix(e.target.checked)}
+                              className="h-3.5 w-3.5 accent-primary"
+                            />
+                            日付の後に時刻を追加する
+                          </label>
+                          {useTimeSuffix && (
+                            <Input
+                              type="text"
+                              value={timeSuffix}
+                              onChange={(e) => setTimeSuffix(e.target.value)}
+                              placeholder="例: 19:00 / 19:00@渋谷"
+                              className="h-7 w-full text-xs"
+                            />
+                          )}
+                          <CalendarAssist
+                            existingValues={dateTimeOptions}
+                            onPickDate={addDateTimeByLabel}
+                          />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          「5/1 19:00」のような形式で入力してください。参加者はこのリストから選択します。
-                        </p>
                       </div>
                     )}
                   </CardContent>

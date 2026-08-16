@@ -25,6 +25,9 @@ import {
   Lock,
   Sparkles,
   Eye,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -70,6 +73,137 @@ function SectionHeader({
   )
 }
 
+// ── Calendar Assist Widget (for adding rows) ──────────────────────────
+const WEEK_DAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
+const MONTH_NAMES_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]
+const MONTH_NAMES_SHORT_EN = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
+
+const getOrdinal = (n: number) => {
+  if (n > 3 && n < 21) return "th"
+  switch (n % 10) {
+    case 1:  return "st"
+    case 2:  return "nd"
+    case 3:  return "rd"
+    default: return "th"
+  }
+}
+
+function CalendarAssist({
+  existingValues,
+  onPickDate,
+}: {
+  existingValues: string[]
+  onPickDate: (label: string, date: Date) => void
+}) {
+  const today = new Date()
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth())
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11) }
+    else setViewMonth((m) => m - 1)
+  }
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0) }
+    else setViewMonth((m) => m + 1)
+  }
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+
+  const cells: (number | null)[] = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  const isAlreadyAdded = (day: number) => {
+    const label = `${MONTH_NAMES_SHORT_EN[viewMonth]} ${day}${getOrdinal(day)}`
+    return existingValues.some((v) => v === label || v.startsWith(label + " ") || v.startsWith(label + " ("))
+  }
+
+  return (
+    <div className="w-full rounded-lg border bg-muted/30">
+      <div className="flex items-center justify-between border-b px-3 py-2">
+        <button
+          type="button"
+          onClick={prevMonth}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-xs font-semibold">
+          {MONTH_NAMES_EN[viewMonth]} {viewYear}
+        </span>
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Next month"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 border-b">
+        {WEEK_DAYS_EN.map((d, i) => (
+          <div
+            key={d}
+            className={cn(
+              "py-1 text-center text-[10px] font-semibold",
+              i === 0 && "text-red-500",
+              i === 6 && "text-blue-500",
+            )}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 p-1 gap-0.5">
+        {cells.map((day, idx) => {
+          if (day === null) return <div key={`empty-${idx}`} className="h-7" />
+          const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+          const isToday = dateStr === todayStr
+          const added = isAlreadyAdded(day)
+          const col = idx % 7
+          const label = `${MONTH_NAMES_SHORT_EN[viewMonth]} ${day}${getOrdinal(day)}`
+          const dateObj = new Date(viewYear, viewMonth, day)
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => onPickDate(label, dateObj)}
+              title={added ? `${label} (already added)` : `Add ${label}`}
+              className={cn(
+                "h-7 w-full rounded text-xs font-medium transition-colors",
+                added
+                  ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                  : "hover:bg-primary/15",
+                isToday && !added && "ring-1 ring-inset ring-primary/50 font-bold",
+                col === 0 && !added && "text-red-500",
+                col === 6 && !added && "text-blue-500",
+              )}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
   const [eventDesc, setEventDesc] = useState("")
@@ -82,7 +216,11 @@ export default function HomePage() {
   const [yAxis, setYAxis] = useState(yAxisTemplate)
 
   // Axes for one-time events (date-time combinations)
-  const [dateTimeOptions, setDateTimeOptions] = useState(["5/1 19:00", "5/2 19:00", "5/3 20:00"])
+  const [dateTimeOptions, setDateTimeOptions] = useState<string[]>([])
+
+  // Time suffix for calendar clicks
+  const [useTimeSuffix, setUseTimeSuffix] = useState(true)
+  const [timeSuffix, setTimeSuffix] = useState("")
 
   // Group/Role Options
   const [gradeOptions, setGradeOptions] = useState(
@@ -126,10 +264,26 @@ export default function HomePage() {
     })
   }
 
-  // Add date-time option
+  // Add date-time option (empty row)
   const addDateTimeOption = () => {
     setDateTimeOptions((prev) => {
-      const newOptions = [...prev, `Date-Time${prev.length + 1}`]
+      const newOptions = [...prev, ""]
+      requestAnimationFrame(() => {
+        const newIndex = newOptions.length - 1
+        dateTimeRefs.current[newIndex]?.focus()
+      })
+      return newOptions
+    })
+  }
+
+  // Add row by label from calendar (with day-of-week + time suffix)
+  const addDateTimeByLabel = (label: string, date: Date) => {
+    const dow = WEEK_DAYS_EN[date.getDay()]
+    const labelWithDow = `${label} (${dow})`
+    const trimmedSuffix = timeSuffix.trim()
+    const finalLabel = useTimeSuffix && trimmedSuffix ? `${labelWithDow} ${trimmedSuffix}` : labelWithDow
+    setDateTimeOptions((prev) => {
+      const newOptions = [...prev, finalLabel]
       requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
         dateTimeRefs.current[newIndex]?.focus()
@@ -156,7 +310,6 @@ export default function HomePage() {
 
   // Remove date-time option
   const removeDateTimeOption = (index: number) => {
-    if (dateTimeOptions.length <= 1) return
     const newOptions = [...dateTimeOptions]
     newOptions.splice(index, 1)
     setDateTimeOptions(newOptions)
@@ -304,12 +457,15 @@ export default function HomePage() {
     }
 
     if (eventType === "recurring") {
-      if (xAxis.length === 0 || yAxis.length === 0) {
-        toast({ title: "Error", description: "Please set items for both X and Y axes", variant: "destructive" })
+      const validX = xAxis.filter((v) => v.trim() !== "")
+      const validY = yAxis.filter((v) => v.trim() !== "")
+      if (validX.length === 0 || validY.length === 0) {
+        toast({ title: "Error", description: "Please set X and Y axis options", variant: "destructive" })
         return
       }
     } else {
-      if (dateTimeOptions.length === 0) {
+      const validDates = dateTimeOptions.filter((v) => v.trim() !== "")
+      if (validDates.length === 0) {
         toast({ title: "Error", description: "Please set date-time options", variant: "destructive" })
         return
       }
@@ -331,10 +487,10 @@ export default function HomePage() {
 
     try {
       const cleanedScheduleTypes = removeEmptyScheduleTypes(scheduleTypes)
-      const cleanedXAxis = xAxis.filter((v) => v.trim() !== "")
-      const cleanedYAxis = yAxis.filter((v) => v.trim() !== "")
-      const cleanedDateTimes = dateTimeOptions.filter((v) => v.trim() !== "")
-      const cleanedGrades = gradeOptions.filter((g) => g.name.trim() !== "").map((g) => g.name.trim())
+      const cleanedXAxis = xAxis.map((v) => v.trim()).filter((v) => v !== "")
+      const cleanedYAxis = yAxis.map((v) => v.trim()).filter((v) => v !== "")
+      const cleanedDateTimes = dateTimeOptions.map((v) => v.trim()).filter((v) => v !== "")
+      const cleanedGrades = gradeOptions.map((g) => g.name.trim()).filter((v) => v !== "")
       const gradeOrder = gradeOptions.reduce(
         (acc, g) => {
           const name = g.name.trim()
@@ -654,65 +810,102 @@ export default function HomePage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="flex items-center gap-1 text-sm font-medium">
-                            <Clock className="h-4 w-4" />
-                            Date-Time Options
-                          </Label>
-                          <Button type="button" variant="ghost" size="sm" onClick={addDateTimeOption}>
-                            <Plus className="mr-1 h-4 w-4" />
-                            Add
-                          </Button>
+                      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+                        {/* Left: row input list */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
+                              <Clock className="h-4 w-4" />
+                              Date-Time Options
+                            </Label>
+                            <Button type="button" variant="ghost" size="sm" onClick={addDateTimeOption}>
+                              <Plus className="mr-1 h-4 w-4" />
+                              Add
+                            </Button>
+                          </div>
+                          <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                            {dateTimeOptions.length === 0 && (
+                              <p className="py-4 text-center text-xs text-muted-foreground">
+                                Click a date on the calendar or use "Add" to add a row.
+                              </p>
+                            )}
+                            {dateTimeOptions.map((item, index) => (
+                              <div key={`datetime-${index}`} className="flex items-center gap-2">
+                                <Input
+                                  ref={(el) => {
+                                    if (el) dateTimeRefs.current[index] = el
+                                  }}
+                                  id={`datetime-option-${index}`}
+                                  value={item}
+                                  onChange={(e) => updateDateTimeOption(index, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                    if (e.key === "Enter" && !isComposing) {
+                                      e.preventDefault()
+                                      addDateTimeOption()
+                                    }
+                                    if (
+                                      (e.key === "Backspace" || e.key === "Delete") &&
+                                      !isComposing &&
+                                      e.currentTarget.value === ""
+                                    ) {
+                                      e.preventDefault()
+                                      removeDateTimeOption(index)
+                                      requestAnimationFrame(() => {
+                                        const prevIndex = Math.max(index - 1, 0)
+                                        dateTimeRefs.current[prevIndex]?.focus()
+                                      })
+                                      return
+                                    }
+                                  }}
+                                  placeholder="e.g. 8/17 19:00"
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeDateTimeOption(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Enter in 'Apr 5th 19:00' format. Press Enter to add a new row; Backspace on empty to delete.
+                          </p>
                         </div>
-                        <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
-                          {dateTimeOptions.map((item, index) => (
-                            <div key={`datetime-${index}`} className="flex items-center gap-2">
-                              <Input
-                                ref={(el) => {
-                                  if (el) dateTimeRefs.current[index] = el
-                                }}
-                                id={`datetime-option-${index}`}
-                                value={item}
-                                onChange={(e) => updateDateTimeOption(index, e.target.value)}
-                                onKeyDown={(e) => {
-                                  const isComposing = (e.nativeEvent as any).isComposing as boolean
-                                  if (e.key === "Enter" && !isComposing) {
-                                    e.preventDefault()
-                                    addDateTimeOption()
-                                  }
-                                  if (
-                                    (e.key === "Backspace" || e.key === "Delete") &&
-                                    !isComposing &&
-                                    e.currentTarget.value === ""
-                                  ) {
-                                    e.preventDefault()
-                                    removeDateTimeOption(index)
-                                    requestAnimationFrame(() => {
-                                      const prevIndex = Math.max(index - 1, 0)
-                                      dateTimeRefs.current[prevIndex]?.focus()
-                                    })
-                                    return
-                                  }
-                                }}
-                                placeholder={`Date-Time ${index + 1} (e.g., 5/1 19:00)`}
-                                className="flex-1"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeDateTimeOption(index)}
-                                disabled={dateTimeOptions.length <= 1}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
+
+                        {/* Right: compact calendar assist */}
+                        <div className="w-[220px] shrink-0 space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Add from calendar
+                          </p>
+                          {/* Time suffix option */}
+                          <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={useTimeSuffix}
+                              onChange={(e) => setUseTimeSuffix(e.target.checked)}
+                              className="h-3.5 w-3.5 accent-primary"
+                            />
+                            Add time after date
+                          </label>
+                          {useTimeSuffix && (
+                            <Input
+                              type="text"
+                              value={timeSuffix}
+                              onChange={(e) => setTimeSuffix(e.target.value)}
+                              placeholder="e.g. 19:00 / 19:00@Shibuya"
+                              className="h-7 w-full text-xs"
+                            />
+                          )}
+                          <CalendarAssist
+                            existingValues={dateTimeOptions}
+                            onPickDate={addDateTimeByLabel}
+                          />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Enter date-times like '5/1 19:00'. Participants will select from this list.
-                        </p>
                       </div>
                     )}
                   </CardContent>
