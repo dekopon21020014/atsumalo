@@ -89,20 +89,64 @@ export const recurringTemplates = [
   { name: "時間帯（午前/午後）", x: ["月", "火", "水", "木", "金"], y: ["午前", "午後", "夕方", "夜"] },
 ]
 
-export const onetimeTemplates = [
-  {
-    name: "平日夕方",
-    options: ["5/1(月) 19:00", "5/2(火) 19:00", "5/3(水) 19:00", "5/4(木) 19:00", "5/5(金) 19:00"],
-  },
-  {
-    name: "週末",
-    options: ["5/6(土) 10:00", "5/6(土) 14:00", "5/7(日) 10:00", "5/7(日) 14:00"],
-  },
-  {
-    name: "来週平日",
-    options: ["5/8(月) 19:00", "5/9(火) 19:00", "5/10(水) 19:00", "5/11(木) 19:00", "5/12(金) 19:00"],
-  },
-]
+export const getOnetimeTemplates = () => {
+  const WEEK_DAYS = ["日", "月", "火", "水", "木", "金", "土"]
+  const getFormattedDate = (date: Date) => {
+    return `${date.getMonth() + 1}/${date.getDate()}（${WEEK_DAYS[date.getDay()]}）`
+  }
+
+  const today = new Date()
+
+  // 1. 直近の平日 (明日以降の平日5日間)
+  const next5Weekdays = []
+  let curr = new Date(today)
+  curr.setDate(curr.getDate() + 1)
+  while (next5Weekdays.length < 5) {
+    const dow = curr.getDay()
+    if (dow !== 0 && dow !== 6) {
+      next5Weekdays.push(getFormattedDate(curr))
+    }
+    curr.setDate(curr.getDate() + 1)
+  }
+
+  // 2. 直近の週末 (次の土日)
+  const daysUntilSat = (6 - today.getDay() + 7) % 7
+  const nextSat = new Date(today)
+  nextSat.setDate(today.getDate() + daysUntilSat)
+  const nextSun = new Date(nextSat)
+  nextSun.setDate(nextSat.getDate() + 1)
+
+  // 3. 来週の平日 (次の月曜日から金曜日)
+  const daysUntilNextMon = (1 - today.getDay() + 7) % 7 || 7
+  const nextMon = new Date(today)
+  nextMon.setDate(today.getDate() + daysUntilNextMon)
+  const nextWeekWeekdays = []
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(nextMon)
+    d.setDate(nextMon.getDate() + i)
+    nextWeekWeekdays.push(getFormattedDate(d))
+  }
+
+  return [
+    {
+      name: "平日夕方",
+      options: next5Weekdays.map((d) => `${d} 19:00`),
+    },
+    {
+      name: "週末",
+      options: [
+        `${getFormattedDate(nextSat)} 10:00`,
+        `${getFormattedDate(nextSat)} 14:00`,
+        `${getFormattedDate(nextSun)} 10:00`,
+        `${getFormattedDate(nextSun)} 14:00`,
+      ],
+    },
+    {
+      name: "来週平日",
+      options: nextWeekWeekdays.map((d) => `${d} 19:00`),
+    },
+  ]
+}
 
 export const scheduleTypeTemplate = [
     { id: "available", label: "可能", color: "bg-green-200 text-green-800", isAvailable: true },

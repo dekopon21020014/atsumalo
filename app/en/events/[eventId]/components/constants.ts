@@ -89,20 +89,73 @@ export const recurringTemplates = [
   { name: "Time Slots (Morning/Afternoon)", x: ["Mon", "Tue", "Wed", "Thu", "Fri"], y: ["Morning", "Afternoon", "Evening", "Night"] },
 ]
 
-export const onetimeTemplates = [
-  {
-    name: "Weekday Evenings",
-    options: ["5/1(Mon) 19:00", "5/2(Tue) 19:00", "5/3(Wed) 19:00", "5/4(Thu) 19:00", "5/5(Fri) 19:00"],
-  },
-  {
-    name: "Weekend",
-    options: ["5/6(Sat) 10:00", "5/6(Sat) 14:00", "5/7(Sun) 10:00", "5/7(Sun) 14:00"],
-  },
-  {
-    name: "Next Weekdays",
-    options: ["5/8(Mon) 19:00", "5/9(Tue) 19:00", "5/10(Wed) 19:00", "5/11(Thu) 19:00", "5/12(Fri) 19:00"],
-  },
-]
+export const getOnetimeTemplates = () => {
+  const MONTH_NAMES_SHORT_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const getOrdinal = (n: number) => {
+    if (n > 3 && n < 21) return "th"
+    switch (n % 10) {
+      case 1:  return "st"
+      case 2:  return "nd"
+      case 3:  return "rd"
+      default: return "th"
+    }
+  }
+  const getFormattedDateEn = (date: Date) => {
+    return `${MONTH_NAMES_SHORT_EN[date.getMonth()]} ${date.getDate()}${getOrdinal(date.getDate())}`
+  }
+
+  const today = new Date()
+
+  // 1. Next Weekdays (Next 5 Weekdays starting from tomorrow)
+  const next5Weekdays = []
+  let curr = new Date(today)
+  curr.setDate(curr.getDate() + 1)
+  while (next5Weekdays.length < 5) {
+    const dow = curr.getDay()
+    if (dow !== 0 && dow !== 6) {
+      next5Weekdays.push(getFormattedDateEn(curr))
+    }
+    curr.setDate(curr.getDate() + 1)
+  }
+
+  // 2. Next Weekend (Next Sat and Sun)
+  const daysUntilSat = (6 - today.getDay() + 7) % 7
+  const nextSat = new Date(today)
+  nextSat.setDate(today.getDate() + daysUntilSat)
+  const nextSun = new Date(nextSat)
+  nextSun.setDate(nextSat.getDate() + 1)
+
+  // 3. Next Week's Weekdays (Next week's Monday to Friday)
+  const daysUntilNextMon = (1 - today.getDay() + 7) % 7 || 7
+  const nextMon = new Date(today)
+  nextMon.setDate(today.getDate() + daysUntilNextMon)
+  const nextWeekWeekdays = []
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(nextMon)
+    d.setDate(nextMon.getDate() + i)
+    nextWeekWeekdays.push(getFormattedDateEn(d))
+  }
+
+  return [
+    {
+      name: "Weekday Evenings",
+      options: next5Weekdays.map((d) => `${d} 19:00`),
+    },
+    {
+      name: "Weekend",
+      options: [
+        `${getFormattedDateEn(nextSat)} 10:00`,
+        `${getFormattedDateEn(nextSat)} 14:00`,
+        `${getFormattedDateEn(nextSun)} 10:00`,
+        `${getFormattedDateEn(nextSun)} 14:00`,
+      ],
+    },
+    {
+      name: "Next Weekdays",
+      options: nextWeekWeekdays.map((d) => `${d} 19:00`),
+    },
+  ]
+}
 
 export const scheduleTypeTemplate = [
   { id: "available", label: "Available", color: "bg-green-200 text-green-800", isAvailable: true },

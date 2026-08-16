@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils"
 import {
   colorPalettes,
   recurringTemplates,
-  onetimeTemplates,
+  getOnetimeTemplates,
   scheduleTypeTemplate,
   xAxisTemplate,
   yAxisTemplate,
@@ -203,6 +203,7 @@ export default function HomePage() {
 
   // 単発イベント用の軸（日時の組み合わせ）
   const [dateTimeOptions, setDateTimeOptions] = useState<string[]>([])
+  const onetimeTemplates = useMemo(() => getOnetimeTemplates(), [])
 
   // 時刻サフィックス（カレンダークリック時に付与）
   const [useTimeSuffix, setUseTimeSuffix] = useState(true)
@@ -660,9 +661,9 @@ export default function HomePage() {
                                 {template.name}
                               </Button>
                             ))
-                          : onetimeTemplates.map((template, index) => (
+                          : onetimeTemplates.map((template: { name: string; options: string[] }, index: number) => (
                               <Button
-                                key={`ot-${index}`}
+                                key={`onetime-tpl-${index}`}
                                 type="button"
                                 variant="outline"
                                 size="sm"
