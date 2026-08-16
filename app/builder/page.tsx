@@ -198,8 +198,8 @@ export default function HomePage() {
   const [eventType, setEventType] = useState<"recurring" | "onetime" | undefined>(undefined)
 
   // 定期イベント用の軸
-  const [xAxis, setXAxis] = useState(xAxisTemplate)
-  const [yAxis, setYAxis] = useState(yAxisTemplate)
+  const [xAxis, setXAxis] = useState<string[]>([])
+  const [yAxis, setYAxis] = useState<string[]>([])
 
   // 単発イベント用の軸（日時の組み合わせ）
   const [dateTimeOptions, setDateTimeOptions] = useState<string[]>([])
@@ -693,6 +693,11 @@ export default function HomePage() {
                             </Button>
                           </div>
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {xAxis.length === 0 && (
+                              <p className="py-4 text-center text-xs text-muted-foreground">
+                                「追加」ボタンで列を追加してください。
+                              </p>
+                            )}
                             {xAxis.map((item, i) => (
                               <div key={`x-${i}`} className="flex items-center gap-2">
                                 <Input
@@ -751,6 +756,11 @@ export default function HomePage() {
                             </Button>
                           </div>
                           <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {yAxis.length === 0 && (
+                              <p className="py-4 text-center text-xs text-muted-foreground">
+                                「追加」ボタンで行を追加してください。
+                              </p>
+                            )}
                             {yAxis.map((item, i) => (
                               <div key={`y-${i}`} className="flex items-center gap-2">
                                 <Input
@@ -787,7 +797,6 @@ export default function HomePage() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeYItem(i)}
-                                  disabled={yAxis.length <= 1}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
