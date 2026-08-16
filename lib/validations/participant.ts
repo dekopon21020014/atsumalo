@@ -6,12 +6,16 @@ export const participantSchema = z.object({
   grade: z.string().min(1, "所属/役職が必要です").max(50, "所属/役職は50文字以内で入力してください"),
   gradePriority: z.number().int().optional(),
   comment: z.string().max(1000, "コメントは1000文字以内で入力してください").optional().nullable(),
-  schedule: z
-    .array(
+  schedule: z.union([
+    z.record(z.string().max(50), z.string().max(50)).refine(
+      (val) => Object.keys(val).length <= 100,
+      { message: "スケジュールの項目数が多すぎます（最大100件）" }
+    ),
+    z.array(
       z.object({
         dateTime: z.string().max(50),
         typeId: z.string().max(50),
       })
-    )
-    .max(100, "スケジュールの項目数が多すぎます（最大100件）"),
+    ).max(100, "スケジュールの項目数が多すぎます（最大100件）")
+  ]),
 });
