@@ -134,10 +134,15 @@ export default function OneTimeSummaryTab({
                 </div>
                 <div className="mt-2 text-sm text-green-600">
                   参加可能な人:{" "}
-                  {getRespondentsByType(
-                    bestDateTime.dateTime,
-                    scheduleTypes.find((t) => t.isAvailable)?.id || ""
-                  ).join(", ")}
+                  {responses
+                    .filter((response) => {
+                      const sel = response.schedule.find((s) => s.dateTime === bestDateTime.dateTime)
+                      if (!sel) return false
+                      const type = scheduleTypes.find((t) => t.id === sel.typeId)
+                      return type?.isAvailable
+                    })
+                    .map((r) => r.name)
+                    .join(", ")}
                 </div>
               </CardContent>
             </Card>

@@ -363,17 +363,8 @@ export default function EventPage() {
 
   // 予定タイプの「参加可能」状態を更新
   const updateScheduleTypeAvailability = (index: number, isAvailable: boolean) => {
-    // 一旦すべてfalseにする
-    const newTypes = editScheduleTypes.map((type) => ({
-      ...type,
-      isAvailable: false,
-    }))
-
-    // 選択された項目だけtrueにする
-    if (isAvailable) {
-      newTypes[index].isAvailable = true
-    }
-
+    const newTypes = [...editScheduleTypes]
+    newTypes[index].isAvailable = isAvailable
     setEditScheduleTypes(newTypes)
   }
 

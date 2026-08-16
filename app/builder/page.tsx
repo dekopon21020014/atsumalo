@@ -263,15 +263,8 @@ export default function HomePage() {
 
   // 予定タイプの「参加可能」状態を更新
   const updateScheduleTypeAvailability = (index: number, isAvailable: boolean) => {
-    const newTypes = scheduleTypes.map((type) => ({
-      ...type,
-      isAvailable: false,
-    }))
-
-    if (isAvailable) {
-      newTypes[index].isAvailable = true
-    }
-
+    const newTypes = [...scheduleTypes]
+    newTypes[index].isAvailable = isAvailable
     setScheduleTypes(newTypes)
   }
 
@@ -733,7 +726,7 @@ export default function HomePage() {
                         step={4}
                         icon={<Check className="h-5 w-5" />}
                         title="回答の選択肢（予定タイプ）"
-                        description="参加者が各コマで選ぶ選択肢です。1つを「参加可能」に設定すると集計の基準になります。"
+                        description="参加者が各コマで選ぶ選択肢です。「参加可能」に設定すると集計の基準になります。"
                       />
                       <Button type="button" variant="outline" size="sm" onClick={addScheduleType} className="shrink-0 bg-background">
                         <Plus className="mr-1 h-4 w-4" />
