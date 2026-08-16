@@ -4,6 +4,7 @@ import { db, FieldValue } from '@/lib/firebase'
 import { randomUUID } from 'crypto'
 import type { DocumentSnapshot } from 'firebase-admin/firestore'
 import { ensurePasswordHash, verifyPassword } from '@/lib/password-utils'
+import { participantSchema } from '@/lib/validations/participant'
 
 type EventAuthResult =
   | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
@@ -69,17 +70,35 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ even
   return NextResponse.json({ participants })
 }
 
+import { checkRateLimit } from '@/lib/rate-limit'
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
+  // レートリミット (1分間に20回まで参加登録可能)
+  const allowed = await checkRateLimit(req, 20, 60000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
+      { status: 429 }
+    );
+  }
+
   const { eventId } = await params
   const body = await req.json()
-  const { eventId: bodyEventId, name, grade, gradePriority, schedule, comment: rawComment } = body
+  // Zodによるバリデーション
+  const parseResult = participantSchema.safeParse(body);
 
-  if (!bodyEventId || typeof bodyEventId !== "string") {
-    return NextResponse.json({ error: "eventId が必要です" }, { status: 400 })
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: parseResult.error.errors[0]?.message || "入力内容に誤りがあります" },
+      { status: 400 }
+    );
   }
+
+  const { eventId: bodyEventId, name, grade, gradePriority, schedule, comment: rawComment } = parseResult.data;
+
   if (bodyEventId !== eventId) {
     return NextResponse.json({ error: "eventId が一致しません" }, { status: 400 })
   }
@@ -89,24 +108,8 @@ export async function POST(
     return authResult.response
   }
 
-  if (!name || typeof name !== "string") {
-    return NextResponse.json({ error: "名前が必要です" }, { status: 400 })
-  }
-  if (!grade || typeof grade !== "string") {
-    return NextResponse.json({ error: "所属/役職が必要です" }, { status: 400 })
-  }
-  if (gradePriority != null && typeof gradePriority !== "number") {
-    return NextResponse.json({ error: "gradePriority は数値で指定してください" }, { status: 400 })
-  }
-  if (!schedule || typeof schedule !== "object") {
-    return NextResponse.json({ error: "スケジュールが必要です" }, { status: 400 })
-  }
-
   let comment = ""
   if (rawComment != null) {
-    if (typeof rawComment !== "string") {
-      return NextResponse.json({ error: "コメントは文字列で指定してください" }, { status: 400 })
-    }
     const trimmed = rawComment.trim()
     if (trimmed !== "") {
       comment = trimmed

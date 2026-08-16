@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 import { ensurePasswordHash, hashPassword, verifyPassword } from "@/lib/password-utils"
+import { eventSchema } from "@/lib/validations/event"
 
 interface ScheduleType {
   id: string
@@ -85,10 +86,21 @@ export async function GET(
   })
 }
 
+import { checkRateLimit } from "@/lib/rate-limit"
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
+  // レートリミット (1分間に10回まで更新可能)
+  const allowed = await checkRateLimit(req, 10, 60000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
+      { status: 429 }
+    );
+  }
+
   const { eventId } = await params
   const eventRef = db.collection("events").doc(eventId)
   const eventSnap = await eventRef.get()
@@ -129,7 +141,19 @@ export async function PUT(
   }
 
   const json = await req.json()
-  let {
+  
+  // Zodによるバリデーション
+  const parseResult = eventSchema.safeParse(json);
+  
+  if (!parseResult.success) {
+    // 最初のバリデーションエラーメッセージを返す
+    return NextResponse.json(
+      { error: parseResult.error.errors[0]?.message || "入力内容に誤りがあります" },
+      { status: 400 }
+    );
+  }
+
+  const {
     name,
     description,
     eventType,
@@ -140,99 +164,16 @@ export async function PUT(
     gradeOptions,
     gradeOrder,
     password,
-  } = json
+  } = parseResult.data;
 
-  // 基本バリデーション
-  if (!name || typeof name !== "string") {
-    return NextResponse.json(
-      { error: "イベント名が必要です" },
-      { status: 400 },
-    )
-  }
-  if (description != null && typeof description !== "string") {
-    return NextResponse.json(
-      { error: "説明は文字列で入力してください" },
-      { status: 400 },
-    )
-  }
-  if (eventType !== "recurring" && eventType !== "onetime") {
-    return NextResponse.json(
-      { error: 'eventType は "recurring" または "onetime" で指定してください' },
-      { status: 400 },
-    )
-  }
-  if (password != null && typeof password !== "string") {
-    return NextResponse.json(
-      { error: "password は文字列で指定してください" },
-      { status: 400 },
-    )
-  }
-
-  // scheduleTypes の検証
-  if (
-    !Array.isArray(scheduleTypes) ||
-    !scheduleTypes.every(
-      (t: any) =>
-        t &&
-        typeof t.id === "string" &&
-        t.id.trim() !== "" &&
-        typeof t.label === "string" &&
-        typeof t.color === "string" &&
-        typeof t.isAvailable === "boolean",
-    )
-  ) {
-    return NextResponse.json(
-      { error: "scheduleTypes は正しい形式で指定してください" },
-      { status: 400 },
-    )
-  }
-
-  if (
-    !Array.isArray(gradeOptions) ||
-    !gradeOptions.every((v: any) => typeof v === "string")
-  ) {
-    gradeOptions = defaultGradeOptions
-  }
+  const validGradeOptions = gradeOptions && gradeOptions.length > 0
+    ? gradeOptions
+    : defaultGradeOptions;
 
   const order =
-    gradeOrder && typeof gradeOrder === "object"
-      ? Object.entries(gradeOrder).reduce((acc: any, [k, v]) => {
-          if (typeof k === "string" && typeof v === "number") acc[k] = v
-          return acc
-        }, {})
-      : defaultGradeOrder
-
-  // イベントタイプ別の検証
-  if (eventType === "recurring") {
-    if (
-      !Array.isArray(xAxis) ||
-      !xAxis.every((v: any) => typeof v === "string")
-    ) {
-      return NextResponse.json(
-        { error: "recurring の場合、xAxis は文字列の配列で指定してください" },
-        { status: 400 },
-      )
-    }
-    if (
-      !Array.isArray(yAxis) ||
-      !yAxis.every((v: any) => typeof v === "string")
-    ) {
-      return NextResponse.json(
-        { error: "recurring の場合、yAxis は文字列の配列で指定してください" },
-        { status: 400 },
-      )
-    }
-  } else {
-    if (
-      !Array.isArray(dateTimeOptions) ||
-      !dateTimeOptions.every((v: any) => typeof v === "string")
-    ) {
-      return NextResponse.json(
-        { error: "onetime の場合、dateTimeOptions は文字列の配列で指定してください" },
-        { status: 400 },
-      )
-    }
-  }
+    gradeOrder && Object.keys(gradeOrder).length > 0
+      ? gradeOrder
+      : defaultGradeOrder;
 
   // 更新データ作成
   const updateData: any = {
@@ -240,7 +181,7 @@ export async function PUT(
     description: description || "",
     eventType,
     scheduleTypes,
-    gradeOptions,
+    gradeOptions: validGradeOptions,
     gradeOrder: order,
     updatedAt: new Date(),
   }

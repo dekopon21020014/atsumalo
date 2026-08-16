@@ -1,11 +1,34 @@
-// app/api/events/route.ts
 import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
 import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
 import { hashPassword } from "@/lib/password-utils"
+import { eventSchema } from "@/lib/validations/event"
+
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
+  // レートリミット (1分間に5回まで)
+  const allowed = await checkRateLimit(req, 5, 60000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
+      { status: 429 }
+    );
+  }
+
   const json = await req.json()
+  
+  // Zodによるバリデーション
+  const parseResult = eventSchema.safeParse(json);
+  
+  if (!parseResult.success) {
+    // 最初のバリデーションエラーメッセージを返す
+    return NextResponse.json(
+      { error: parseResult.error.errors[0]?.message || "入力内容に誤りがあります" },
+      { status: 400 }
+    );
+  }
+
   const {
     name,
     description,
@@ -17,96 +40,16 @@ export async function POST(req: NextRequest) {
     gradeOptions,
     gradeOrder,
     password,
-  } = json
-
-  // --- 基本項目チェック ---
-  if (!name || typeof name !== "string") {
-    return NextResponse.json({ error: "イベント名が必要です" }, { status: 400 })
-  }
-  if (description != null && typeof description !== "string") {
-    return NextResponse.json({ error: "説明は文字列で入力してください" }, { status: 400 })
-  }  
-
-  // --- eventType のチェック ---
-  if (
-    !eventType ||
-    (eventType !== "recurring" && eventType !== "onetime")
-  ) {
-    return NextResponse.json(
-      { error: "eventType は \"recurring\" または \"onetime\" で指定してください" },
-      { status: 400 }
-    )
-  }
-
-  if (password != null && typeof password !== "string") {
-    return NextResponse.json(
-      { error: "password は文字列で指定してください" },
-      { status: 400 }
-    )
-  }
-
-  // --- イベントタイプ別の検証 ---
-  if (eventType === "recurring") {    
-    if (
-      !Array.isArray(xAxis) ||
-      !xAxis.every((v) => typeof v === "string")
-    ) {      
-      console.log(xAxis)
-      return NextResponse.json(
-        { error: "recurring の場合、xAxis は文字列の配列で指定してください" },
-        { status: 400 }
-      )
-    }
-    if (
-      !Array.isArray(yAxis) ||
-      !yAxis.every((v) => typeof v === "string")
-    ) {      
-      return NextResponse.json(
-        { error: "recurring の場合、yAxis は文字列の配列で指定してください" },
-        { status: 400 }
-      )
-    }    
-  } else {
-    // onetime
-    if (
-      !Array.isArray(dateTimeOptions) ||
-      !dateTimeOptions.every((v) => typeof v === "string")
-    ) {
-      return NextResponse.json(
-        { error: "onetime の場合、dateTimeOptions は文字列の配列で指定してください" },
-        { status: 400 }
-      )
-    }
-  }
-
-  // --- scheduleTypes の検証 ---
-  if (
-    !Array.isArray(scheduleTypes) ||
-    !scheduleTypes.every((t) =>
-      t &&
-      typeof t.id === "string" &&
-      typeof t.label === "string" &&
-      typeof t.color === "string" &&
-      typeof t.isAvailable === "boolean"
-    )
-  ) {
-    return NextResponse.json(
-      { error: "scheduleTypes は正しい形式で指定してください" },
-      { status: 400 }
-    )
-  }
+  } = parseResult.data;
 
   const grades =
-    Array.isArray(gradeOptions) && gradeOptions.every((v: any) => typeof v === "string")
+    gradeOptions && gradeOptions.length > 0
       ? gradeOptions
       : defaultGradeOptions
 
   const order =
-    gradeOrder && typeof gradeOrder === "object"
-      ? Object.entries(gradeOrder).reduce((acc: any, [k, v]) => {
-          if (typeof k === "string" && typeof v === "number") acc[k] = v
-          return acc
-        }, {})
+    gradeOrder && Object.keys(gradeOrder).length > 0
+      ? gradeOrder
       : defaultGradeOrder
 
   const pass = typeof password === "string" ? password.trim() : ""
@@ -125,10 +68,10 @@ export async function POST(req: NextRequest) {
       ...(passwordHash ? { password: passwordHash } : {}),
     }
     if (eventType === "recurring") {
-      payload.xAxis = xAxis
-      payload.yAxis = yAxis
+      payload.xAxis = xAxis || []
+      payload.yAxis = yAxis || []
     } else {
-      payload.dateTimeOptions = dateTimeOptions
+      payload.dateTimeOptions = dateTimeOptions || []
     }
 
     const docRef = await db.collection("events").add(payload)
