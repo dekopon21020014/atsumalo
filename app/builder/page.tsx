@@ -37,10 +37,10 @@ import {
   colorPalettes,
   recurringTemplates,
   getOnetimeTemplates,
-  scheduleTypeTemplate,
+  scheduleTypeTemplates,
   xAxisTemplate,
   yAxisTemplate,
-  defaultGradeOptions,
+  gradeTemplates,
   defaultGradeOrder,
 } from "../events/[eventId]/components/constants"
 import type { ScheduleType } from "../events/[eventId]/components/constants"
@@ -210,14 +210,12 @@ export default function HomePage() {
   const [timeSuffix, setTimeSuffix] = useState("")
 
   // 所属/役職の選択肢
-  const [gradeOptions, setGradeOptions] = useState(
-    defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 })),
-  )
+  const [gradeOptions, setGradeOptions] = useState<{ name: string; priority: number }[]>([])
 
   const router = useRouter()
 
   // 予定タイプの初期値
-  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>(scheduleTypeTemplate)
+  const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
 
   const xAxisRefs = useRef<HTMLInputElement[]>([])
   const yAxisRefs = useRef<HTMLInputElement[]>([])
@@ -917,6 +915,24 @@ export default function HomePage() {
                         追加
                       </Button>
                     </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {scheduleTypeTemplates.map((template, index) => (
+                        <Button
+                          key={`st-tpl-${index}`}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 bg-background"
+                          onClick={() => {
+                            setScheduleTypes(template.options.map(opt => ({ ...opt })))
+                            toast({ title: "テンプレート適用", description: `「${template.name}」を適用しました` })
+                          }}
+                        >
+                          {template.name}
+                        </Button>
+                      ))}
+                    </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       {scheduleTypes.map((type, index) => (
@@ -1015,6 +1031,30 @@ export default function HomePage() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">数字が小さいほど優先度が高くなります。</p>
+                    
+                    <div className="flex flex-wrap gap-2 py-2">
+                      {gradeTemplates.map((template, index) => (
+                        <Button
+                          key={`grade-tpl-${index}`}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 bg-background"
+                          onClick={() => {
+                            setGradeOptions(
+                              template.options.map((grade) => ({
+                                name: grade,
+                                priority: defaultGradeOrder[grade] || 99,
+                              }))
+                            )
+                            toast({ title: "テンプレート適用", description: `「${template.name}」を適用しました` })
+                          }}
+                        >
+                          {template.name}
+                        </Button>
+                      ))}
+                    </div>
+
                     <div className="max-h-[240px] space-y-2 overflow-y-auto pr-1">
                       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         <span className="flex-1">所属/役職</span>
