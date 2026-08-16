@@ -8,12 +8,10 @@ import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Plus,
   Trash2,
-  Copy,
   ArrowDown,
   ArrowRight,
   Save,
@@ -25,11 +23,13 @@ import {
   FileText,
   UserPlus,
   Lock,
+  Sparkles,
+  Eye,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import {
   colorPalettes,
   recurringTemplates,
@@ -41,6 +41,34 @@ import {
   defaultGradeOrder,
 } from "../events/[eventId]/components/constants"
 import type { ScheduleType } from "../events/[eventId]/components/constants"
+
+// Section header (with numbered badge)
+function SectionHeader({
+  step,
+  title,
+  description,
+  icon,
+}: {
+  step: number
+  title: string
+  description?: string
+  icon: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+        {step}
+      </div>
+      <div className="min-w-0">
+        <h2 className="flex items-center gap-2 text-lg font-semibold leading-tight">
+          <span className="text-muted-foreground">{icon}</span>
+          {title}
+        </h2>
+        {description && <p className="mt-1 text-sm text-muted-foreground text-pretty">{description}</p>}
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const [eventName, setEventName] = useState("")
@@ -58,10 +86,9 @@ export default function HomePage() {
 
   // Group/Role Options
   const [gradeOptions, setGradeOptions] = useState(
-    defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 }))
+    defaultGradeOptions.map((g) => ({ name: g, priority: defaultGradeOrder[g] || 0 })),
   )
 
-  const [activeTab, setActiveTab] = useState("builder")
   const router = useRouter()
   const pathname = usePathname()
   const prefix = pathname.startsWith("/en") ? "/en" : ""
@@ -111,7 +138,7 @@ export default function HomePage() {
     })
   }
 
-  // Remove item from X-axis
+  // Remove X-axis item
   const removeXItem = (index: number) => {
     if (xAxis.length <= 1) return
     const newXAxis = [...xAxis]
@@ -119,7 +146,7 @@ export default function HomePage() {
     setXAxis(newXAxis)
   }
 
-  // Remove item from Y-axis
+  // Remove Y-axis item
   const removeYItem = (index: number) => {
     if (yAxis.length <= 1) return
     const newYAxis = [...yAxis]
@@ -135,13 +162,10 @@ export default function HomePage() {
     setDateTimeOptions(newOptions)
   }
 
-  // Add group/role option
+  // Add group/role item
   const addGradeOption = () => {
     setGradeOptions((prev) => {
-      const newOptions = [
-        ...prev,
-        { name: `Option${prev.length + 1}`, priority: prev.length + 1 },
-      ]
+      const newOptions = [...prev, { name: `Option${prev.length + 1}`, priority: prev.length + 1 }]
       requestAnimationFrame(() => {
         const newIndex = newOptions.length - 1
         gradeOptionRefs.current[newIndex]?.focus()
@@ -150,7 +174,7 @@ export default function HomePage() {
     })
   }
 
-  // Remove group/role option
+  // Remove group/role item
   const removeGradeOption = (index: number) => {
     if (gradeOptions.length <= 1) return
     const newOpts = [...gradeOptions]
@@ -193,7 +217,7 @@ export default function HomePage() {
     setDateTimeOptions(newOptions)
   }
 
-  // Add schedule type and focus new field
+  // Add schedule type
   const addScheduleType = () => {
     const newId = `type_${Date.now()}`
     const randomColorIndex = Math.floor(Math.random() * colorPalettes.length)
@@ -241,13 +265,11 @@ export default function HomePage() {
 
   // Update schedule type "Available" state
   const updateScheduleTypeAvailability = (index: number, isAvailable: boolean) => {
-    // Reset all to false
     const newTypes = scheduleTypes.map((type) => ({
       ...type,
       isAvailable: false,
     }))
 
-    // Set only the selected item to true
     if (isAvailable) {
       newTypes[index].isAvailable = true
     }
@@ -255,7 +277,7 @@ export default function HomePage() {
     setScheduleTypes(newTypes)
   }
 
-  // Apply template for recurring events
+  // Apply recurring event template
   const applyRecurringTemplate = (templateIndex: number) => {
     const template = recurringTemplates[templateIndex]
     setXAxis([...template.x])
@@ -266,7 +288,7 @@ export default function HomePage() {
     })
   }
 
-  // Apply template for one-time events
+  // Apply one-time event template
   const applyOnetimeTemplate = (templateIndex: number) => {
     const template = onetimeTemplates[templateIndex]
     setDateTimeOptions([...template.options])
@@ -284,14 +306,13 @@ export default function HomePage() {
     }
 
     if (!eventType) {
-      toast({ title: "Error", description: "Please select the event type", variant: "destructive" })
+      toast({ title: "Error", description: "Please select an event type", variant: "destructive" })
       return
     }
 
-    // Validation based on event type
     if (eventType === "recurring") {
       if (xAxis.length === 0 || yAxis.length === 0) {
-        toast({ title: "Error", description: "Please set items for both axes", variant: "destructive" })
+        toast({ title: "Error", description: "Please set items for both X and Y axes", variant: "destructive" })
         return
       }
     } else {
@@ -301,19 +322,16 @@ export default function HomePage() {
       }
     }
 
-    // Check that at least one schedule type is marked as Available
     const hasAvailableType = scheduleTypes.some((type) => type.isAvailable)
     if (!hasAvailableType) {
       toast({
         title: "Error",
-        description: "At least one schedule type must be marked as Available",
+        description: "At least one schedule type must be marked as 'Available'",
         variant: "destructive",
       })
       return
     }
 
-
-    // Helper to remove empty option strings
     function removeEmptyScheduleTypes(arr: ScheduleType[]): ScheduleType[] {
       return arr.filter((t) => t.id.trim() !== "")
     }
@@ -323,16 +341,16 @@ export default function HomePage() {
       const cleanedXAxis = xAxis.filter((v) => v.trim() !== "")
       const cleanedYAxis = yAxis.filter((v) => v.trim() !== "")
       const cleanedDateTimes = dateTimeOptions.filter((v) => v.trim() !== "")
-      const cleanedGrades = gradeOptions
-        .filter((g) => g.name.trim() !== "")
-        .map((g) => g.name.trim())
-      const gradeOrder = gradeOptions.reduce((acc, g) => {
-        const name = g.name.trim()
-        if (name) acc[name] = g.priority
-        return acc
-      }, {} as Record<string, number>)
+      const cleanedGrades = gradeOptions.filter((g) => g.name.trim() !== "").map((g) => g.name.trim())
+      const gradeOrder = gradeOptions.reduce(
+        (acc, g) => {
+          const name = g.name.trim()
+          if (name) acc[name] = g.priority
+          return acc
+        },
+        {} as Record<string, number>,
+      )
 
-      // Prepare data according to event type
       const eventData = {
         name: eventName,
         description: eventDesc,
@@ -361,693 +379,635 @@ export default function HomePage() {
     }
   }
 
+  const availableType = scheduleTypes.find((t) => t.isAvailable)
+
   return (
-    <div className="container mx-auto py-10 px-4 space-y-8">
-      <div className="relative overflow-hidden rounded-xl bg-black p-8 text-white">
-        <h1 className="text-4xl font-extrabold tracking-tight">Atsumalo</h1>
-        <p className="mt-2 text-lg">
-          A tool to smartly coordinate schedules for lab seminars, study groups, and more.
-        </p>
-        <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 md:grid-cols-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>Create Event</span>
+    <div className="min-h-screen bg-muted/30">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8 max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            Create Event
           </div>
-          <div className="flex items-center space-x-2">
-            <ArrowRight className="h-5 w-5" />
-            <span>Share Link</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Check className="h-5 w-5" />
-            <span>Participants Respond</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Settings className="h-5 w-5" />
-            <span>Check Results</span>
-          </div>
-        </div>
-      </div>
-
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Event pages are automatically deleted 3 months after creation.
-      </p>
-
-      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto space-y-6">
-        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Event Name
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Input
-                id="eventName"
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                placeholder="e.g., Seminar Schedule"
-                required
-              />
-            </CardContent>
-          </Card>
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Event Description
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                id="eventDesc"
-                value={eventDesc}
-                onChange={(e) => setEventDesc(e.target.value)}
-                placeholder="Enter a summary for this event"
-                className="h-24"
-              />
-            </CardContent>
-          </Card>
-          <Card className="bg-white dark:bg-gray-800 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Password
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="usePassword"
-                  checked={usePassword}
-                  onCheckedChange={setUsePassword}
-                />
-                <Label htmlFor="usePassword" className="text-sm">
-                  Set a password
-                </Label>
-              </div>
-              {usePassword && (
-                <Input
-                  id="eventPassword"
-                  type="text"
-                  value={eventPassword}
-                  onChange={(e) => setEventPassword(e.target.value)}
-                  placeholder="Enter password"
-                />
-              )}
-            </CardContent>
-          </Card>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance">Create a Scheduling Event</h1>
+          <p className="mt-2 text-sm text-muted-foreground text-pretty">
+            Just fill in the steps below to create a scheduling page you can share with participants. The page will be automatically deleted 3 months after creation.
+          </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Event TypeSelect */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Event Type
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Please select the event type.
-              </p>
-              <ToggleGroup
-                type="single"
-                value={eventType}
-                onValueChange={(value) => {
-                  if (!value) return
-                  setEventType(value as "recurring" | "onetime")
-                }}
-                className="grid w-full grid-cols-2 gap-2"
-              >
-                <ToggleGroupItem
-                  value="recurring"
-                  aria-label="Recurring Event"
-                  className="w-full cursor-pointer rounded-md border py-2 data-[state=on]:bg-black data-[state=on]:text-white"
-                >
-                  <CalendarDays className="mr-2 h-4 w-4" />
-                  Recurring Event
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="onetime"
-                  aria-label="One-time Event"
-                  className="w-full cursor-pointer rounded-md border py-2 data-[state=on]:bg-black data-[state=on]:text-white"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  One-time Event
-                </ToggleGroupItem>
-              </ToggleGroup>
-
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {eventType === "recurring"
-                  ? "For recurring meetings or classes, schedule using a day × time grid."
-                  : eventType === "onetime"
-                    ? "For one-off events or meetings, choose from a list of specific date-times."
-                    : null}
-              </div>
-            </CardContent>
-          </Card>
-          {/* Group/Role settings */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              Group/Role Options
-            </CardTitle>
-            <CardDescription>Smaller numbers indicate higher priority.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-[200px] overflow-y-auto">
-              <div className="flex items-center gap-2 font-semibold sticky top-0 bg-white dark:bg-gray-800">
-                <span className="flex-1">Group/Role</span>
-                <span className="w-20">Priority</span>
-                <span className="w-10" />
-              </div>
-              {gradeOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    ref={(el) => { if (el) gradeOptionRefs.current[i] = el }}
-                    value={opt.name}
-                    onChange={(e) => updateGradeOptionName(i, e.target.value)}
-                    onKeyDown={(e) => {
-                      const isComposing = (e.nativeEvent as any).isComposing as boolean
-                      if (e.key === "Enter" && !isComposing) {
-                        e.preventDefault()
-                        addGradeOption()
-                      }
-                      if (
-                        (e.key === "Backspace" || e.key === "Delete") &&
-                        !isComposing &&
-                        e.currentTarget.value === ""
-                      ) {
-                        e.preventDefault()
-                        removeGradeOption(i)
-                        requestAnimationFrame(() => {
-                          const prevIndex = Math.max(i - 1, 0)
-                          gradeOptionRefs.current[prevIndex]?.focus()
-                        })
-                        return
-                      }
-                    }}
-                    className="flex-1"
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+            {/* Left: Input section */}
+            <div className="space-y-6">
+              {/* Step 1: Basic Information */}
+              <Card>
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    step={1}
+                    icon={<Calendar className="h-5 w-5" />}
+                    title="Basic Information"
+                    description="The event name will be displayed exactly as entered to participants."
                   />
-                  <Input
-                    type="number"
-                    value={opt.priority}
-                    onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
-                    className="w-20"
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="eventName" className="flex items-center gap-1 text-sm font-medium">
+                        Event Name
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="eventName"
+                        value={eventName}
+                        onChange={(e) => setEventName(e.target.value)}
+                        placeholder="e.g., Seminar Schedule"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="eventDesc" className="flex items-center gap-1 text-sm font-medium">
+                        <FileText className="h-3.5 w-3.5" />
+                        Description (Optional)
+                      </Label>
+                      <Textarea
+                        id="eventDesc"
+                        value={eventDesc}
+                        onChange={(e) => setEventDesc(e.target.value)}
+                        placeholder="Enter a summary for this event"
+                        className="min-h-20"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 2: Format */}
+              <Card>
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    step={2}
+                    icon={<Settings className="h-5 w-5" />}
+                    title="Select Event Type"
+                    description="Choose a format that matches what you want to schedule."
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeGradeOption(i)}
-                    disabled={gradeOptions.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addGradeOption}
-                className="mt-2 bg-transparent"
-              >
-                <Plus className="h-4 w-4 mr-1" />Add
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        </div>
-
-        {eventType && (
-          <Card className="bg-white dark:bg-gray-800 shadow-sm border">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                {eventType === "recurring" ? (
-                  <CalendarDays className="h-5 w-5" />
-                ) : (
-                  <Clock className="h-5 w-5" />
-                )}
-                {eventType === "recurring" ? "Grid Settings" : "Date-Time Settings"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4 flex w-full overflow-x-auto justify-start md:justify-center bg-white/60 dark:bg-gray-700/50 p-1 rounded-lg">
-            <TabsTrigger value="builder">{eventType === "recurring" ? "Grid Builder" : "Date-Time List"}</TabsTrigger>
-            <TabsTrigger value="scheduleTypes">Schedule Types</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="builder" className="space-y-6">
-              {eventType === "recurring" ? (
-                // Grid builder for recurring events
-                  <div className="flex flex-col lg:flex-row gap-6">
-                  {/* X-axis settings */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-base font-medium flex items-center">
-                        <ArrowRight className="h-4 w-4 mr-1" />
-                        X-axis items (days, etc.)
-                      </Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addXItem}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
-                      </Button>
-                    </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                      {xAxis.map((item, i) => (
-                        <div key={`x-${i}`} className="flex items-center gap-2">
-                          <Input
-                            ref={(el) => { if (el) xAxisRefs.current[i] = el }}
-                            id={`x-axis-${i}`}
-                            value={item}
-                            onChange={(e) => updateXItem(i, e.target.value)}
-                            onKeyDown={(e) => {
-                              const isComposing = (e.nativeEvent as any).isComposing as boolean
-                              if (e.key === "Enter" && !isComposing) {
-                                e.preventDefault()
-                                addXItem()
-                              }
-                              if (
-                                (e.key === "Backspace" || e.key === "Delete") &&
-                                !isComposing &&
-                                e.currentTarget.value === ""
-                              ) {
-                                e.preventDefault()
-                                removeXItem(i)
-                                requestAnimationFrame(() => {
-                                  const prevIndex = Math.max(i - 1, 0)
-                                  xAxisRefs.current[prevIndex]?.focus()
-                                })
-                                return
-                              }
-                            }}
-                            className="flex-1"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeXItem(i)}
-                            disabled={xAxis.length <= 1}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Y-axis settings */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-base font-medium flex items-center">
-                        <ArrowDown className="h-4 w-4 mr-1" />
-                        Y-axis items (periods, etc.)
-                      </Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addYItem}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
-                      </Button>
-                    </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                      {yAxis.map((item, i) => (
-                        <div key={`y-${i}`} className="flex items-center gap-2">
-                          <Input
-                            ref={(el) => { if (el) yAxisRefs.current[i] = el }}
-                            id={`y-axis-${i}`}
-                            value={item}
-                            onChange={(e) => updateYItem(i, e.target.value)}
-                            onKeyDown={(e) => {
-                              const isComposing = (e.nativeEvent as any).isComposing as boolean
-                              if (e.key === "Enter" && !isComposing) {
-                                e.preventDefault()
-                                addYItem()
-                              }
-                              if (
-                                (e.key === "Backspace" || e.key === "Delete") &&
-                                !isComposing &&
-                                e.currentTarget.value === ""
-                              ) {
-                                e.preventDefault()
-                                removeYItem(i)
-                                requestAnimationFrame(() => {
-                                  const prevIndex = Math.max(i - 1, 0)
-                                  yAxisRefs.current[prevIndex]?.focus()
-                                })
-                                return
-                              }
-                            }}
-                            className="flex-1"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeYItem(i)}
-                            disabled={yAxis.length <= 1}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Date-time list for one-time events
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-base font-medium flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      Date-Time Options
-                    </Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addDateTimeOption}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add
-                    </Button>
-                  </div>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                    {dateTimeOptions.map((item, index) => (
-                      <div key={`datetime-${index}`} className="flex items-center gap-2">
-                        <Input
-                          ref={(el) => { if (el) dateTimeRefs.current[index] = el }}
-                          id={`datetime-option-${index}`}
-                          value={item}
-                          onChange={(e) => updateDateTimeOption(index, e.target.value)}
-                          onKeyDown={(e) => {
-                            const isComposing = (e.nativeEvent as any).isComposing as boolean
-                            if (e.key === "Enter" && !isComposing) {
-                              e.preventDefault()
-                              addDateTimeOption()                              
-                            }
-                            if (
-                              (e.key === "Backspace" || e.key === "Delete") &&
-                              !isComposing &&
-                              e.currentTarget.value === ""
-                            ) {
-                              e.preventDefault()
-                              removeDateTimeOption(index)
-                              requestAnimationFrame(() => {
-                                const prevIndex = Math.max(index - 1, 0)
-                                dateTimeRefs.current[prevIndex]?.focus()
-                              })
-                              return
-                            }
-                          }}
-                          placeholder={`Date-Time ${index + 1} (e.g., 5/1 19:00)`}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeDateTimeOption(index)}
-                          disabled={dateTimeOptions.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setEventType("recurring")}
+                      aria-pressed={eventType === "recurring"}
+                      className={cn(
+                        "flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-colors",
+                        eventType === "recurring"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex items-center gap-2 font-semibold">
+                        <CalendarDays className="h-5 w-5" />
+                        Recurring Event
                       </div>
-                    ))}
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm text-gray-600">
-                      Enter date-times like "5/1 19:00". Participants will select from this list.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="scheduleTypes" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-base font-medium flex items-center">
-                  <Settings className="h-4 w-4 mr-1" />
-                  Schedule Type Settings
-                </h3>
-                <Button type="button" variant="outline" size="sm" onClick={addScheduleType}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add
-                </Button>
-              </div>
-
-              <div className="bg-gray-50 p-3 rounded-md mb-4">
-                <p className="text-sm text-gray-600">
-                  Set schedule types participants can choose. Types marked as "Available" will be counted as available in the summary.
-                </p>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                {scheduleTypes.map((type, index) => (
-                  <div key={`type-${index}`} className="border rounded-md p-4 bg-white">
-                    <div className="flex flex-col gap-3">
-                      {/* Label input */}
-                      <div className="flex-1">
-                        <Label htmlFor={`type-label-${index}`} className="text-xs mb-1 block">
-                          Label
-                        </Label>
-                        <Input
-                          ref={(el) => { if (el) typeLabelRefs.current[index] = el }}
-                          id={`type-label-${index}`}
-                          value={type.label}
-                          onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
-                          onKeyDown={(e) => {
-                            const isComposing = (e.nativeEvent as any).isComposing as boolean
-                            if (e.key === "Enter" && !isComposing) {
-                              e.preventDefault()
-                              addScheduleType()
-                            }
-                            if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
-                              e.preventDefault()
-                              removeScheduleType(index)
-                              return
-                            }
-                          }}
-                          placeholder="Schedule type name"
-                        />
+                      <p className="text-xs text-muted-foreground text-pretty">
+                        Grid format with days × periods. Ideal for lab seminars or classes.
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEventType("onetime")}
+                      aria-pressed={eventType === "onetime"}
+                      className={cn(
+                        "flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-colors",
+                        eventType === "onetime"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex items-center gap-2 font-semibold">
+                        <Calendar className="h-5 w-5" />
+                        One-time Event
                       </div>
+                      <p className="text-xs text-muted-foreground text-pretty">
+                        Select from a list of specific dates and times. Ideal for meetings or parties.
+                      </p>
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
 
-                      <div className="flex items-end gap-3">
-                        {/* ColorSelect */}
-                        <div className="flex-1">
-                          <Label htmlFor={`type-color-${index}`} className="text-xs mb-1 block">
-                            Color
-                          </Label>
-                          <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
-                            <SelectTrigger id={`type-color-${index}`} className={`w-full ${type.color}`}>
-                              <SelectValue placeholder="Select color" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {colorPalettes.map((color, colorIndex) => (
-                                <SelectItem
-                                  key={`color-${colorIndex}`}
-                                  value={`${color.bg} ${color.text}`}
-                                  className={`${color.bg} ${color.text}`}
+              {/* Step 3: Candidates (Grid or Date-Time) */}
+              {eventType && (
+                <Card>
+                  <CardContent className="space-y-5 p-6">
+                    <SectionHeader
+                      step={3}
+                      icon={eventType === "recurring" ? <CalendarDays className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                      title={eventType === "recurring" ? "Grid Settings" : "Date-Time Options"}
+                      description={
+                        eventType === "recurring"
+                          ? "Set the X-axis (days, etc.) and Y-axis (periods, etc.). Press Enter to add, Backspace on an empty field to remove."
+                          : "Add candidate date-times. Press Enter to add, Backspace on an empty field to remove."
+                      }
+                    />
+
+                    {/* Templates */}
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Start from Template
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {eventType === "recurring"
+                          ? recurringTemplates.map((template, index) => (
+                              <Button
+                                key={`rt-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 bg-background"
+                                onClick={() => applyRecurringTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))
+                          : onetimeTemplates.map((template, index) => (
+                              <Button
+                                key={`ot-${index}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 bg-background"
+                                onClick={() => applyOnetimeTemplate(index)}
+                              >
+                                {template.name}
+                              </Button>
+                            ))}
+                      </div>
+                    </div>
+
+                    {eventType === "recurring" ? (
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {/* X-axis */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
+                              <ArrowRight className="h-4 w-4" />
+                              X-axis (days, etc.)
+                            </Label>
+                            <Button type="button" variant="ghost" size="sm" onClick={addXItem}>
+                              <Plus className="mr-1 h-4 w-4" />
+                              Add
+                            </Button>
+                          </div>
+                          <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {xAxis.map((item, i) => (
+                              <div key={`x-${i}`} className="flex items-center gap-2">
+                                <Input
+                                  ref={(el) => {
+                                    if (el) xAxisRefs.current[i] = el
+                                  }}
+                                  id={`x-axis-${i}`}
+                                  value={item}
+                                  onChange={(e) => updateXItem(i, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                    if (e.key === "Enter" && !isComposing) {
+                                      e.preventDefault()
+                                      addXItem()
+                                    }
+                                    if (
+                                      (e.key === "Backspace" || e.key === "Delete") &&
+                                      !isComposing &&
+                                      e.currentTarget.value === ""
+                                    ) {
+                                      e.preventDefault()
+                                      removeXItem(i)
+                                      requestAnimationFrame(() => {
+                                        const prevIndex = Math.max(i - 1, 0)
+                                        xAxisRefs.current[prevIndex]?.focus()
+                                      })
+                                      return
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeXItem(i)}
+                                  disabled={xAxis.length <= 1}
                                 >
-                                  {color.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
-                        {/* Available flag */}
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id={`type-available-${index}`}
-                            checked={type.isAvailable}
-                            onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
-                          />
-                          <Label htmlFor={`type-available-${index}`} className="text-sm">
-                            Available
+                        {/* Y-axis */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
+                              <ArrowDown className="h-4 w-4" />
+                              Y-axis (periods, etc.)
+                            </Label>
+                            <Button type="button" variant="ghost" size="sm" onClick={addYItem}>
+                              <Plus className="mr-1 h-4 w-4" />
+                              Add
+                            </Button>
+                          </div>
+                          <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                            {yAxis.map((item, i) => (
+                              <div key={`y-${i}`} className="flex items-center gap-2">
+                                <Input
+                                  ref={(el) => {
+                                    if (el) yAxisRefs.current[i] = el
+                                  }}
+                                  id={`y-axis-${i}`}
+                                  value={item}
+                                  onChange={(e) => updateYItem(i, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                    if (e.key === "Enter" && !isComposing) {
+                                      e.preventDefault()
+                                      addYItem()
+                                    }
+                                    if (
+                                      (e.key === "Backspace" || e.key === "Delete") &&
+                                      !isComposing &&
+                                      e.currentTarget.value === ""
+                                    ) {
+                                      e.preventDefault()
+                                      removeYItem(i)
+                                      requestAnimationFrame(() => {
+                                        const prevIndex = Math.max(i - 1, 0)
+                                        yAxisRefs.current[prevIndex]?.focus()
+                                      })
+                                      return
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeYItem(i)}
+                                  disabled={yAxis.length <= 1}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="flex items-center gap-1 text-sm font-medium">
+                            <Clock className="h-4 w-4" />
+                            Date-Time Options
                           </Label>
+                          <Button type="button" variant="ghost" size="sm" onClick={addDateTimeOption}>
+                            <Plus className="mr-1 h-4 w-4" />
+                            Add
+                          </Button>
                         </div>
-
-                        {/* Delete button */}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeScheduleType(index)}
-                          disabled={scheduleTypes.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Preview */}
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="text-xs text-gray-500 mb-1">Preview:</div>
-                      <div className={`inline-block px-3 py-1 rounded-md ${type.color}`}>
-                        {type.label}
-                        {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="preview">
-              {eventType === "recurring" ? (
-                // Preview for recurring events (grid)
-                <div className="border rounded overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="border p-2"></th>
-                        {xAxis.map((item, index) => (
-                          <th key={`header-${index}`} className="border p-2 text-center min-w-[80px]">
-                            {item || `Item${index + 1}`}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {yAxis.map((item, rowIndex) => (
-                        <tr key={`row-${rowIndex}`}>
-                          <td className="border p-2 font-medium text-center">{item || `Item${rowIndex + 1}`}</td>
-                          {xAxis.map((_, colIndex) => (
-                            <td key={`cell-${rowIndex}-${colIndex}`} className="border p-2 text-center">
-                              <Select>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {scheduleTypes.map((type, typeIndex) => (
-                                    <SelectItem
-                                      key={`preview-type-${typeIndex}`}
-                                      value={type.id}
-                                      className={type.color}
-                                    >
-                                      {type.label}
-                                      {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
+                        <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                          {dateTimeOptions.map((item, index) => (
+                            <div key={`datetime-${index}`} className="flex items-center gap-2">
+                              <Input
+                                ref={(el) => {
+                                  if (el) dateTimeRefs.current[index] = el
+                                }}
+                                id={`datetime-option-${index}`}
+                                value={item}
+                                onChange={(e) => updateDateTimeOption(index, e.target.value)}
+                                onKeyDown={(e) => {
+                                  const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                  if (e.key === "Enter" && !isComposing) {
+                                    e.preventDefault()
+                                    addDateTimeOption()
+                                  }
+                                  if (
+                                    (e.key === "Backspace" || e.key === "Delete") &&
+                                    !isComposing &&
+                                    e.currentTarget.value === ""
+                                  ) {
+                                    e.preventDefault()
+                                    removeDateTimeOption(index)
+                                    requestAnimationFrame(() => {
+                                      const prevIndex = Math.max(index - 1, 0)
+                                      dateTimeRefs.current[prevIndex]?.focus()
+                                    })
+                                    return
+                                  }
+                                }}
+                                placeholder={`Date-Time ${index + 1} (e.g., 5/1 19:00)`}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeDateTimeOption(index)}
+                                disabled={dateTimeOptions.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           ))}
-                        </tr>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter date-times like '5/1 19:00'. Participants will select from this list.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 4: Schedule types */}
+              {eventType && (
+                <Card>
+                  <CardContent className="space-y-5 p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <SectionHeader
+                        step={4}
+                        icon={<Check className="h-5 w-5" />}
+                        title="Schedule Types (Answer Options)"
+                        description="Options participants choose for each slot. Setting one as 'Available' will use it as the basis for tallying."
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={addScheduleType} className="shrink-0 bg-background">
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {scheduleTypes.map((type, index) => (
+                        <div key={`type-${index}`} className="rounded-lg border bg-card p-3">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-sm", type.color)}>
+                              {type.label || "(Untitled)"}
+                              {type.isAvailable && <Check className="ml-1 h-3 w-3" />}
+                            </span>
+                            <div className="ml-auto flex items-center gap-2">
+                              <Label htmlFor={`type-available-${index}`} className="text-xs text-muted-foreground">
+                                Available
+                              </Label>
+                              <Switch
+                                id={`type-available-${index}`}
+                                checked={type.isAvailable}
+                                onCheckedChange={(checked) => updateScheduleTypeAvailability(index, checked)}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => removeScheduleType(index)}
+                                disabled={scheduleTypes.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex items-center gap-2">
+                            <Input
+                              ref={(el) => {
+                                if (el) typeLabelRefs.current[index] = el
+                              }}
+                              id={`type-label-${index}`}
+                              value={type.label}
+                              onChange={(e) => updateScheduleTypeLabel(index, e.target.value)}
+                              onKeyDown={(e) => {
+                                const isComposing = (e.nativeEvent as any).isComposing as boolean
+                                if (e.key === "Enter" && !isComposing) {
+                                  e.preventDefault()
+                                  addScheduleType()
+                                }
+                                if (e.key === "Backspace" && !isComposing && e.currentTarget.value === "") {
+                                  e.preventDefault()
+                                  removeScheduleType(index)
+                                  return
+                                }
+                              }}
+                              placeholder="Label"
+                              className="flex-1"
+                            />
+                            <Select value={type.color} onValueChange={(value) => updateScheduleTypeColor(index, value)}>
+                              <SelectTrigger id={`type-color-${index}`} className={cn("w-28", type.color)}>
+                                <SelectValue placeholder="Color" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {colorPalettes.map((color, colorIndex) => (
+                                  <SelectItem
+                                    key={`color-${colorIndex}`}
+                                    value={`${color.bg} ${color.text}`}
+                                    className={`${color.bg} ${color.text}`}
+                                  >
+                                    {color.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                // Preview for one-time events (list)
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-3 rounded-md mb-2">
-                    <p className="text-sm text-gray-600">
-                      Participants will choose one option for each date-time from below.
-                    </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 5: Advanced settings */}
+              {eventType && (
+              <Card>
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    step={5}
+                    icon={<UserPlus className="h-5 w-5" />}
+                    title="Advanced Settings (Optional)"
+                    description="Set group/role options and an event password."
+                  />
+
+                  {/* Group/Role */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Group/Role Options</Label>
+                      <Button type="button" variant="ghost" size="sm" onClick={addGradeOption}>
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Smaller numbers indicate higher priority.</p>
+                    <div className="max-h-[240px] space-y-2 overflow-y-auto pr-1">
+                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <span className="flex-1">Group/Role</span>
+                        <span className="w-20 text-center">Priority</span>
+                        <span className="w-9" />
+                      </div>
+                      {gradeOptions.map((opt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Input
+                            ref={(el) => {
+                              if (el) gradeOptionRefs.current[i] = el
+                            }}
+                            value={opt.name}
+                            onChange={(e) => updateGradeOptionName(i, e.target.value)}
+                            onKeyDown={(e) => {
+                              const isComposing = (e.nativeEvent as any).isComposing as boolean
+                              if (e.key === "Enter" && !isComposing) {
+                                e.preventDefault()
+                                addGradeOption()
+                              }
+                              if (
+                                (e.key === "Backspace" || e.key === "Delete") &&
+                                !isComposing &&
+                                e.currentTarget.value === ""
+                              ) {
+                                e.preventDefault()
+                                removeGradeOption(i)
+                                requestAnimationFrame(() => {
+                                  const prevIndex = Math.max(i - 1, 0)
+                                  gradeOptionRefs.current[prevIndex]?.focus()
+                                })
+                                return
+                              }
+                            }}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={opt.priority}
+                            onChange={(e) => updateGradeOptionPriority(i, Number(e.target.value))}
+                            className="w-20"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeGradeOption(i)}
+                            disabled={gradeOptions.length <= 1}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="border rounded-md overflow-hidden">
-                    <div className="bg-gray-50 p-3 border-b font-medium">Example availability input</div>
-                    <div className="divide-y">
+
+                  {/* Password */}
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor="usePassword" className="flex-1 text-sm font-medium">
+                        Protect with Password
+                      </Label>
+                      <Switch id="usePassword" checked={usePassword} onCheckedChange={setUsePassword} />
+                    </div>
+                    {usePassword && (
+                      <Input
+                        id="eventPassword"
+                        type="text"
+                        value={eventPassword}
+                        onChange={(e) => setEventPassword(e.target.value)}
+                        placeholder="Enter Password"
+                      />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              )}
+            </div>
+
+            {/* Right: Live Preview + Create Button */}
+            <aside className="xl:sticky xl:top-6 xl:self-start">
+              <Card className="overflow-hidden">
+                <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-3">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Preview</span>
+                  <span className="ml-auto text-xs text-muted-foreground">What participants will see</span>
+                </div>
+                <CardContent className="space-y-4 p-4">
+                  <div>
+                    <h3 className="font-semibold leading-tight text-balance">{eventName || "(Event Name not entered)"}</h3>
+                    {eventDesc && <p className="mt-1 text-xs text-muted-foreground text-pretty">{eventDesc}</p>}
+                  </div>
+
+                  {!eventType ? (
+                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                      Select a format to see a preview of the input form here.
+                    </div>
+                  ) : eventType === "recurring" ? (
+                    <div className="overflow-x-auto rounded-lg border">
+                      <table className="w-full border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="border p-1.5" />
+                            {xAxis.map((item, index) => (
+                              <th key={`ph-${index}`} className="border p-1.5 text-center font-medium">
+                                {item || `Item${index + 1}`}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {yAxis.map((item, rowIndex) => (
+                            <tr key={`pr-${rowIndex}`}>
+                              <td className="border bg-muted/50 p-1.5 text-center font-medium">{item || `Item${rowIndex + 1}`}</td>
+                              {xAxis.map((_, colIndex) => (
+                                <td key={`pc-${rowIndex}-${colIndex}`} className="border p-1 text-center">
+                                  <span
+                                    className={cn(
+                                      "inline-block w-full rounded px-1 py-0.5 text-[10px]",
+                                      availableType?.color ?? "bg-muted",
+                                    )}
+                                  >
+                                    {availableType?.label ?? "Select"}
+                                  </span>
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="divide-y rounded-lg border">
                       {dateTimeOptions.map((dateTime, index) => (
-                        <div key={`preview-datetime-${index}`} className="p-3">
-                          <div className="font-medium mb-2">{dateTime}</div>
-                          <div className="flex flex-wrap gap-2">
+                        <div key={`pl-${index}`} className="p-2.5">
+                          <div className="mb-1.5 text-xs font-medium">{dateTime}</div>
+                          <div className="flex flex-wrap gap-1">
                             {scheduleTypes.map((type, typeIndex) => (
-                              <button
-                                key={`option-${index}-${typeIndex}`}
-                                className={`px-3 py-1 rounded-md ${type.color} hover:opacity-80 transition-opacity`}
+                              <span
+                                key={`po-${index}-${typeIndex}`}
+                                className={cn("rounded px-2 py-0.5 text-[11px]", type.color)}
                               >
                                 {type.label}
-                                {type.isAvailable && <Check className="inline-block ml-1 h-3 w-3" />}
-                              </button>
+                                {type.isAvailable && <Check className="ml-0.5 inline-block h-2.5 w-2.5" />}
+                              </span>
                             ))}
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              )}
-              <p className="text-sm text-gray-500 mt-2">
-                This is a preview of the input form. The actual form will look like this.
-              </p>
-            </TabsContent>
+                  )}
 
-            <TabsContent value="templates">
-              {eventType === "recurring" ? (
-                // Templates for recurring events
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recurringTemplates.map((template, index) => (
-                    <Card key={`template-${index}`} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <h3 className="font-medium mb-2">{template.name}</h3>
-                        <div className="text-sm text-gray-600 mb-2">
-                          <div>
-                            X-axis: <span className="font-mono">{template.x.join(", ")}</span>
-                          </div>
-                          <div>
-                            Y-axis: <span className="font-mono">{template.y.join(", ")}</span>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full bg-transparent"
-                          onClick={() => applyRecurringTemplate(index)}
-                        >
-                          <Copy className="h-4 w-4 mr-1" />
-                          Use this template
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                // Templates for one-time events
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {onetimeTemplates.map((template, index) => (
-                    <Card key={`template-${index}`} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <h3 className="font-medium mb-2">{template.name}</h3>
-                        <div className="text-sm text-gray-600 mb-2">
-                          <div>
-                            Date-Time Options: <span className="font-mono">{template.options.join(", ")}</span>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full bg-transparent"
-                          onClick={() => applyOnetimeTemplate(index)}
-                        >
-                          <Copy className="h-4 w-4 mr-1" />
-                          Use this template
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        )}
-
-        {eventType && (
-          <div className="flex justify-center pt-4">
-            <Button type="submit" size="lg" className="px-8">
-              <Save className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
+                  <Button type="submit" size="lg" className="w-full" disabled={!eventName.trim() || !eventType}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Create Event
+                  </Button>
+                  {!eventType && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      Set the event name and format to create the event.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </aside>
           </div>
-        )}
-      </form>
+        </form>
+      </div>
     </div>
   )
 }
