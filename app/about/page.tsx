@@ -1,3 +1,10 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "このプロジェクトについて",
+  description: "あつま郎は研究室や小規模グループ向けの日程調整オープンソースツールです。アカウント不要でURLを共有するだけで日程の候補提示・集計ができます。",
+}
+
 export default function AboutPage() {
   return (
     <main className="container mx-auto p-8">

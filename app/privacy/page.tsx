@@ -1,3 +1,10 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "プライバシーポリシー",
+  description: "あつま郎のプライバシーポリシーです。収集する情報の範囲、データの保持と削除、セキュリティに関する方針を記載しています。",
+}
+
 export default function PrivacyPage() {
   return (
     <main className="container mx-auto p-8">
