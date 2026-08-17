@@ -1,3 +1,10 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Privacy policy for Atsumalo. Covers what information is collected, data retention and deletion, and our security approach.",
+}
+
 export default function PrivacyPage() {
   return (
     <main className="container mx-auto p-8">

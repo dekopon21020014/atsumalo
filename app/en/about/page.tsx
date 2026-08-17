@@ -1,3 +1,10 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "Atsumalo is an open-source scheduling tool for research labs and small groups. Share a URL to collect availability — no account required.",
+}
+
 export default function AboutPage() {
   return (
     <main className="container mx-auto p-8">
@@ -50,7 +57,7 @@ export default function AboutPage() {
         </p>
         <p className="mb-2">
           For details, see the{" "}
-          <a href="/privacy" className="underline">Privacy Policy</a>.
+          <a href="/en/privacy" className="underline">Privacy Policy</a>.
         </p>
       </section>
 
