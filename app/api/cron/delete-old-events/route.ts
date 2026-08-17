@@ -6,6 +6,11 @@ export const dynamic = "force-dynamic"
 
 const CRON_SECRET = process.env.CRON_SECRET
 
+// Firestoreのバッチ処理は最大500件まで。
+// participants サブコレクションも削除対象のため、
+// 1イベントあたり最大100人を想定し、安全マージンを持たせて50件ずつ処理する。
+const EVENTS_PER_RUN = 50
+
 export async function GET(request: Request) {
   try {
     if (!CRON_SECRET) {
@@ -28,23 +33,40 @@ export async function GET(request: Request) {
     const cutoff = new Date()
     cutoff.setMonth(cutoff.getMonth() - 3)
 
-    // Firestoreのバッチ処理は最大500件までなのでlimit(500)を指定
-    // 500件を超える場合は次回のCronで処理される
     const snapshot = await db
       .collection("events")
       .where("createdAt", "<", cutoff)
-      .limit(500)
+      .limit(EVENTS_PER_RUN)
       .get()
 
     if (snapshot.empty) {
-      return NextResponse.json({ deleted: 0 })
+      return NextResponse.json({ deleted: 0, deletedParticipants: 0 })
     }
 
-    const batch = db.batch()
-    snapshot.docs.forEach((doc) => batch.delete(doc.ref))
-    await batch.commit()
+    let totalDeletedEvents = 0
+    let totalDeletedParticipants = 0
 
-    return NextResponse.json({ deleted: snapshot.size })
+    for (const eventDoc of snapshot.docs) {
+      // participants サブコレクションを全件取得してからイベントごとにバッチ削除する。
+      // Firestoreでは親ドキュメントを削除してもサブコレクションは自動削除されないため、
+      // 明示的に削除する必要がある。
+      const participantsSnap = await eventDoc.ref.collection("participants").get()
+
+      const batch = db.batch()
+
+      participantsSnap.docs.forEach((p) => batch.delete(p.ref))
+      batch.delete(eventDoc.ref)
+
+      await batch.commit()
+
+      totalDeletedParticipants += participantsSnap.size
+      totalDeletedEvents += 1
+    }
+
+    return NextResponse.json({
+      deleted: totalDeletedEvents,
+      deletedParticipants: totalDeletedParticipants,
+    })
   } catch (err) {
     console.error("Failed to delete old events", err)
     return NextResponse.json(
