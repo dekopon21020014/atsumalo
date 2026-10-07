@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/lib/firebase"
-import { defaultGradeOptions, defaultGradeOrder } from "@/app/events/[eventId]/components/constants"
-import { hashPassword } from "@/lib/password-utils"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { eventSchema } from "@/lib/validations/event"
+import { createEventService } from "@/lib/services/events"
 
 type EventCreatePayload = {
   name: string
@@ -42,53 +41,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const {
-    name,
-    description,
-    eventType,
-    xAxis,
-    yAxis,
-    dateTimeOptions,
-    scheduleTypes,
-    gradeOptions,
-    gradeOrder,
-    password,
-  } = parseResult.data;
+  const data = parseResult.data;
 
-  const grades =
-    gradeOptions && gradeOptions.length > 0
-      ? gradeOptions
-      : defaultGradeOptions
-
-  const order =
-    gradeOrder && Object.keys(gradeOrder).length > 0
-      ? gradeOrder
-      : defaultGradeOrder
-
-  const pass = typeof password === "string" ? password.trim() : ""
-  const passwordHash = pass ? await hashPassword(pass) : ""
-
-  // --- Firestore に保存 ---
   try {
-    const payload: EventCreatePayload = {
-      name,
-      description: description || "",
-      eventType,
-      scheduleTypes,
-      gradeOptions: grades,
-      gradeOrder: order,
-      createdAt: new Date(),
-      ...(passwordHash ? { password: passwordHash } : {}),
-    }
-    if (eventType === "recurring") {
-      payload.xAxis = xAxis || []
-      payload.yAxis = yAxis || []
-    } else {
-      payload.dateTimeOptions = dateTimeOptions || []
-    }
-
-    const docRef = await db.collection("events").add(payload)
-    return NextResponse.json({ id: docRef.id })
+    const id = await createEventService(data);
+    return NextResponse.json({ id });
   } catch (err) {
     console.error("イベント作成エラー:", err)
     return NextResponse.json(
