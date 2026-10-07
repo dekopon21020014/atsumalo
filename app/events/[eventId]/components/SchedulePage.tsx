@@ -72,7 +72,7 @@ export default function SchedulePage({
   const [gradeOrderMap, setGradeOrderMap] = useState<Record<string, number>>(gradeOrder)
   const { eventId } = useParams()
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith('/en')
+  const isEnglish = (pathname || '').startsWith('/en')
   const t = {
     export: isEnglish ? 'Export' : 'エクスポート',
     import: isEnglish ? 'Import' : 'インポート',

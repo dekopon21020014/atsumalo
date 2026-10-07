@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 
 export default function Header() {
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith("/en")
+  const isEnglish = (pathname || '').startsWith("/en")
   const prefix = isEnglish ? "/en" : ""
   const appName = isEnglish ? "Atsumalo" : "あつま郎"
   const navItems = [
@@ -15,7 +15,7 @@ export default function Header() {
   ]
   const langHref = isEnglish
     ? pathname.replace(/^\/en/, "") || "/"
-    : `/en${pathname === "/" ? "" : pathname}`
+    : `/en${(pathname || '') === "/" ? "" : pathname}`
   const langLabel = isEnglish ? "Japanese" : "English"
   return (
     <header className="bg-gray-100 dark:bg-gray-900 p-4">
@@ -28,7 +28,7 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className={pathname === item.href ? "font-semibold underline" : ""}
+              className={(pathname || '') === item.href ? "font-semibold underline" : ""}
             >
               {item.label}
             </Link>

@@ -69,7 +69,7 @@ export default function ParticipantList({
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { eventId } = useParams()
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith('/en')
+  const isEnglish = (pathname || '').startsWith('/en')
   const eventIdStr = eventId ? String(eventId) : ''
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
   const requireParticipantToken = Boolean(eventAccess?.token)

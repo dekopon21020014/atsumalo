@@ -21,7 +21,7 @@ import Link from "next/link"
 export default function EventPage() {
   const { eventId } = useParams()
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith("/en")
+  const isEnglish = (pathname || '').startsWith("/en")
   const { defaultGradeOrder, defaultGradeOptions, colorPalettes } = isEnglish ? en : ja
 
   const [data, setData] = useState<EventData>({

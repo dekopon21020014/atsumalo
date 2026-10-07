@@ -52,7 +52,7 @@ export default function ScheduleSummary({
 }: Props) {
   const [availability, setAvailability] = useState<AvailabilityMap>({})
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith('/en')
+  const isEnglish = (pathname || '').startsWith('/en')
 
   useEffect(() => {
     const newAvail: AvailabilityMap = {}

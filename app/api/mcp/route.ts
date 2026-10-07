@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
   
   // start() が中で呼ばれるので手動で呼ばない
   await mcpServer.server.connect(transport);
-  return await transport.handleWebStreamRequest(req);
+  return await transport.handleRequest(req);
 }
 
 export async function POST(req: NextRequest) {
@@ -117,5 +117,5 @@ export async function POST(req: NextRequest) {
   });
   
   await mcpServer.server.connect(transport);
-  return await transport.handleWebStreamRequest(req);
+  return await transport.handleRequest(req);
 }

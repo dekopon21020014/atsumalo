@@ -38,7 +38,7 @@ export function useParticipantForm(
   )
   const [editComment, setEditComment] = useState<string>("")
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith("/en")
+  const isEnglish = (pathname || '').startsWith("/en")
   const [editingResponse, setEditingResponse] = useState<Response | null>(null)
   const [editName, setEditName] = useState<string>("")
   const [editGrade, setEditGrade] = useState<string>("")

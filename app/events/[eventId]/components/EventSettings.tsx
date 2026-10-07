@@ -40,7 +40,7 @@ export default function EventSettings({
   onUpdate,
 }: EventSettingsProps) {
   const pathname = usePathname()
-  const isEnglish = pathname.startsWith("/en")
+  const isEnglish = (pathname || '').startsWith("/en")
   const { colorPalettes } = isEnglish ? en : ja
 
   const [name, setName] = useState(eventName)

@@ -7,7 +7,7 @@ import { NextRequest } from "next/server"
 
 type EventCreatePayload = {
   name: string
-  description?: string
+  description?: string | null
   eventType: "recurring" | "onetime"
   scheduleTypes: { id: string; label: string; color: string; isAvailable: boolean }[]
   gradeOptions?: string[] | null
