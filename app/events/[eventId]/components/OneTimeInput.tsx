@@ -181,8 +181,8 @@ export default function OneTimeInputTab({
         }}
       >
         {/* 名前と所属/役職 */}
-        <Card className="mb-4">
-          <CardContent className="pt-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="mb-5 overflow-hidden border-primary/15 shadow-sm">
+          <CardContent className="grid grid-cols-1 gap-5 border-l-4 border-l-primary/70 p-5 md:grid-cols-2">
             <div>
               <Label htmlFor="participant-name" className="text-sm font-medium mb-1 block">
                 <User className="h-4 w-4 inline-block mr-1" />
@@ -312,7 +312,7 @@ export default function OneTimeInputTab({
                   const sel = selections[dt]
                   const cnt = getAvailableCount(dt)
                   return (
-                    <tr key={idx} className="hover:bg-gray-50">
+                    <tr key={idx} className="hover:bg-muted/50">
                       <td className="p-2 pl-3 align-middle">
                         <div className="font-medium">{dt}</div>
                       </td>

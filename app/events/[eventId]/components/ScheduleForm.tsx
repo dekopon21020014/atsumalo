@@ -269,21 +269,24 @@ export default function ScheduleForm({
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>{isEnglish ? "Schedule Entry" : "スケジュール入力"}</CardTitle>
-
-        <CardDescription>
-          {editingIndex !== null
-            ? isEnglish
-              ? "Please edit your schedule"
-              : "スケジュールを編集してください"
-            : isEnglish
-            ? "Enter your name and schedule"
-            : "名前と予定を入力してください"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+<Card className="overflow-hidden border-primary/15 shadow-sm">
+        <CardHeader className="border-b bg-muted/20 px-5 py-4 md:px-6">
+          <div className="flex items-start gap-3">
+            <div>
+              <CardTitle>{isEnglish ? "Schedule Entry" : "スケジュール入力"}</CardTitle>
+              <CardDescription>
+                {editingIndex !== null
+                  ? isEnglish
+                    ? "Please edit your schedule"
+                    : "スケジュールを編集してください"
+                  : isEnglish
+                  ? "Enter your name and schedule"
+                  : "名前と予定を入力してください"}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6 px-5 py-5 md:px-6">
         {/* 名前・所属/役職入力 */}
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
