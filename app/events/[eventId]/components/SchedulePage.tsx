@@ -245,17 +245,17 @@ export default function SchedulePage({
       </div>
 
       <Tabs defaultValue="input" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 w-full">
-          <TabsTrigger value="input" className="flex-1">
+        <TabsList className="mb-6 grid h-auto w-full grid-cols-3 gap-1 rounded-xl bg-muted/70 p-1">
+          <TabsTrigger value="input" className="flex-1 gap-2 rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <PenSquare className="h-4 w-4 mr-2" />
             {t.input}
           </TabsTrigger>
-          <TabsTrigger value="participants" className="flex-1">
-            <Users className="h-4 w-4 mr-2" />
+          <TabsTrigger value="participants" className="flex-1 gap-2 rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Users className="h-4 w-4" />
             {t.participants}
           </TabsTrigger>
-          <TabsTrigger value="summary" className="flex-1">
-            <BarChart3 className="h-4 w-4 mr-2" />
+          <TabsTrigger value="summary" className="flex-1 gap-2 rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <BarChart3 className="h-4 w-4" />
             {t.summary}
           </TabsTrigger>
         </TabsList>

@@ -84,13 +84,13 @@ export default function EventHeader({
   }
 
   return (
-    <Card className="mb-6">
-      <CardContent className="pt-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <Card className="mb-6 overflow-hidden border-primary/15 bg-card/95 shadow-sm">
+      <CardContent className="p-0">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 p-5 md:p-6">
           <div>
             <h1 className="text-2xl font-bold">{eventName}</h1>
-            {eventDescription && <p className="text-gray-600 mt-1">{eventDescription}</p>}
-            <div className="flex items-center mt-2 text-sm text-gray-500">
+            {eventDescription && <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{eventDescription}</p>}
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
               {eventType === "recurring" ? (
                 <div className="flex items-center">
                   <CalendarDays className="h-4 w-4 mr-1" />

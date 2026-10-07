@@ -95,17 +95,17 @@ export default function OneTimePage({
   return (
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="input" className="flex items-center">
+        <TabsList className="mb-6 grid h-auto grid-cols-3 gap-1 rounded-xl bg-muted/70 p-1">
+          <TabsTrigger value="input" className="flex items-center gap-2 rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <PenSquare className="h-4 w-4 mr-2" />
             入力
           </TabsTrigger>
-          <TabsTrigger value="responses" className="flex items-center">
-            <Users className="h-4 w-4 mr-2" />
+          <TabsTrigger value="responses" className="flex items-center gap-2 rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Users className="h-4 w-4" />
             回答状況
           </TabsTrigger>
-          <TabsTrigger value="summary" className="flex items-center">
-            <BarChart3 className="h-4 w-4 mr-2" />
+          <TabsTrigger value="summary" className="flex items-center gap-2 rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <BarChart3 className="h-4 w-4" />
             集計結果
           </TabsTrigger>
         </TabsList>
