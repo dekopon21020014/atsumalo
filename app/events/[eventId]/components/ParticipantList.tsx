@@ -67,7 +67,7 @@ export default function ParticipantList({
   eventAccess,
 }: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
-  const { eventId } = useParams()
+  const params: any = useParams(); const eventId = params?.eventId
   const pathname = usePathname()
   const isEnglish = (pathname || '').startsWith('/en')
   const eventIdStr = eventId ? String(eventId) : ''

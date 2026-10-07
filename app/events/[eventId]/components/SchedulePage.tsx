@@ -70,7 +70,7 @@ export default function SchedulePage({
   const [filterGrades, setFilterGrades] = useState<string[]>([])
   const [gradeOpts, setGradeOpts] = useState<string[]>(gradeOptions)
   const [gradeOrderMap, setGradeOrderMap] = useState<Record<string, number>>(gradeOrder)
-  const { eventId } = useParams()
+  const params: any = useParams(); const eventId = params?.eventId
   const pathname = usePathname()
   const isEnglish = (pathname || '').startsWith('/en')
   const t = {

@@ -29,7 +29,7 @@ type AnalyticsResponse = {
 }
 
 export default function AnalyticsPage() {
-  const { eventId } = useParams()
+  const params: any = useParams(); const eventId = params?.eventId
   const [eventName, setEventName] = useState("読み込み中...")
   const [scheduleTypes, setScheduleTypes] = useState<ScheduleType[]>([])
   const [responses, setResponses] = useState<AnalyticsResponse[]>([])

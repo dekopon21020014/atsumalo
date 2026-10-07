@@ -14,7 +14,7 @@ export default function Header() {
     { href: `${prefix}/about`, label: "About" },
   ]
   const langHref = isEnglish
-    ? pathname.replace(/^\/en/, "") || "/"
+    ? (pathname || "").replace(/^\/en/, "") || "/"
     : `/en${(pathname || '') === "/" ? "" : pathname}`
   const langLabel = isEnglish ? "Japanese" : "English"
   return (

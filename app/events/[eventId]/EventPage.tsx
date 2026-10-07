@@ -19,7 +19,7 @@ import { buildEventAuthHeaders, type EventAccess } from "@/app/events/[eventId]/
 import Link from "next/link"
 
 export default function EventPage() {
-  const { eventId } = useParams()
+  const params: any = useParams(); const eventId = params?.eventId
   const pathname = usePathname()
   const isEnglish = (pathname || '').startsWith("/en")
   const { defaultGradeOrder, defaultGradeOptions, colorPalettes } = isEnglish ? en : ja
