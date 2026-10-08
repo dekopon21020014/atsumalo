@@ -59,7 +59,7 @@ export async function PUT(
 
   if (!parseResult.success) {
     return NextResponse.json(
-      { error: parseResult.error.errors[0]?.message || '入力内容に誤りがあります' },
+      { error: parseResult.error.issues[0]?.message || '入力内容に誤りがあります' },
       { status: 400 },
     )
   }

@@ -1,19 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import type { DocumentSnapshot } from 'firebase-admin/firestore'
 import { db } from '@/lib/firebase'
 import { ensurePasswordHash, verifyPassword } from '@/lib/password-utils'
 
-export type EventAuthResult =
-  | { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
-  | { response: NextResponse }
+export type AuthorizedEvent = { eventSnap: DocumentSnapshot; requireParticipantToken: boolean }
+
+export type EventAuthResult = AuthorizedEvent | { response: NextResponse }
 
 /**
  * イベントへのアクセスを認証する共通ヘルパー。
  * - パスワードが設定されている場合は x-event-password ヘッダーで検証
  * - トークンが設定されている場合は x-event-token / Authorization ヘッダーで検証
+ *
+ * ヘッダーしか参照しないため、NextRequest に限らず { headers } を持つオブジェクトを受け付ける。
  */
 export async function authorizeEventAccess(
-  req: NextRequest,
+  req: { headers: Headers },
   eventId: string,
 ): Promise<EventAuthResult> {
   const eventSnap = await db.collection('events').doc(eventId).get()

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "atsumalo-event-mcp": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "--env-file=.env.local",
+        "mcp/index.ts"
+      ]
+    }
+  }
+}

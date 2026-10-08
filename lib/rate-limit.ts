@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { db } from "@/lib/firebase";
 
 export type RateLimitResult =
@@ -7,29 +6,39 @@ export type RateLimitResult =
 
 /**
  * 簡易的なFirestoreベースのレートリミット
- * @param req NextRequest
+ * @param req ヘッダーを持つリクエスト (NextRequest など)
  * @param limit 制限回数 (例: 10回)
  * @param windowMs 制限ウィンドウ (ミリ秒, 例: 60000 = 1分)
+ * @param scope カウンタの名前空間 (例: "mcp:create_event")。
+ *   指定するとエンドポイントごとに独立したカウンタになる。
+ *   未指定の場合は従来どおり IP 単位の共有カウンタを使う。
  * @returns RateLimitResult - 許可される場合は { allowed: true }、制限超過の場合は { allowed: false, retryAfter: 残り秒数 }
  */
 export async function checkRateLimit(
-  req: NextRequest,
+  req: { headers: Headers },
   limit: number = 10,
   windowMs: number = 60000,
+  scope?: string,
 ): Promise<RateLimitResult> {
   // IPアドレスの取得 (Vercel等のプロキシ経由を想定; req.ip は Next.js 新バージョンで廃止)
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || "unknown-ip";
 
-  if (ip === "unknown-ip") {
-    // IPが特定できない場合はスルー
-    return { allowed: true };
-  }
-
   // Firestoreのキーとして使えるようにサニタイズ（ピリオドやコロンはそのまま使える）
   const ipKey = ip.replace(/[^a-zA-Z0-9.:-]/g, "");
-  if (!ipKey) return { allowed: true };
 
-  const rateLimitRef = db.collection("rate_limits").doc(ipKey);
+  let docId: string;
+  if (scope) {
+    // スコープ付きの場合、IP が特定できなくても素通りさせず共有バケットで制限する
+    docId = `${scope}:${ip === "unknown-ip" || !ipKey ? "unknown-ip" : ipKey}`;
+  } else {
+    if (ip === "unknown-ip" || !ipKey) {
+      // IPが特定できない場合はスルー（従来の挙動）
+      return { allowed: true };
+    }
+    docId = ipKey;
+  }
+
+  const rateLimitRef = db.collection("rate_limits").doc(docId);
 
   try {
     return await db.runTransaction(async (transaction) => {
