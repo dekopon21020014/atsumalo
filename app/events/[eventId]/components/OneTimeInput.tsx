@@ -46,7 +46,7 @@ export default function OneTimeInputTab({
   eventAccess,
 }: Props) {
   const pathname = usePathname()
-  const isEnglish = (pathname || '').startsWith("/en")
+  const isEnglish = pathname.startsWith("/en")
   const [name, setName] = useState("")
   const [grade, setGrade] = useState("")
   const available = scheduleTypes.find((t) => t.isAvailable)

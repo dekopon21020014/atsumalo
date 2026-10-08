@@ -1,25 +1,38 @@
-import { db, FieldValue } from "@/lib/firebase"
+import { db, FieldValue, FieldPath } from "@/lib/firebase"
 import { hashPassword } from "@/lib/password-utils"
-import { authorizeEventAccess } from "@/lib/auth/authorize-event"
+import type { AuthorizedEvent } from "@/lib/auth/authorize-event"
 import { defaultGradeOptions, defaultGradeOrder } from "@/lib/constants"
+import { eventSchema } from "@/lib/validations/event"
+import { participantSchema } from "@/lib/validations/participant"
 import { randomUUID } from "crypto"
-import { NextRequest } from "next/server"
+import type { ZodError } from "zod"
 
-type EventCreatePayload = {
-  name: string
-  description?: string | null
-  eventType: "recurring" | "onetime"
-  scheduleTypes: { id: string; label: string; color: string; isAvailable: boolean }[]
-  gradeOptions?: string[] | null
-  gradeOrder?: Record<string, number> | null
-  createdAt?: Date
-  password?: string | null
-  xAxis?: string[]
-  yAxis?: string[]
-  dateTimeOptions?: string[]
+/**
+ * 入力値が不正な場合に投げるエラー。
+ * message はユーザーに提示してよい内容（バリデーションメッセージ）のみを持つ。
+ * それ以外の例外は内部エラーとして扱い、呼び出し側で詳細を隠すこと。
+ */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ValidationError"
+  }
 }
 
-export async function createEventService(data: EventCreatePayload) {
+function firstIssueMessage(error: ZodError): string {
+  return error.issues[0]?.message || "入力内容に誤りがあります"
+}
+
+/**
+ * イベントを作成する。REST / MCP の両方から呼ばれるため、ここで必ずスキーマ検証を行う。
+ * @throws ValidationError 入力が eventSchema を満たさない場合
+ */
+export async function createEventService(input: unknown): Promise<string> {
+  const parsed = eventSchema.safeParse(input)
+  if (!parsed.success) {
+    throw new ValidationError(firstIssueMessage(parsed.error))
+  }
+
   const {
     name,
     description,
@@ -31,7 +44,7 @@ export async function createEventService(data: EventCreatePayload) {
     gradeOptions,
     gradeOrder,
     password,
-  } = data
+  } = parsed.data
 
   const grades = gradeOptions && gradeOptions.length > 0 ? gradeOptions : defaultGradeOptions
   const order = gradeOrder && Object.keys(gradeOrder).length > 0 ? gradeOrder : defaultGradeOrder
@@ -39,7 +52,7 @@ export async function createEventService(data: EventCreatePayload) {
   const pass = typeof password === "string" ? password.trim() : ""
   const passwordHash = pass ? await hashPassword(pass) : ""
 
-  const payload: any = {
+  const payload: Record<string, unknown> = {
     name,
     description: description || "",
     eventType,
@@ -61,37 +74,30 @@ export async function createEventService(data: EventCreatePayload) {
   return docRef.id
 }
 
-type ParticipantPayload = {
-  eventId: string
-  name: string
-  grade: string
-  gradePriority?: number
-  schedule: Record<string, string> | { dateTime: string; typeId: string }[]
-  comment?: string | null
-}
+export type SubmitAnswerResult = { id: string; editToken: string }
 
-export async function submitAnswerService(req: NextRequest | { headers: Headers }, data: ParticipantPayload) {
-  const { eventId, name, grade, gradePriority, schedule, comment: rawComment } = data
-
-  const reqObj = 'nextUrl' in req ? req : {
-    headers: req.headers,
-    nextUrl: new URL(`http://localhost/api/events/${eventId}`)
-  } as any as NextRequest;
-
-  const authResult = await authorizeEventAccess(reqObj, eventId)
-  if ('response' in authResult) {
-    throw new Error('Unauthorized or Event Not Found') // Caller can handle this
+/**
+ * 回答を保存する。認可は呼び出し側で authorizeEventAccess により済ませ、その結果を渡すこと
+ * （認可を二重に行わないため）。スキーマ検証はここで必ず行う。
+ * @throws ValidationError 入力が participantSchema を満たさない、または eventId が一致しない場合
+ */
+export async function submitAnswerService(
+  auth: AuthorizedEvent,
+  input: unknown,
+): Promise<SubmitAnswerResult> {
+  const parsed = participantSchema.safeParse(input)
+  if (!parsed.success) {
+    throw new ValidationError(firstIssueMessage(parsed.error))
   }
 
-  let comment = ''
-  if (rawComment != null) {
-    const trimmed = rawComment.trim()
-    if (trimmed !== '') {
-      comment = trimmed
-    }
+  const { eventId, name, grade, gradePriority, schedule, comment: rawComment } = parsed.data
+  const eventRef = auth.eventSnap.ref
+
+  if (eventId !== eventRef.id) {
+    throw new ValidationError("eventId が一致しません")
   }
 
-  const participantsRef = authResult.eventSnap.ref.collection('participants')
+  const comment = rawComment?.trim() ?? ""
 
   const participantData: Record<string, unknown> = {
     name,
@@ -101,21 +107,25 @@ export async function submitAnswerService(req: NextRequest | { headers: Headers 
     createdAt: FieldValue.serverTimestamp(),
   }
 
-  const editToken = authResult.requireParticipantToken ? randomUUID() : ''
+  const editToken = auth.requireParticipantToken ? randomUUID() : ""
   if (editToken) {
     participantData.editToken = editToken
   }
 
-  const docRef = await participantsRef.add(participantData)
+  const docRef = await eventRef.collection("participants").add(participantData)
 
-  const eventRef = db.collection('events').doc(eventId)
-  const eventUpdatePayload: any = {
-    gradeOptions: FieldValue.arrayUnion(grade)
-  }
   if (gradePriority != null) {
-    eventUpdatePayload[`gradeOrder.${grade}`] = gradePriority
+    // grade を文字列連結でフィールドパスにすると "." を含む値でネストしたフィールドを
+    // 書き換えられてしまうため、FieldPath で 1 セグメントとして扱う
+    await eventRef.update(
+      "gradeOptions",
+      FieldValue.arrayUnion(grade),
+      new FieldPath("gradeOrder", grade),
+      gradePriority,
+    )
+  } else {
+    await eventRef.update({ gradeOptions: FieldValue.arrayUnion(grade) })
   }
-  await eventRef.update(eventUpdatePayload)
 
   return { id: docRef.id, editToken }
 }

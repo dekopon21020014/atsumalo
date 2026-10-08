@@ -29,7 +29,7 @@ export default function BestTimeSlots({
 }: Props) {
   const [bestSlots, setBestSlots] = useState<Slot[]>([])
   const pathname = usePathname()
-  const isEnglish = (pathname || '').startsWith('/en')
+  const isEnglish = pathname.startsWith('/en')
   // 参加可能者が多い上位3スロットを返す
   useEffect(() => {
     console.log('BestTimeSlots: useEffect')

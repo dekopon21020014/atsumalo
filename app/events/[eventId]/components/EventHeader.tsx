@@ -36,7 +36,7 @@ export default function EventHeader({
 }: EventHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const pathname = usePathname()
-  const isEnglish = (pathname || '').startsWith("/en")
+  const isEnglish = pathname.startsWith("/en")
 
   // イベントを共有
   const shareEvent = () => {

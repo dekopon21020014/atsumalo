@@ -75,10 +75,10 @@ export default function ScheduleForm({
   const [bulkScheduleType, setBulkScheduleType] = useState<string>(defaultTypeId)
   const [selectionMode, setSelectionMode] = useState<"tap" | "drag">(isMobile ? "tap" : "drag")
   const params = useParams()
-  const eventIdParam = (params as any)?.eventId as string
+  const eventIdParam = params.eventId
   const eventIdStr = typeof eventIdParam === "string" ? eventIdParam : Array.isArray(eventIdParam) ? eventIdParam[0] : ""
   const pathname = usePathname()
-  const isEnglish = (pathname || '').startsWith("/en")
+  const isEnglish = pathname.startsWith("/en")
   const authHeaders = useMemo(() => buildEventAuthHeaders(eventAccess), [eventAccess])
   const requireParticipantToken = Boolean(eventAccess?.token)
 
