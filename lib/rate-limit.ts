@@ -5,6 +5,24 @@ export type RateLimitResult =
   | { allowed: false; retryAfter: number } // retryAfter: 残り秒数
 
 /**
+ * クライアントの IP アドレスを取得するヘルパー。
+ * 信頼できるプロキシが付与するヘッダー（x-real-ip, cf-connecting-ip）を最優先にし、
+ * x-forwarded-for の偽装耐性を高める。
+ */
+export function getClientIp(headers: Headers): string {
+  const xRealIp = headers.get("x-real-ip")?.trim();
+  if (xRealIp) return xRealIp;
+
+  const cfConnectingIp = headers.get("cf-connecting-ip")?.trim();
+  if (cfConnectingIp) return cfConnectingIp;
+
+  const xForwardedFor = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (xForwardedFor) return xForwardedFor;
+
+  return "unknown-ip";
+}
+
+/**
  * 簡易的なFirestoreベースのレートリミット
  * @param req ヘッダーを持つリクエスト (NextRequest など)
  * @param limit 制限回数 (例: 10回)
@@ -20,8 +38,7 @@ export async function checkRateLimit(
   windowMs: number = 60000,
   scope?: string,
 ): Promise<RateLimitResult> {
-  // IPアドレスの取得 (Vercel等のプロキシ経由を想定; req.ip は Next.js 新バージョンで廃止)
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || "unknown-ip";
+  const ip = getClientIp(req.headers);
 
   // Firestoreのキーとして使えるようにサニタイズ（ピリオドやコロンはそのまま使える）
   const ipKey = ip.replace(/[^a-zA-Z0-9.:-]/g, "");

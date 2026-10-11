@@ -102,6 +102,13 @@ export function registerTools(server: McpServer, opts: RegisterToolsOptions = {}
       try {
         const auth = await authorizeEventAccess({ headers }, answer.eventId)
         if ("response" in auth) {
+          if (auth.response.status === 429) {
+            const retryAfter = auth.response.headers.get("Retry-After")
+            return textResult(
+              `Rate limit exceeded: too many failed password attempts for this event. Please try again in ${retryAfter || 600} seconds.`,
+              true,
+            )
+          }
           return auth.response.status === 404
             ? textResult("Event not found.", true)
             : textResult("Unauthorized: the event password or token is missing or invalid.", true)
