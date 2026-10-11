@@ -88,5 +88,38 @@ yarn lint
 yarn test
 ```
 
+## MCP (Model Context Protocol) / APM
+
+あつま郎は MCP (Model Context Protocol) に対応しており、AI エージェント（Claude Code、Cursor、GitHub Copilot など）からイベントの作成や日程回答を行うことができます。
+
+### APM (Agent Package Manager) による導入
+
+[APM (Agent Package Manager)](https://github.com/microsoft/apm) を使用して、簡単にエージェント環境へ導入できます。
+
+#### パッケージとしてインストール
+```bash
+apm install dekopon21020014/atsumalo
+```
+
+#### または MCP サーバーを直接インストール
+```bash
+apm install --mcp atsumalo --transport http --url https://atsumalo.vercel.app/api/mcp
+```
+
+#### `apm.yml` に直接記述する場合
+プロジェクトの `apm.yml` に以下を追加して `apm install` を実行します:
+```yaml
+dependencies:
+  mcp:
+    - name: atsumalo
+      registry: false
+      transport: http
+      url: https://atsumalo.vercel.app/api/mcp
+```
+
+### 提供ツール
+- `create_event`: 日程調整イベント（定期・単発）を新規作成し、URL (`https://atsumalo.vercel.app/events/<eventId>`) を取得します。
+- `submit_answer`: イベントに対して参加者の空き状況・回答を登録します（編集用トークン `editToken` も返却されます）。
+
 ## その他
 英語版の README は [README.en.md](README.en.md) を参照してください。

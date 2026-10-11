@@ -1,5 +1,5 @@
 import { getApps, initializeApp, cert, type ServiceAccount } from 'firebase-admin/app'
-import { getFirestore, FieldValue } from 'firebase-admin/firestore'
+import { getFirestore, FieldValue, FieldPath } from 'firebase-admin/firestore'
 
 // 必須環境変数の存在チェック（アプリ起動時に欠落を早期検知する）
 const requiredEnvVars = {
@@ -30,4 +30,4 @@ if (!getApps().length) {
 
 const db = getFirestore()
 
-export { db, FieldValue }
+export { db, FieldValue, FieldPath }
