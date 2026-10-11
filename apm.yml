@@ -1,0 +1,19 @@
+name: atsumalo
+version: "1.0.0"
+description: "Atsumalo event scheduling MCP server and AI agent instructions"
+dependencies:
+  mcp:
+    - name: atsumalo
+      registry: false
+      transport: http
+      url: https://atsumalo.vercel.app/api/mcp
+devDependencies:
+  mcp:
+    - name: atsumalo-local
+      registry: false
+      transport: stdio
+      command: npx
+      args:
+        - tsx
+        - "--env-file=.env.local"
+        - mcp/index.ts

@@ -54,3 +54,36 @@ yarn start
 yarn lint
 yarn test
 ```
+
+## MCP (Model Context Protocol) / APM
+
+Atsumalo supports the Model Context Protocol (MCP), enabling AI agents (Claude Code, Cursor, GitHub Copilot, etc.) to create events and submit availability.
+
+### Installation via APM (Agent Package Manager)
+
+You can easily integrate Atsumalo into your agent environment using [APM (Agent Package Manager)](https://github.com/microsoft/apm).
+
+#### Install as a package
+```bash
+apm install dekopon21020014/atsumalo
+```
+
+#### Or install the MCP server directly
+```bash
+apm install --mcp atsumalo --transport http --url https://atsumalo.vercel.app/api/mcp
+```
+
+#### In your `apm.yml`
+Add the following to your `apm.yml` and run `apm install`:
+```yaml
+dependencies:
+  mcp:
+    - name: atsumalo
+      registry: false
+      transport: http
+      url: https://atsumalo.vercel.app/api/mcp
+```
+
+### Available Tools
+- `create_event`: Creates a new scheduling event (recurring or onetime) and returns the event URL (`https://atsumalo.vercel.app/events/<eventId>`).
+- `submit_answer`: Submits a participant's availability answers to an event (returns `editToken` if required).

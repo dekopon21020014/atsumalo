@@ -29,3 +29,6 @@ next-env.d.ts
 
 # mac
 .DS_Store
+
+# local agent IDE configurations
+.agents/
