@@ -6,15 +6,12 @@ export type RateLimitResult =
 
 /**
  * クライアントの IP アドレスを取得するヘルパー。
- * 信頼できるプロキシが付与するヘッダー（x-real-ip, cf-connecting-ip）を最優先にし、
- * x-forwarded-for の偽装耐性を高める。
+ * Vercel 等の信頼できるプロキシが付与する x-real-ip を最優先にし、
+ * 次いで x-forwarded-for の先頭を参照する。
  */
 export function getClientIp(headers: Headers): string {
   const xRealIp = headers.get("x-real-ip")?.trim();
   if (xRealIp) return xRealIp;
-
-  const cfConnectingIp = headers.get("cf-connecting-ip")?.trim();
-  if (cfConnectingIp) return cfConnectingIp;
 
   const xForwardedFor = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   if (xForwardedFor) return xForwardedFor;

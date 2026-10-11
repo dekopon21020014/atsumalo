@@ -11,6 +11,8 @@ export type EventAuthResult = AuthorizedEvent | { response: NextResponse }
 const MAX_PASSWORD_FAILURES = 10 // 連続10回失敗でロック
 const PASSWORD_LOCKOUT_MS = 10 * 60 * 1000 // 10分間ロック
 
+import { getClientIp } from '@/lib/rate-limit'
+
 /**
  * 文字列の長さに依存せず SHA-256 ダイジェスト経由で一定時間比較を行う。
  * タイミング攻撃によるトークン推測を防止する。
@@ -24,13 +26,19 @@ export function safeTokenCompare(a: string, b: string): boolean {
   return timingSafeEqual(hashA, hashB)
 }
 
+function getLockDocId(eventId: string, ip: string): string {
+  const ipKey = ip.replace(/[^a-zA-Z0-9.:-]/g, '') || 'unknown-ip'
+  return `pw_lock:${eventId}:${ipKey}`
+}
+
 /**
- * イベント単位のパスワードロック状態をチェックする。
+ * IP単位のパスワードロック状態をチェックする（第三者による他者締め出し DoS を防止）。
  */
 export async function checkPasswordLock(
   eventId: string,
+  ip: string = 'unknown-ip',
 ): Promise<{ locked: boolean; retryAfter: number }> {
-  const lockRef = db.collection('rate_limits').doc(`pw_lock:${eventId}`)
+  const lockRef = db.collection('rate_limits').doc(getLockDocId(eventId, ip))
   try {
     const snap = await lockRef.get()
     if (!snap.exists) return { locked: false, retryAfter: 0 }
@@ -51,12 +59,14 @@ export async function checkPasswordLock(
 
 /**
  * パスワード検証結果（成功/失敗）を記録する。
+ * ロック期限超過後、または前回の失敗から十分時間が経過している場合は失敗回数をリセットする。
  */
 export async function recordPasswordAttempt(
   eventId: string,
-  success: boolean,
+  ip: string = 'unknown-ip',
+  success: boolean = false,
 ): Promise<void> {
-  const lockRef = db.collection('rate_limits').doc(`pw_lock:${eventId}`)
+  const lockRef = db.collection('rate_limits').doc(getLockDocId(eventId, ip))
   try {
     await db.runTransaction(async (t) => {
       const doc = await t.get(lockRef)
@@ -67,7 +77,17 @@ export async function recordPasswordAttempt(
         return
       }
       const now = Date.now()
-      const currentFailures = (doc.data()?.failures || 0) + 1
+      const data = doc.data()
+      const lockedUntil =
+        data?.lockedUntil?.toMillis?.() ?? data?.lockedUntil?.getTime?.() ?? 0
+      const updatedAt =
+        data?.updatedAt?.toMillis?.() ?? data?.updatedAt?.getTime?.() ?? 0
+
+      // ロック期限が過ぎている、または直近の試行からタイムアウトしている場合はカウントをリセット
+      const isLockExpired = lockedUntil > 0 && lockedUntil <= now
+      const isWindowExpired = updatedAt > 0 && now - updatedAt > PASSWORD_LOCKOUT_MS
+      const currentFailures = isLockExpired || isWindowExpired ? 1 : (data?.failures || 0) + 1
+
       if (currentFailures >= MAX_PASSWORD_FAILURES) {
         t.set(lockRef, {
           failures: currentFailures,
@@ -92,7 +112,7 @@ export async function recordPasswordAttempt(
 
 /**
  * イベントへのアクセスを認証する共通ヘルパー。
- * - パスワードが設定されている場合は x-event-password ヘッダーで検証（総当たり防御付き）
+ * - パスワードが設定されている場合は x-event-password ヘッダーで検証（IP×イベント単位の総当たり防御付き）
  * - トークンが設定されている場合は x-event-token / Authorization ヘッダーで検証（タイミング攻撃防御付き）
  *
  * ヘッダーしか参照しないため、NextRequest に限らず { headers } を持つオブジェクトを受け付ける。
@@ -127,8 +147,10 @@ export async function authorizeEventAccess(
   const tokenRequired = tokens.length > 0
 
   if (passwordRequired) {
-    // ブルートフォースによるロック状態を検証
-    const lockStatus = await checkPasswordLock(eventId)
+    const clientIp = getClientIp(req.headers)
+
+    // ブルートフォースによるロック状態を検証（IP × イベント単位）
+    const lockStatus = await checkPasswordLock(eventId, clientIp)
     if (lockStatus.locked) {
       return {
         response: NextResponse.json(
@@ -148,7 +170,7 @@ export async function authorizeEventAccess(
     const passwordValid =
       providedPassword && (await verifyPassword(hashedPassword, providedPassword))
 
-    await recordPasswordAttempt(eventId, Boolean(passwordValid))
+    await recordPasswordAttempt(eventId, clientIp, Boolean(passwordValid))
 
     if (!passwordValid) {
       return { response: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) }

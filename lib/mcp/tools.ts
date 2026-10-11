@@ -74,7 +74,9 @@ export function registerTools(server: McpServer, opts: RegisterToolsOptions = {}
 
       try {
         const id = await createEventService(args)
-        return textResult(`Event created successfully. Event ID: ${id}`)
+        return textResult(
+          `Event created successfully. Event ID: ${id}\nEvent URL: https://atsumalo.vercel.app/events/${id}`,
+        )
       } catch (error) {
         return errorResult("create_event", error)
       }
